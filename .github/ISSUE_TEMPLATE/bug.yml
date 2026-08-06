@@ -1,0 +1,23 @@
+name: Bug Report
+description: Report a bug or issue in the Demo MVP
+labels: ["type:bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What is the bug? What is the expected behavior vs actual behavior?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this bug?
+    validations:
+      required: true
+  - type: textarea
+    id: test_requirements
+    attributes:
+      label: Test Requirements
+      description: How should we verify the fix?

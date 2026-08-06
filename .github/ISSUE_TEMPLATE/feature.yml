@@ -1,0 +1,51 @@
+name: Feature Request
+description: Propose a new feature or enhancement for the Demo MVP
+labels: ["type:feature"]
+body:
+  - type: textarea
+    id: user_value
+    attributes:
+      label: User or Engineering Value
+      description: What value does this provide to the passenger, admin, or the system?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What exactly will be implemented?
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of Scope
+      description: What is explicitly not included?
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: List the conditions that must be met for this to be considered done.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Any prior issues, packages, or decisions needed?
+  - type: textarea
+    id: test_requirements
+    attributes:
+      label: Test Requirements
+      description: What needs to be tested automatically or manually?
+  - type: textarea
+    id: doc_impact
+    attributes:
+      label: Documentation Impact
+      description: What documentation needs to be updated?
+  - type: checkboxes
+    id: demo_relevance
+    attributes:
+      label: Demo Relevance
+      options:
+        - label: This is a Demo-Critical feature
