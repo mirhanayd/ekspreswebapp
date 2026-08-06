@@ -41,7 +41,7 @@ $MatchColors = [regex]::Matches($LabelsYml, 'color:\s*"([^"]+)"')
 for ($i=0; $i -lt $MatchNames.Count; $i++) {
     $Name = $MatchNames[$i].Groups[1].Value
     $Color = $MatchColors[$i].Groups[1].Value
-    
+
     $Args = @("label", "create", $Name, "--repo", $Repo, "--color", $Color, "--force")
     & gh @Args 2>$null
     if ($LASTEXITCODE -eq 0) {
@@ -62,7 +62,7 @@ Write-Host "Creating Milestones..." -ForegroundColor Cyan
 foreach ($Milestone in $Manifest.milestones) {
     $MilestonesJson = & gh api "/repos/$Repo/milestones"
     $MilestoneExists = $MilestonesJson | ConvertFrom-Json | Where-Object { $_.title -eq $Milestone }
-    
+
     if (-not $MilestoneExists) {
         Write-Host "Creating milestone: $Milestone"
         $Args = @("api", "/repos/$Repo/milestones", "-f", "title=$Milestone")
@@ -81,13 +81,13 @@ if (-not $TargetProject) {
     $Args = @("project", "create", "--owner", $ProjectOwner, "--title", $ProjectTitle, "--format", "json")
     $TargetProjectInfo = & gh @Args | ConvertFrom-Json
     $ProjectNumber = $TargetProjectInfo.number
-    
+
     $ArgsEdit = @("project", "edit", $ProjectNumber, "--owner", $ProjectOwner, "--visibility", "PRIVATE")
     & gh @ArgsEdit
-    
+
     $ArgsLink = @("project", "link", $ProjectNumber, "--owner", $ProjectOwner, "--repo", "ekspreswebapp")
     & gh @ArgsLink
-    
+
     Write-Host "Project created, set to PRIVATE, and linked. Number: $ProjectNumber" -ForegroundColor Green
 } else {
     $ProjectNumber = $TargetProject.number
@@ -101,16 +101,16 @@ $AllIssuesJson = & gh @AllIssuesArgs | ConvertFrom-Json
 Write-Host "Creating Issues..." -ForegroundColor Cyan
 foreach ($Issue in $Manifest.issues) {
     $ExistingIssue = $AllIssuesJson | Where-Object { $_.title -eq $Issue.title }
-    
+
     if (-not $ExistingIssue) {
         Write-Host "Creating issue: $($Issue.title)"
         $Args = @("issue", "create", "--repo", $Repo, "--title", $Issue.title, "--body", $Issue.body)
         if ($Issue.labels) { $LabelsArg = $Issue.labels -join ","; $Args += "--label"; $Args += $LabelsArg }
         if ($Issue.milestone) { $Args += "--milestone"; $Args += $Issue.milestone }
-        
+
         $NewIssueUrl = & gh @Args
         Write-Host "Created: $NewIssueUrl"
-        
+
         $ArgsAdd = @("project", "item-add", $ProjectNumber, "--owner", $ProjectOwner, "--url", $NewIssueUrl)
         & gh @ArgsAdd > $null
     } else {

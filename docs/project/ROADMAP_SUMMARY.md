@@ -1,6 +1,6 @@
 # Roadmap Summary
 
-This is the executable summary of the detailed roadmap. 
+This is the executable summary of the detailed roadmap.
 
 ## M0 Governance & Discovery
 - Repository setup, GitHub Project, issues, and delivery workflow.
