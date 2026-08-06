@@ -31,13 +31,13 @@
     {
       "title": "Monorepo workspace setup",
       "body": "## User or Engineering Value\nScaffolds the repo to hold multiple apps and shared packages.\n\n## Scope\n- Create `pnpm-workspace.yaml`\n- Create Next.js passenger web app\n- Create Next.js admin web app\n- Create NestJS API\n\n## Acceptance Criteria\n- Root `package.json` can start all apps.\n\n## Dependencies\n- None\n\n## Demo Relevance\n- Critical",
-      "labels": ["type:technical-task", "area:infra", "priority:P0"],
+      "labels": ["type:chore", "area:infra", "priority:P0"],
       "milestone": "M1 Foundation & Infrastructure"
     },
     {
       "title": "Docker Compose and Database init",
       "body": "## User or Engineering Value\nProvides local data stores.\n\n## Scope\n- Docker Compose for Postgres (with PostGIS) and Redis.\n- Drizzle ORM setup for migrations.\n\n## Acceptance Criteria\n- DBs start successfully.\n- Drizzle can connect and run a test migration.\n\n## Dependencies\n- Monorepo setup",
-      "labels": ["type:technical-task", "area:database", "priority:P0"],
+      "labels": ["type:chore", "area:database", "priority:P0"],
       "milestone": "M1 Foundation & Infrastructure"
     },
     {
