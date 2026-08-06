@@ -1,0 +1,110 @@
+{
+  "milestones": [
+    "M0 Governance & Discovery",
+    "M1 Foundation & Infrastructure",
+    "M2 Design System & Auth",
+    "M3 Routes, Trips & Search",
+    "M4 Maps & Seat Inventory",
+    "M5 Checkout & Tickets",
+    "M6 Live Tracking",
+    "M7 Admin, QA & Demo Deployment"
+  ],
+  "issues": [
+    {
+      "title": "Epic: Governance, discovery, and product decisions",
+      "body": "## User or Engineering Value\nEstablishes repository rules, delivery workflow, and project planning tools so agents and engineers can operate effectively without conflict.\n\n## Scope\n- Repository settings and structure\n- GitHub Project creation and configuration\n- Issue and PR templates\n- Milestone and label creation\n- Core documentation (`AGENTS.md`, workflows)\n\n## Out of Scope\n- Feature implementation\n\n## Acceptance Criteria\n- `AGENTS.md` and workflow docs exist.\n- GitHub Project exists and is private.\n- Issues are populated.\n- Labels and milestones are created.\n\n## Dependencies\n- None\n\n## Demo Relevance\n- Required for organized delivery.",
+      "labels": ["type:epic", "area:infra", "priority:P0", "demo-critical"],
+      "milestone": "M0 Governance & Discovery"
+    },
+    {
+      "title": "Epic: Monorepo and local infrastructure",
+      "body": "## User or Engineering Value\nProvides the foundation for building the web apps and APIs locally with consistent tooling.\n\n## Scope\n- pnpm workspace setup\n- Next.js and NestJS initialization\n- Docker Compose (PostgreSQL/PostGIS, Redis)\n- ESLint, Prettier, and TypeScript configs\n\n## Acceptance Criteria\n- `pnpm dev` starts the monorepo.\n- `docker-compose up` runs the databases.\n- DBs are accessible.\n\n## Dependencies\n- M0 Epic\n\n## Demo Relevance\n- Core infrastructure.",
+      "labels": ["type:epic", "area:infra", "priority:P0", "demo-critical"],
+      "milestone": "M1 Foundation & Infrastructure"
+    },
+    {
+      "title": "Epic: CI, quality gates, logging, and OpenAPI",
+      "body": "## User or Engineering Value\nEnsures code quality and provides API contracts for the frontend.\n\n## Scope\n- GitHub Actions (Lint, Test, Build)\n- Pino logging setup\n- Swagger/OpenAPI setup in NestJS\n\n## Acceptance Criteria\n- PRs require passing CI.\n- `api/docs` serves Swagger UI.\n\n## Dependencies\n- Monorepo Epic",
+      "labels": ["type:epic", "area:infra", "area:api", "priority:P1"],
+      "milestone": "M1 Foundation & Infrastructure"
+    },
+    {
+      "title": "Monorepo workspace setup",
+      "body": "## User or Engineering Value\nScaffolds the repo to hold multiple apps and shared packages.\n\n## Scope\n- Create `pnpm-workspace.yaml`\n- Create Next.js passenger web app\n- Create Next.js admin web app\n- Create NestJS API\n\n## Acceptance Criteria\n- Root `package.json` can start all apps.\n\n## Dependencies\n- None\n\n## Demo Relevance\n- Critical",
+      "labels": ["type:technical-task", "area:infra", "priority:P0"],
+      "milestone": "M1 Foundation & Infrastructure"
+    },
+    {
+      "title": "Docker Compose and Database init",
+      "body": "## User or Engineering Value\nProvides local data stores.\n\n## Scope\n- Docker Compose for Postgres (with PostGIS) and Redis.\n- Drizzle ORM setup for migrations.\n\n## Acceptance Criteria\n- DBs start successfully.\n- Drizzle can connect and run a test migration.\n\n## Dependencies\n- Monorepo setup",
+      "labels": ["type:technical-task", "area:database", "priority:P0"],
+      "milestone": "M1 Foundation & Infrastructure"
+    },
+    {
+      "title": "Epic: Brand system, design system, and application shells",
+      "body": "## User or Engineering Value\nProvides a cohesive and beautiful UI for passengers.\n\n## Scope\n- Shared UI package\n- Colors, typography, layout shells\n\n## Acceptance Criteria\n- Reusable buttons, inputs, layouts.\n\n## Dependencies\n- M1 Foundation",
+      "labels": ["type:epic", "area:passenger-web", "priority:P0"],
+      "milestone": "M2 Design System & Auth"
+    },
+    {
+      "title": "Epic: Authentication and user ownership",
+      "body": "## User or Engineering Value\nAllows passengers to register, log in, and own their tickets.\n\n## Scope\n- JWT-based auth in NestJS\n- Next.js auth integration\n\n## Acceptance Criteria\n- User can register and login.\n- Protected routes redirect to login.\n\n## Dependencies\n- DB init",
+      "labels": ["type:epic", "area:api", "area:security", "priority:P0", "demo-critical"],
+      "milestone": "M2 Design System & Auth"
+    },
+    {
+      "title": "Epic: Locations, routes, buses, trips, and deterministic seed data",
+      "body": "## User or Engineering Value\nPopulates the system with queryable data.\n\n## Scope\n- Schema for locations, routes, trips, buses.\n- Seed script for dummy data.\n\n## Acceptance Criteria\n- Seed script runs successfully and populates tables.\n\n## Dependencies\n- DB init",
+      "labels": ["type:epic", "area:database", "priority:P0", "demo-critical"],
+      "milestone": "M3 Routes, Trips & Search"
+    },
+    {
+      "title": "Epic: Search and trip results",
+      "body": "## Scope\n- Search API by origin, dest, date.\n- Results UI.\n\n## Dependencies\n- Seed data",
+      "labels": ["type:epic", "area:api", "area:passenger-web", "priority:P0", "demo-critical"],
+      "milestone": "M3 Routes, Trips & Search"
+    },
+    {
+      "title": "Epic: Trip detail, route map, and stop timeline",
+      "body": "## Scope\n- Trip details view.\n- MapLibre integration for route visualization.\n\n## Dependencies\n- Search UI",
+      "labels": ["type:epic", "area:passenger-web", "area:maps", "priority:P0"],
+      "milestone": "M4 Maps & Seat Inventory"
+    },
+    {
+      "title": "Epic: Seat inventory and concurrency-safe seat holds",
+      "body": "## Scope\n- Seat layout UI.\n- Redis-backed seat locking.\n\n## Dependencies\n- Trip detail",
+      "labels": ["type:epic", "area:api", "area:database", "priority:P0", "demo-critical"],
+      "milestone": "M4 Maps & Seat Inventory"
+    },
+    {
+      "title": "Epic: Checkout, order, demo payment, and ticket issuance",
+      "body": "## Scope\n- Passenger details form.\n- Simulated payment.\n- Ticket generation in DB.\n\n## Dependencies\n- Seat holds",
+      "labels": ["type:epic", "area:passenger-web", "area:api", "priority:P0", "demo-critical"],
+      "milestone": "M5 Checkout & Tickets"
+    },
+    {
+      "title": "Epic: Tickets list, ticket detail, and QR",
+      "body": "## Scope\n- Passenger tickets view.\n- QR code generation.\n\n## Dependencies\n- Ticket issuance",
+      "labels": ["type:epic", "area:passenger-web", "priority:P1"],
+      "milestone": "M5 Checkout & Tickets"
+    },
+    {
+      "title": "Epic: Tracking ingestion, simulator, WebSocket, ETA, and live ticket UI",
+      "body": "## Scope\n- Worker simulating bus movement.\n- WebSocket API.\n- Map UI updates.\n\n## Dependencies\n- Maps UI, Tickets",
+      "labels": ["type:epic", "area:tracking", "area:api", "area:passenger-web", "area:maps", "priority:P0", "demo-critical"],
+      "milestone": "M6 Live Tracking"
+    },
+    {
+      "title": "Epic: Admin dashboard and operations views",
+      "body": "## Scope\n- Basic admin UI to view trips and fleet.\n\n## Dependencies\n- Tracking, Tickets",
+      "labels": ["type:epic", "area:admin-web", "priority:P2"],
+      "milestone": "M7 Admin, QA & Demo Deployment"
+    },
+    {
+      "title": "Epic: Security, accessibility, PWA, QA, performance, and staging demo",
+      "body": "## Scope\n- QA and deployment to a demo server.\n\n## Dependencies\n- All features",
+      "labels": ["type:epic", "area:infra", "area:testing", "priority:P0"],
+      "milestone": "M7 Admin, QA & Demo Deployment"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+name: Technical Task
+description: Infrastructure, refactoring, or non-functional work
+labels: ["type:chore"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+      description: What is the technical work?
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope & Acceptance Criteria
+      description: What exactly will be done and how is it verified?
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Any prior issues, packages, or decisions needed?
