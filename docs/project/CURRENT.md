@@ -1,19 +1,23 @@
 # Current Project Status
 
 ## Current Phase
-M0 Governance & Discovery
+
+M1 Local Infrastructure
 
 ## Current Sprint
-Sprint 1: Project setup and governance
+
+Sprint 2: Workspace & Database Foundation
 
 ## Highest-Priority Next Items
-1. Authenticate GitHub CLI (`gh`).
-2. Run `scripts/github/sync.ps1` to establish GitHub Project, Issues, Labels, and Milestones.
-3. Review and merge the bootstrap PR.
+
+1. Docker Compose setup for PostgreSQL and PostGIS.
+2. Drizzle ORM initialization and schema definitions.
 
 ## Blockers
-- None at the moment (Pending manual `gh` authentication).
+
+- None.
 
 ## Current Demo Readiness
-- Target: 0%
-- Status: Project bootstrapping in progress. No demo UI/API exists yet.
+
+- Target: 5%
+- Status: Monorepo workspace established. Apps and packages scaffolded. No database or features yet.

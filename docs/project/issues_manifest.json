@@ -91,7 +91,15 @@
     {
       "title": "Epic: Tracking ingestion, simulator, WebSocket, ETA, and live ticket UI",
       "body": "## Scope\n- Worker simulating bus movement.\n- WebSocket API.\n- Map UI updates.\n\n## Dependencies\n- Maps UI, Tickets",
-      "labels": ["type:epic", "area:tracking", "area:api", "area:passenger-web", "area:maps", "priority:P0", "demo-critical"],
+      "labels": [
+        "type:epic",
+        "area:tracking",
+        "area:api",
+        "area:passenger-web",
+        "area:maps",
+        "priority:P0",
+        "demo-critical"
+      ],
       "milestone": "M6 Live Tracking"
     },
     {
