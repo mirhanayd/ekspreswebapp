@@ -94,11 +94,13 @@ if (-not $TargetProject) {
     Write-Host "Project already exists. Number: $ProjectNumber" -ForegroundColor Green
 }
 
+Write-Host "Fetching all existing issues for idempotency check..." -ForegroundColor Cyan
+$AllIssuesArgs = @("issue", "list", "--repo", $Repo, "--state", "all", "--limit", "200", "--json", "number,title,url")
+$AllIssuesJson = & gh @AllIssuesArgs | ConvertFrom-Json
+
 Write-Host "Creating Issues..." -ForegroundColor Cyan
 foreach ($Issue in $Manifest.issues) {
-    $SearchArg = 'in:title "' + $Issue.title + '"'
-    $SearchArgs = @("issue", "list", "--repo", $Repo, "--search", $SearchArg, "--json", "number")
-    $ExistingIssue = & gh @SearchArgs | ConvertFrom-Json
+    $ExistingIssue = $AllIssuesJson | Where-Object { $_.title -eq $Issue.title }
     
     if (-not $ExistingIssue) {
         Write-Host "Creating issue: $($Issue.title)"
@@ -113,6 +115,9 @@ foreach ($Issue in $Manifest.issues) {
         & gh @ArgsAdd > $null
     } else {
         Write-Host "Issue already exists: $($Issue.title)"
+        # Try to ensure it's in the project if it exists. Ignore if already added.
+        $ArgsAdd = @("project", "item-add", $ProjectNumber, "--owner", $ProjectOwner, "--url", $ExistingIssue[0].url)
+        & gh @ArgsAdd 2>$null >$null
     }
 }
 
