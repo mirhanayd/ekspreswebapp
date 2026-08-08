@@ -1,5 +1,30 @@
 {
   "name": "@ekspres/database",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "main": "src/index.ts",
+  "scripts": {
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate",
+    "check": "drizzle-kit check",
+    "verify": "node --import tsx src/scripts/verify.ts",
+    "test:integration": "vitest run test/database.integration.test.ts",
+    "test": "vitest run test/config.test.ts",
+    "lint": "eslint src/ --ext .ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@ekspres/typescript-config": "workspace:^",
+    "@types/node": "^26.2.0",
+    "@types/pg": "^8.21.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.23.11",
+    "typescript": "^7.0.2",
+    "vitest": "^2.1.0"
+  }
 }
