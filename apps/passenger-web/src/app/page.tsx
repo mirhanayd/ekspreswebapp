@@ -11,7 +11,7 @@ export default function Home() {
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-black/40" />
         </div>
-        
+
         <div className="relative z-10 max-w-4xl w-full mx-auto space-y-8">
           <div className="text-center space-y-4">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
@@ -25,7 +25,6 @@ export default function Home() {
           {/* Search Card */}
           <div className="bg-white rounded-2xl p-4 md:p-6 shadow-2xl max-w-4xl mx-auto">
             <form className="grid grid-cols-1 md:grid-cols-4 gap-4" action="/search">
-              
               {/* Origin */}
               <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nereden</label>
@@ -33,7 +32,10 @@ export default function Home() {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-5 w-5 text-gray-400" />
                   </div>
-                  <select name="originId" className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none">
+                  <select
+                    name="originId"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none"
+                  >
                     <option value="">Kalkış noktası seçin</option>
                     <option value="siirt">Siirt</option>
                     <option value="kurtalan">Kurtalan</option>
@@ -50,7 +52,10 @@ export default function Home() {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-5 w-5 text-gray-400" />
                   </div>
-                  <select name="destinationId" className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none">
+                  <select
+                    name="destinationId"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none"
+                  >
                     <option value="">Varış noktası seçin</option>
                     <option value="siirt">Siirt</option>
                     <option value="kurtalan">Kurtalan</option>
@@ -67,18 +72,24 @@ export default function Home() {
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Calendar className="h-5 w-5 text-gray-400" />
                   </div>
-                  <input type="date" name="date" className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50" />
+                  <input
+                    type="date"
+                    name="date"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
+                  />
                 </div>
               </div>
 
               {/* Submit Button */}
               <div className="flex items-end">
-                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2">
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
+                >
                   <Search className="h-5 w-5" />
                   Sefer Ara
                 </button>
               </div>
-
             </form>
           </div>
         </div>
@@ -90,7 +101,7 @@ export default function Home() {
           {[
             { title: 'Modern Filo', desc: 'Son model araçlarla konforlu ve güvenli yolculuk.' },
             { title: '7/24 Destek', desc: 'Yolculuğunuzun her anında yanınızdayız.' },
-            { title: 'Kolay Rezervasyon', desc: 'Hızlı ve güvenli online bilet alma deneyimi.' }
+            { title: 'Kolay Rezervasyon', desc: 'Hızlı ve güvenli online bilet alma deneyimi.' },
           ].map((feature, i) => (
             <div key={i} className="bg-white p-6 rounded-2xl shadow-sm text-center space-y-4">
               <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
