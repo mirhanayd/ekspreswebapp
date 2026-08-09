@@ -8,6 +8,7 @@
     "migrate": "drizzle-kit migrate",
     "check": "drizzle-kit check",
     "verify": "node --import tsx src/scripts/verify.ts",
+    "seed": "node --import tsx src/seed.ts",
     "test:integration": "vitest run test/database.integration.test.ts",
     "test": "vitest run test/config.test.ts",
     "lint": "eslint src/ --ext .ts",

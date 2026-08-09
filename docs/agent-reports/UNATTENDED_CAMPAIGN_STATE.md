@@ -16,10 +16,11 @@
 - [x] **Stage 1: API Infrastructure Foundation** - Configured Redis in docker compose, Pino logging, OpenAPI Swagger, and environment validation. Pushed to `chore/20-api-infra-foundation` and opened PR #21.
 - [x] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Pushed to `feat/22-ui-tailwind-layout` and opened PR #23.
 - [x] **Stage 3: Authentication Foundation** - Implemented JWT Auth guards, JWT Strategy, auth module, and `users` table schema in database. Pushed to `feat/24-auth-foundation` and opened PR #25.
+- [x] **Stage 4: Transport Data Foundation (Locations, Routes, Buses, Trips)** - Created transport schema, API transport module, routes, trips, and seed script. Pushed to `feat/26-transport-data` and opened PR #27.
 
 ## Next Stage
 
-- [ ] **Stage 4: Transport Data Foundation (Locations, Routes, Buses, Trips)** - TBD
+- [ ] **Stage 5: Trip Search Foundation** - Search API by origin, destination, date. Test search results UI with filtering.
 
 ## Last Successful Validation
 

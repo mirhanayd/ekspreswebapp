@@ -4,6 +4,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AppController } from './app.controller';
 import { validateEnv } from './config/env.config';
 import { AuthModule } from './auth/auth.module';
+import { TransportModule } from './transport/transport.module';
 import { DatabaseModule } from './database';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -25,6 +26,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     }),
     DatabaseModule,
     AuthModule,
+    TransportModule,
   ],
   controllers: [AppController],
   providers: [

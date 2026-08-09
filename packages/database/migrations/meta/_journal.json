@@ -15,6 +15,13 @@
       "when": 1786267816753,
       "tag": "0001_eager_roughhouse",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786268254110,
+      "tag": "0002_spooky_vargas",
+      "breakpoints": true
     }
   ]
 }
