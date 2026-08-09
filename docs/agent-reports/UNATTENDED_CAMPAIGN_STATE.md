@@ -6,19 +6,18 @@
 - starting branch: chore/16-postgres-drizzle
 - starting commit: e1e25b3
 - active issue: 16
-- active PR: 19
-- repository status: Clean up required for PR #19
+- active issue: 22
+- active PR: 21
+- repository status: Ready for Stage 2
 
-## Stage Status
+## Completed Stages
 
-| Stage                           | Issue | Branch                    | PR  | Status      |
-| ------------------------------- | ----- | ------------------------- | --- | ----------- |
-| 0 Database PR stabilization     | 16    | chore/16-postgres-drizzle | 19  | IN_PROGRESS |
-| 1 API infrastructure foundation | TBD   | TBD                       | TBD | NOT_STARTED |
-| 2 Design system/app shells      | TBD   | TBD                       | TBD | NOT_STARTED |
-| 3 Authentication foundation     | TBD   | TBD                       | TBD | NOT_STARTED |
-| 4 Transport data foundation     | TBD   | TBD                       | TBD | NOT_STARTED |
-| 5 Passenger trip search         | TBD   | TBD                       | TBD | NOT_STARTED |
+- [x] **Stage 0: Stabilize PR #19** - Fixed TypeScript ESLint parser configuration, resolved TS version mismatches in dependencies, and pushed fixes to `chore/16-postgres-drizzle`. Wait for CI passed.
+- [x] **Stage 1: API Infrastructure Foundation** - Configured Redis in docker compose, Pino logging, OpenAPI Swagger, and environment validation. Pushed to `chore/20-api-infra-foundation` and opened PR #21.
+
+## Next Stage
+
+- [ ] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Created issue #22 for this.
 
 ## Last Successful Validation
 
