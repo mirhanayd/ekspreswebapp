@@ -42,19 +42,21 @@ This project is a Turborepo-managed monorepo containing:
 ### Local Database
 
 The local Postgres database runs on port `5432` mapped to `127.0.0.1`.
+
 - **Start**: `pnpm infra:up`
 - **Stop**: `pnpm infra:down`
 - **Logs**: `pnpm infra:logs`
-- **Reset**: `pnpm infra:reset` *(WARNING: Destructive. Removes local volume)*
+- **Reset**: `pnpm infra:reset` _(WARNING: Destructive. Removes local volume)_
 
 #### Database Migrations
+
 - `pnpm db:generate`: Generate migrations based on schema changes.
 - `pnpm db:migrate`: Apply migrations to the database.
 - `pnpm db:check`: Check migration consistency.
 - `pnpm db:verify`: Validate Postgres and PostGIS connection.
 - `pnpm db:test:integration`: Run database smoke tests.
 
-*Note: No product-domain tables exist yet in `@ekspres/database`.*
+_Note: No product-domain tables exist yet in `@ekspres/database`._
 
 ### Troubleshooting
 

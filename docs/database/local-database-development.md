@@ -12,6 +12,7 @@ This document describes the local PostgreSQL/PostGIS foundation for the Siirt Ku
 ## Compose Service
 
 The database service uses the `postgis/postgis:16-3.4-alpine` image to ensure reproducible GIS queries.
+
 - Port: `5432` bound to `127.0.0.1` locally.
 - Data Volume: `ekspres_pg_data` (persists data).
 - Timezone: `UTC`.
@@ -21,6 +22,7 @@ The database service uses the `postgis/postgis:16-3.4-alpine` image to ensure re
 
 Ensure `.env` exists in the repository root (copied from `.env.example`).
 Variables required:
+
 - `DATABASE_URL` (format: `postgres://user:pass@host:port/dbname`)
 
 ## Startup & Health
@@ -28,6 +30,7 @@ Variables required:
 ```bash
 pnpm infra:up
 ```
+
 Use `pnpm infra:ps` or `docker compose ps` to check the `healthy` status.
 
 ## Migration Workflow
@@ -46,25 +49,31 @@ Migrations are managed with `drizzle-kit`.
 ## Verification
 
 To verify that the database is reachable and PostGIS is enabled:
+
 ```bash
 pnpm db:verify
 ```
-*(Never prints actual credentials)*
+
+_(Never prints actual credentials)_
 
 ## Integration Tests
 
 Integration tests connect to the database to ensure behavior is correct.
+
 ```bash
 pnpm db:test:integration
 ```
+
 Tests do NOT run automatically in standard unit tests. A `DATABASE_URL` is required.
 
 ## Destructive Reset
 
 If you need to wipe the local database completely (e.g. broken state):
+
 ```bash
 pnpm infra:reset
 ```
+
 **WARNING: This removes the local volume `ekspres_pg_data`. All local data will be lost.**
 
 ## Security Boundaries
@@ -83,6 +92,7 @@ pnpm infra:reset
 ## Intentionally Deferred Database Work
 
 The following items are deferred to future phases:
+
 - Redis for caching and seat holds
 - Queue tools
 - Product domain database tables (trips, users, buses, routes, etc.)

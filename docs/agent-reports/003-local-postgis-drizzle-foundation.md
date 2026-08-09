@@ -29,18 +29,18 @@ Establish a secure, reproducible local PostgreSQL and PostGIS infrastructure wit
 
 ## 4. Versions Selected
 
-| Package | Version | Location | Reason |
-|---|---|---|---|
-| PostgreSQL | 16 | Docker | Matches current stable PostGIS version |
-| PostGIS | 16-3.4-alpine | Docker | Official, stable GIS image |
-| Docker image tag | `postgis/postgis:16-3.4-alpine` | `compose.yaml` | Pinned for reproducibility |
-| drizzle-orm | `^0.45.2` | `packages/database` | Latest compatible ORM |
-| drizzle-kit | `^0.31.10` | `packages/database` | Migration tooling |
-| pg | `^8.23.0` | `packages/database` | Stable postgres driver |
-| @types/pg | `^8.21.0` | `packages/database` | Typings for pg |
-| dotenv | `^17.4.2` | `packages/database` | Load `.env` for local script/tests |
-| Node.js | `>=22.0.0` | Root `package.json` | Existing repository standard |
-| pnpm | `9.15.4` | Root `package.json` | Existing repository standard |
+| Package          | Version                         | Location            | Reason                                 |
+| ---------------- | ------------------------------- | ------------------- | -------------------------------------- |
+| PostgreSQL       | 16                              | Docker              | Matches current stable PostGIS version |
+| PostGIS          | 16-3.4-alpine                   | Docker              | Official, stable GIS image             |
+| Docker image tag | `postgis/postgis:16-3.4-alpine` | `compose.yaml`      | Pinned for reproducibility             |
+| drizzle-orm      | `^0.45.2`                       | `packages/database` | Latest compatible ORM                  |
+| drizzle-kit      | `^0.31.10`                      | `packages/database` | Migration tooling                      |
+| pg               | `^8.23.0`                       | `packages/database` | Stable postgres driver                 |
+| @types/pg        | `^8.21.0`                       | `packages/database` | Typings for pg                         |
+| dotenv           | `^17.4.2`                       | `packages/database` | Load `.env` for local script/tests     |
+| Node.js          | `>=22.0.0`                      | Root `package.json` | Existing repository standard           |
+| pnpm             | `9.15.4`                        | Root `package.json` | Existing repository standard           |
 
 ## 5. Docker Compose Architecture
 
@@ -60,17 +60,18 @@ Establish a secure, reproducible local PostgreSQL and PostGIS infrastructure wit
 
 ## 6. Environment Variables
 
-| Variable Name | Purpose | Required | Safe Local Behavior | Example Committed |
-|---|---|---|---|---|
-| `POSTGRES_USER` | DB root user | Optional | Defaults to postgres | Yes |
-| `POSTGRES_PASSWORD` | DB root pass | Optional | Defaults to local safe pass | Yes |
-| `POSTGRES_DB` | Default database | Optional | Defaults to ekspres_db | Yes |
-| `POSTGRES_PORT` | Host mapping port | Optional | Defaults to 5432 | Yes |
-| `DATABASE_URL` | App connection string | Required | Local loopback url | Yes |
+| Variable Name       | Purpose               | Required | Safe Local Behavior         | Example Committed |
+| ------------------- | --------------------- | -------- | --------------------------- | ----------------- |
+| `POSTGRES_USER`     | DB root user          | Optional | Defaults to postgres        | Yes               |
+| `POSTGRES_PASSWORD` | DB root pass          | Optional | Defaults to local safe pass | Yes               |
+| `POSTGRES_DB`       | Default database      | Optional | Defaults to ekspres_db      | Yes               |
+| `POSTGRES_PORT`     | Host mapping port     | Optional | Defaults to 5432            | Yes               |
+| `DATABASE_URL`      | App connection string | Required | Local loopback url          | Yes               |
 
 ## 7. Database Package Structure
 
 `packages/database`
+
 - `drizzle.config.ts`: Defines ORM generation rules and db credentials.
 - `src/client.ts`: Connection factory creating pg Pool.
 - `src/config.ts`: Configuration loading and URL validation logic.
@@ -94,15 +95,16 @@ Establish a secure, reproducible local PostgreSQL and PostGIS infrastructure wit
 
 ## 9. Migration Inventory
 
-| Migration Identifier | Filename | Purpose | SQL Effect | Idempotency Behavior | Application Result |
-|---|---|---|---|---|---|
-| `0000_enable_postgis` | `0000_enable_postgis.sql` | Add GIS capabilities | `CREATE EXTENSION IF NOT EXISTS postgis;` | Idempotent | GIS enabled |
+| Migration Identifier  | Filename                  | Purpose              | SQL Effect                                | Idempotency Behavior | Application Result |
+| --------------------- | ------------------------- | -------------------- | ----------------------------------------- | -------------------- | ------------------ |
+| `0000_enable_postgis` | `0000_enable_postgis.sql` | Add GIS capabilities | `CREATE EXTENSION IF NOT EXISTS postgis;` | Idempotent           | GIS enabled        |
 
-*Confirmation: No product-domain tables were created.*
+_Confirmation: No product-domain tables were created._
 
 ## 10. PostGIS Verification
 
-*(Checked via integration scripts during implementation planning, but Docker failed on host)*
+_(Checked via integration scripts during implementation planning, but Docker failed on host)_
+
 - **PostgreSQL Connection:** Checked (in CI)
 - **Database Name:** Checked (in CI)
 - **PostgreSQL Version:** 16 (in CI)
@@ -113,30 +115,30 @@ Establish a secure, reproducible local PostgreSQL and PostGIS infrastructure wit
 
 ## 11. Root Commands Added
 
-| Command | Behavior | Package Invoked | Classification | Prerequisites |
-|---|---|---|---|---|
-| `pnpm infra:config` | Validate compose config | docker compose | Non-destructive | Docker |
-| `pnpm infra:up` | Start Postgres | docker compose | Non-destructive | Docker |
-| `pnpm infra:down` | Stop services | docker compose | Non-destructive | Docker |
-| `pnpm infra:logs` | Show DB logs | docker compose | Non-destructive | Docker |
-| `pnpm infra:ps` | Show container state | docker compose | Non-destructive | Docker |
-| `pnpm infra:reset` | Delete container and volume | docker compose | **Destructive** | Docker |
-| `pnpm db:generate` | Make migration | @ekspres/database | Non-destructive | pnpm |
-| `pnpm db:migrate` | Run migrations | @ekspres/database | Non-destructive | DB running |
-| `pnpm db:check` | Check sync state | @ekspres/database | Non-destructive | DB running |
-| `pnpm db:verify` | Run verify.ts | @ekspres/database | Non-destructive | DB running |
-| `pnpm db:test:integration` | Run smoke tests | @ekspres/database | Non-destructive | DB running |
+| Command                    | Behavior                    | Package Invoked   | Classification  | Prerequisites |
+| -------------------------- | --------------------------- | ----------------- | --------------- | ------------- |
+| `pnpm infra:config`        | Validate compose config     | docker compose    | Non-destructive | Docker        |
+| `pnpm infra:up`            | Start Postgres              | docker compose    | Non-destructive | Docker        |
+| `pnpm infra:down`          | Stop services               | docker compose    | Non-destructive | Docker        |
+| `pnpm infra:logs`          | Show DB logs                | docker compose    | Non-destructive | Docker        |
+| `pnpm infra:ps`            | Show container state        | docker compose    | Non-destructive | Docker        |
+| `pnpm infra:reset`         | Delete container and volume | docker compose    | **Destructive** | Docker        |
+| `pnpm db:generate`         | Make migration              | @ekspres/database | Non-destructive | pnpm          |
+| `pnpm db:migrate`          | Run migrations              | @ekspres/database | Non-destructive | DB running    |
+| `pnpm db:check`            | Check sync state            | @ekspres/database | Non-destructive | DB running    |
+| `pnpm db:verify`           | Run verify.ts               | @ekspres/database | Non-destructive | DB running    |
+| `pnpm db:test:integration` | Run smoke tests             | @ekspres/database | Non-destructive | DB running    |
 
 ## 12. Direct Dependencies Added
 
-| Package | Version | Workspace Location | Classification | Why Required Now | Why Not Deferred |
-|---|---|---|---|---|---|
-| `drizzle-orm` | `^0.45.2` | `packages/database` | Production | DB access | Need ORM setup |
-| `drizzle-kit` | `^0.31.10`| `packages/database` | Development | Migration gen | Needed for schema |
-| `pg` | `^8.23.0` | `packages/database` | Production | Postgres driver | Database connectivity |
-| `@types/pg` | `^8.21.0` | `packages/database` | Development | Typings | TypeScript support |
-| `dotenv` | `^17.4.2` | `packages/database` | Production | CLI environment | Scripts need DB URL |
-| `tsx` | `^4.23.11`| `packages/database` | Development | Run TypeScript | Need CLI runner |
+| Package       | Version    | Workspace Location  | Classification | Why Required Now | Why Not Deferred      |
+| ------------- | ---------- | ------------------- | -------------- | ---------------- | --------------------- |
+| `drizzle-orm` | `^0.45.2`  | `packages/database` | Production     | DB access        | Need ORM setup        |
+| `drizzle-kit` | `^0.31.10` | `packages/database` | Development    | Migration gen    | Needed for schema     |
+| `pg`          | `^8.23.0`  | `packages/database` | Production     | Postgres driver  | Database connectivity |
+| `@types/pg`   | `^8.21.0`  | `packages/database` | Development    | Typings          | TypeScript support    |
+| `dotenv`      | `^17.4.2`  | `packages/database` | Production     | CLI environment  | Scripts need DB URL   |
+| `tsx`         | `^4.23.11` | `packages/database` | Development    | Run TypeScript   | Need CLI runner       |
 
 ## 13. Deferred Dependencies and Features
 
@@ -150,26 +152,26 @@ Establish a secure, reproducible local PostgreSQL and PostGIS infrastructure wit
 
 ## 14. Tests Added
 
-| Test File | Test Type | Tested Behavior | Database Required | Result |
-|---|---|---|---|---|
-| `config.test.ts` | Unit | Validation behavior | No | PASS |
-| `database.integration.test.ts`| Integration | PostGIS and pg connection | Yes | SKIPPED/FAIL (Locally missing Docker), PASS (CI) |
+| Test File                      | Test Type   | Tested Behavior           | Database Required | Result                                           |
+| ------------------------------ | ----------- | ------------------------- | ----------------- | ------------------------------------------------ |
+| `config.test.ts`               | Unit        | Validation behavior       | No                | PASS                                             |
+| `database.integration.test.ts` | Integration | PostGIS and pg connection | Yes               | SKIPPED/FAIL (Locally missing Docker), PASS (CI) |
 
 ## 15. Local Validation Results
 
-| Command | Result | Duration | Evidence | Notes |
-|---|---|---|---|---|
-| docker version | FAIL | 1s | `'docker' is not recognized` | No Docker installed on host Windows |
-| docker compose version | FAIL | 1s | - | - |
-| pnpm infra:config | FAIL | 1s | - | - |
-| pnpm infra:up | FAIL | 1s | - | - |
-| pnpm db:migrate | FAIL | 1s | - | Blocked by Docker |
-| pnpm test | PASS | 44s | `5 successful, 5 total` | Unit tests passed |
-| pnpm typecheck | PASS | 5s | `7 successful, 7 total` | Fixed config |
-| pnpm format:check | PASS | - | - | Auto-formatted |
-| pnpm build | PASS | - | `api#build` issues fixed | Builds passed |
-| git diff --check | PASS | 1s | Clean | - |
-| Tracked-file inspection | PASS | - | No `.env` committed | - |
+| Command                 | Result | Duration | Evidence                     | Notes                               |
+| ----------------------- | ------ | -------- | ---------------------------- | ----------------------------------- |
+| docker version          | FAIL   | 1s       | `'docker' is not recognized` | No Docker installed on host Windows |
+| docker compose version  | FAIL   | 1s       | -                            | -                                   |
+| pnpm infra:config       | FAIL   | 1s       | -                            | -                                   |
+| pnpm infra:up           | FAIL   | 1s       | -                            | -                                   |
+| pnpm db:migrate         | FAIL   | 1s       | -                            | Blocked by Docker                   |
+| pnpm test               | PASS   | 44s      | `5 successful, 5 total`      | Unit tests passed                   |
+| pnpm typecheck          | PASS   | 5s       | `7 successful, 7 total`      | Fixed config                        |
+| pnpm format:check       | PASS   | -        | -                            | Auto-formatted                      |
+| pnpm build              | PASS   | -        | `api#build` issues fixed     | Builds passed                       |
+| git diff --check        | PASS   | 1s       | Clean                        | -                                   |
+| Tracked-file inspection | PASS   | -        | No `.env` committed          | -                                   |
 
 ## 16. CI Changes and Results
 

@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createDatabaseClient } from '../src/client.js';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
-dotenv.config({ path: join(process.cwd(), "../../.env") });
+dotenv.config({ path: join(process.cwd(), '../../.env') });
 
 describe('Database Integration Smoke Tests', () => {
   let client: ReturnType<typeof createDatabaseClient>;
