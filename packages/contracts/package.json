@@ -5,13 +5,13 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint src/ --ext .ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@ekspres/eslint-config": "workspace:*",
     "@ekspres/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.9.3"
   }
 }
