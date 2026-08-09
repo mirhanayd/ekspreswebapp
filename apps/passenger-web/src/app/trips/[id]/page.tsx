@@ -144,11 +144,14 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
               <MapView stops={stops} />
             </div>
 
-            <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-xl shadow-md transition-colors text-lg">
+            <a
+              href={`/trips/${id}/seats`}
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-xl shadow-md transition-colors text-lg text-center"
+            >
               Koltuk Seç
-            </button>
+            </a>
             <p className="text-sm text-center text-gray-500 mt-4">
-              Koltuk seçimi sonraki adımda yapılacaktır.
+              Otobüs koltuk haritasını görüntüleyin ve koltuğunuzu seçin.
             </p>
           </div>
         </div>
