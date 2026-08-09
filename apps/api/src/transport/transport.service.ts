@@ -61,6 +61,21 @@ export class TransportService {
   async getTripDetails(tripId: string) {
     const trip = await this.db.query.trips.findFirst({
       where: eq(schema.trips.id, tripId),
+      with: {
+        bus: true,
+        route: {
+          with: {
+            origin: true,
+            destination: true,
+            stops: {
+              with: {
+                location: true,
+              },
+              orderBy: (stops, { asc }) => [asc(stops.stopOrder)],
+            },
+          },
+        },
+      },
     });
 
     if (!trip) {

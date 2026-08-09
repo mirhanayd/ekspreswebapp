@@ -1,6 +1,3 @@
-import { StatusBadge } from '@ekspres/ui';
-import { ApplicationStatus } from '@ekspres/contracts';
-
 import { Search, Calendar, MapPin } from 'lucide-react';
 
 export default function Home() {
