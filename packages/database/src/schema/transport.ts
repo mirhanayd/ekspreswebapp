@@ -7,7 +7,7 @@ import {
   integer,
   jsonb,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { sql, relations } from 'drizzle-orm';
 
 // We define PostGIS geometry as a custom type since drizzle support for postgis can be limited.
 // Or we can just use geometry from pg-core if it exists, but in drizzle 0.30+ it does!
@@ -81,3 +81,50 @@ export const trips = pgTable('trips', {
   basePrice: doublePrecision('base_price').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const locationsRelations = relations(locations, ({ many }) => ({
+  routesAsOrigin: many(routes, { relationName: 'originLocation' }),
+  routesAsDestination: many(routes, { relationName: 'destinationLocation' }),
+  routeStops: many(routeStops),
+}));
+
+export const routesRelations = relations(routes, ({ one, many }) => ({
+  origin: one(locations, {
+    fields: [routes.originId],
+    references: [locations.id],
+    relationName: 'originLocation',
+  }),
+  destination: one(locations, {
+    fields: [routes.destinationId],
+    references: [locations.id],
+    relationName: 'destinationLocation',
+  }),
+  stops: many(routeStops),
+  trips: many(trips),
+}));
+
+export const routeStopsRelations = relations(routeStops, ({ one }) => ({
+  route: one(routes, {
+    fields: [routeStops.routeId],
+    references: [routes.id],
+  }),
+  location: one(locations, {
+    fields: [routeStops.locationId],
+    references: [locations.id],
+  }),
+}));
+
+export const busesRelations = relations(buses, ({ many }) => ({
+  trips: many(trips),
+}));
+
+export const tripsRelations = relations(trips, ({ one }) => ({
+  route: one(routes, {
+    fields: [trips.routeId],
+    references: [routes.id],
+  }),
+  bus: one(buses, {
+    fields: [trips.busId],
+    references: [buses.id],
+  }),
+}));
