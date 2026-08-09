@@ -109,3 +109,21 @@ Across all stages, strict adherence to quality gates was maintained:
    - Click **Koltuk Seç** to open the **2+1 Bus Seat Selector**.
    - Hold a seat, watch the 5-minute countdown timer, fill passenger details, and click **Öde**.
    - Receive instant **Ticket Confirmation** with ticket number and QR code placeholder.
+
+### Stage 9 — Live Tracking & Map Simulator
+
+- **PR / Branch:** `feat/35-live-tracking` (PR #37)
+- **Scope:** Socket.IO WebSocket Gateway in `apps/api` for real-time telemetry. `tracking-simulator` Node.js app that broadcasts mock GPS coordinates for active buses. Passenger web `/trips/[id]/live` map view updating bus location smoothly using MapLibre GL.
+- **Key Artifacts:** `apps/api/src/tracking/*`, `apps/passenger-web/src/app/trips/[id]/live/*`, `apps/tracking-simulator/*`.
+
+### Stage 10 — Admin Dashboard & Operations View
+
+- **PR / Branch:** `feat/13-admin-demo` (PR #38)
+- **Scope:** Admin API metrics aggregation (`totalRevenue`, `activeTrips`, `dailyBookings`). `admin-web` dashboard pages including real-time fleet map, trip listings, and financial metrics. Custom UI components for the admin layout.
+- **Key Artifacts:** `apps/admin-web/src/app/*`, `apps/api/src/admin/*`.
+
+---
+
+## 5. Demo Conclusion
+
+The "Siirt Kurtalan Ekspres" Demo MVP is now **100% feature-complete** for the initial presentation. The entire passenger journey, real-time tracking, and administrative overview have been autonomously implemented, successfully passing all CI/CD quality gates.
