@@ -69,9 +69,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -128,9 +126,7 @@
         "buses_plate_number_unique": {
           "name": "buses_plate_number_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "plate_number"
-          ]
+          "columns": ["plate_number"]
         }
       },
       "policies": {},
@@ -224,12 +220,8 @@
           "name": "route_stops_route_id_routes_id_fk",
           "tableFrom": "route_stops",
           "tableTo": "routes",
-          "columnsFrom": [
-            "route_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["route_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -237,12 +229,8 @@
           "name": "route_stops_location_id_locations_id_fk",
           "tableFrom": "route_stops",
           "tableTo": "locations",
-          "columnsFrom": [
-            "location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["location_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -296,12 +284,8 @@
           "name": "routes_origin_id_locations_id_fk",
           "tableFrom": "routes",
           "tableTo": "locations",
-          "columnsFrom": [
-            "origin_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["origin_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -309,12 +293,8 @@
           "name": "routes_destination_id_locations_id_fk",
           "tableFrom": "routes",
           "tableTo": "locations",
-          "columnsFrom": [
-            "destination_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["destination_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -387,12 +367,8 @@
           "name": "trips_route_id_routes_id_fk",
           "tableFrom": "trips",
           "tableTo": "routes",
-          "columnsFrom": [
-            "route_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["route_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -400,12 +376,8 @@
           "name": "trips_bus_id_buses_id_fk",
           "tableFrom": "trips",
           "tableTo": "buses",
-          "columnsFrom": [
-            "bus_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["bus_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -421,10 +393,7 @@
     "public.role": {
       "name": "role",
       "schema": "public",
-      "values": [
-        "admin",
-        "passenger"
-      ]
+      "values": ["admin", "passenger"]
     }
   },
   "schemas": {},
