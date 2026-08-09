@@ -2,6 +2,17 @@
 
 **Rule:** Do not install all future libraries now. Use just-in-time installation for each phase and record the reason.
 
+### M1 Foundation Dependencies
+
+| Package       | Version    | Location            | Type | Immediate Purpose    | Why it is required now          |
+| ------------- | ---------- | ------------------- | ---- | -------------------- | ------------------------------- |
+| `drizzle-orm` | `^0.45.2`  | `packages/database` | Prod | Database ORM         | Core requirement for db queries |
+| `drizzle-kit` | `^0.31.10` | `packages/database` | Dev  | Migration tool       | Generate/run migrations         |
+| `pg`          | `^8.23.0`  | `packages/database` | Prod | Postgres driver      | Connect to PostgreSQL           |
+| `@types/pg`   | `^8.21.0`  | `packages/database` | Dev  | TypeScript types     | Type safety for pg              |
+| `dotenv`      | `^17.4.2`  | `packages/database` | Prod | Env var loader       | Read .env for local tooling     |
+| `tsx`         | `^4.23.11` | `packages/database` | Dev  | TypeScript execution | Run verify script directly      |
+
 ## M1 Foundation & Infrastructure
 
 - `next` / `react` / `react-dom` (Next.js App Router for UI)

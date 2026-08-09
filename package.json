@@ -14,10 +14,30 @@
     "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
-    "clean": "turbo clean && rm -rf node_modules"
+    "clean": "turbo clean && rm -rf node_modules",
+    "infra:config": "docker compose config",
+    "infra:up": "docker compose up -d postgres redis",
+    "infra:down": "docker compose down",
+    "infra:logs": "docker compose logs postgres",
+    "infra:ps": "docker compose ps",
+    "infra:reset": "docker compose down -v",
+    "db:generate": "pnpm --filter @ekspres/database generate",
+    "db:migrate": "pnpm --filter @ekspres/database migrate",
+    "db:check": "pnpm --filter @ekspres/database check",
+    "db:verify": "pnpm --filter @ekspres/database verify",
+    "db:test:integration": "pnpm --filter @ekspres/database test:integration"
   },
   "devDependencies": {
+    "@vercel/style-guide": "^6.0.0",
+    "eslint-config-turbo": "^2.10.9",
+    "eslint-plugin-only-warn": "^1.2.1",
     "prettier": "^3.4.2",
-    "turbo": "^2.3.3"
+    "turbo": "^2.3.3",
+    "typescript": "^5.5.4"
+  },
+  "pnpm": {
+    "overrides": {
+      "typescript": "5.5.4"
+    }
   }
 }

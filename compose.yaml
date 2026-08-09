@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: ekspres_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_local_password}
+      POSTGRES_DB: ${POSTGRES_DB:-ekspres_db}
+      # Set timezone to UTC
+      TZ: UTC
+    ports:
+      # Bind local port to loopback without exposing it to the public network
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ekspres_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-ekspres_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    # Ensure UTF-8 initialization
+    command: postgres -c "client_encoding=UTF8"
+
+  redis:
+    image: redis:7-alpine
+    container_name: ekspres_redis
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ekspres_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  ekspres_pg_data:
+    name: ekspres_pg_data
+  ekspres_redis_data:
+    name: ekspres_redis_data
