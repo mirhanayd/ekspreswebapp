@@ -29,6 +29,13 @@
       "when": 1786274147919,
       "tag": "0003_seat-inventory",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786276235358,
+      "tag": "0004_checkout-order-tickets",
+      "breakpoints": true
     }
   ]
 }
