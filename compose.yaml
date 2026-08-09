@@ -22,6 +22,22 @@ services:
     # Ensure UTF-8 initialization
     command: postgres -c "client_encoding=UTF8"
 
+  redis:
+    image: redis:7-alpine
+    container_name: ekspres_redis
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ekspres_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   ekspres_pg_data:
     name: ekspres_pg_data
+  ekspres_redis_data:
+    name: ekspres_redis_data

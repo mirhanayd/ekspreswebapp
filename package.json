@@ -16,7 +16,7 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "clean": "turbo clean && rm -rf node_modules",
     "infra:config": "docker compose config",
-    "infra:up": "docker compose up -d postgres",
+    "infra:up": "docker compose up -d postgres redis",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs postgres",
     "infra:ps": "docker compose ps",

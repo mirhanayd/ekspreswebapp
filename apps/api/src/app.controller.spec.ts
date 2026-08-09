@@ -1,3 +1,4 @@
+/* eslint-env jest */
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { ApplicationStatus } from '@ekspres/contracts';
