@@ -13,9 +13,9 @@ export class AdminService {
   async getDashboardMetrics() {
     // Total Revenue (all completed orders)
     const revenueResult = await this.db
-      .select({ total: sum(schema.orders.totalAmount) })
+      .select({ total: sum(schema.orders.totalMinor) })
       .from(schema.orders)
-      .where(eq(schema.orders.status, 'completed'));
+      .where(eq(schema.orders.status, 'paid'));
 
     // Active Trips
     const activeTripsResult = await this.db
@@ -27,10 +27,10 @@ export class AdminService {
     const bookingsResult = await this.db
       .select({ count: count() })
       .from(schema.orders)
-      .where(eq(schema.orders.status, 'completed'));
+      .where(eq(schema.orders.status, 'paid'));
 
     return {
-      totalRevenue: Number(revenueResult[0]?.total || 0),
+      totalRevenue: Number(revenueResult[0]?.total || 0) / 100,
       activeTrips: Number(activeTripsResult[0]?.count || 0),
       dailyBookings: Number(bookingsResult[0]?.count || 0),
     };
