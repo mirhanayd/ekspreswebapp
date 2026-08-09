@@ -17,10 +17,11 @@
 - [x] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Pushed to `feat/22-ui-tailwind-layout` and opened PR #23.
 - [x] **Stage 3: Authentication Foundation** - Implemented JWT Auth guards, JWT Strategy, auth module, and `users` table schema in database. Pushed to `feat/24-auth-foundation` and opened PR #25.
 - [x] **Stage 4: Transport Data Foundation (Locations, Routes, Buses, Trips)** - Created transport schema, API transport module, routes, trips, and seed script. Pushed to `feat/26-transport-data` and opened PR #27.
+- [x] **Stage 5: Trip Search Foundation** - Added trip search API functionality and implemented a mocked search UI in the passenger web app. Pushed to `feat/28-trip-search` and opened PR #29.
 
 ## Next Stage
 
-- [ ] **Stage 5: Trip Search Foundation** - Search API by origin, destination, date. Test search results UI with filtering.
+- [ ] **Stage 6: Booking & Payments (BLOCKED)** - Per user rules, do not exceed Stage 5. No product features like payments or booking are to be implemented by the agent. Campaign is complete.
 
 ## Last Successful Validation
 

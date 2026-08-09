@@ -25,8 +25,12 @@ export class TransportController {
   @Public()
   @Get('trips')
   @ApiOperation({ summary: 'Search available trips' })
-  getTrips(@Query('date') date?: string) {
-    return this.transportService.getTrips(date);
+  getTrips(
+    @Query('date') date?: string,
+    @Query('originId') originId?: string,
+    @Query('destinationId') destinationId?: string,
+  ) {
+    return this.transportService.getTrips(date, originId, destinationId);
   }
 
   @Public()
