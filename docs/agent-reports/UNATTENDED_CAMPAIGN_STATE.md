@@ -11,22 +11,22 @@
 
 | Stage                            | Issue | Branch                 | PR  | Status         |
 | -------------------------------- | ----- | ---------------------- | --- | -------------- |
-| Previous work reconciliation     | 34    | feat/34-checkout-order | 35  | WAITING_FOR_CI |
-| Ticketing / My Tickets           |       |                        |     | NOT_STARTED    |
+| Previous work reconciliation     | 34    | feat/34-checkout-order | 35  | DONE           |
+| Ticketing / My Tickets           | 11    | feat/11-tickets-qr     | 36  | WAITING_FOR_CI |
 | Live Tracking                    |       |                        |     | NOT_STARTED    |
 | Admin Demo                       |       |                        |     | NOT_STARTED    |
 | Demo QA / Presentation Readiness |       |                        |     | NOT_STARTED    |
 
 ## Current Blocker
 
-None. Waiting for CI on PR #35 (Checkout, order, demo payment).
+None. Waiting for CI on PR #36 (Tickets list, detail, and QR).
 
 ## Last Successful Validation
 
-- timestamp: 2026-08-09T12:28:11Z
-- command: git commit
+- timestamp: 2026-08-09T12:40:00Z
+- command: pnpm --filter api build; pnpm --filter passenger-web build
 - result: Success
 
 ## Next Autonomous Action
 
-Watch CI for PR #35, merge it when passed, and then begin Stage 1 (Ticketing / My Tickets).
+Watch CI for PR #36, merge it when passed, and then begin Stage 2 (Live Tracking).
