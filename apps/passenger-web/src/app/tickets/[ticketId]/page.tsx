@@ -179,7 +179,7 @@ export default async function TicketDetailPage({
               </div>
             </div>
             {isLiveEligible ? (
-              <Link 
+              <Link
                 href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
