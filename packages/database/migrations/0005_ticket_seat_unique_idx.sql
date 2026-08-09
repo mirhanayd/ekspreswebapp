@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "seat_ticket_unique_idx" ON "tickets" USING btree ("trip_seat_id") WHERE "tickets"."status" != 'cancelled';

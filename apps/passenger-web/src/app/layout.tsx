@@ -21,10 +21,18 @@ export default function RootLayout({
       >
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-14 items-center">
-            <div className="mr-4 hidden md:flex">
+            <div className="mr-4 flex w-full justify-between md:justify-start">
               <a className="mr-6 flex items-center space-x-2" href="/">
-                <span className="hidden font-bold sm:inline-block">Siirt Kurtalan Ekspres</span>
+                <span className="font-bold inline-block">Siirt Kurtalan Ekspres</span>
               </a>
+              <nav className="flex items-center space-x-6 text-sm font-medium">
+                <a
+                  href="/tickets"
+                  className="transition-colors hover:text-foreground/80 text-foreground/60"
+                >
+                  Biletlerim
+                </a>
+              </nav>
             </div>
           </div>
         </header>
