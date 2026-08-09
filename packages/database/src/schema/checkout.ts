@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, uuid, integer, uniqueIndex } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 import { users } from './users';
 import { trips, tripSeats } from './transport';
 
@@ -96,6 +96,9 @@ export const tickets = pgTable(
   },
   (table) => ({
     orderTicketUnique: uniqueIndex('order_ticket_unique_idx').on(table.orderId),
+    seatTicketUnique: uniqueIndex('seat_ticket_unique_idx')
+      .on(table.tripSeatId)
+      .where(sql`${table.status} != 'cancelled'`),
   }),
 );
 
