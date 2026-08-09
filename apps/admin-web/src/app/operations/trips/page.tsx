@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, Badge, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@ekspres/ui';
+import { Card, CardContent, CardHeader, CardTitle, Badge, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 

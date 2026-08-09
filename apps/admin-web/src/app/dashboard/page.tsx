@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@ekspres/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
 import { Activity, CreditCard, DollarSign, Users } from 'lucide-react';
 import { cookies } from 'next/headers';
 

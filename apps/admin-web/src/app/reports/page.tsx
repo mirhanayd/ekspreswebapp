@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@ekspres/ui';
+import { Card, CardContent, CardHeader, CardTitle, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui';
 
 export default function ReportsPage() {
   return (
