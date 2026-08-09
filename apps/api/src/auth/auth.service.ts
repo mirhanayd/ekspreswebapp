@@ -25,12 +25,15 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(dto.password, salt);
 
-    const [user] = await this.db.insert(schema.users).values({
-      email: dto.email,
-      passwordHash,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-    }).returning();
+    const [user] = await this.db
+      .insert(schema.users)
+      .values({
+        email: dto.email,
+        passwordHash,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+      })
+      .returning();
 
     return this.generateTokens(user);
   }
@@ -39,7 +42,7 @@ export class AuthService {
     const user = await this.db.query.users.findFirst({
       where: eq(schema.users.email, dto.email),
     });
-    
+
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }

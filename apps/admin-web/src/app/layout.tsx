@@ -26,24 +26,28 @@ export default function RootLayout({
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 space-y-1">
-              <a href="#" className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary">
+              <a
+                href="#"
+                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
                 Dashboard
               </a>
-              <a href="#" className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary">
+              <a
+                href="#"
+                className="flex items-center gap-3 rounded-lg bg-muted px-3 py-2 text-primary transition-all hover:text-primary"
+              >
                 Trips
               </a>
             </nav>
           </div>
         </aside>
-        
+
         {/* Main content */}
         <div className="flex flex-col flex-1">
           <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
             <span className="font-semibold text-lg md:hidden">Admin Panel</span>
           </header>
-          <main className="flex-1 p-4 lg:p-6">
-            {children}
-          </main>
+          <main className="flex-1 p-4 lg:p-6">{children}</main>
         </div>
       </body>
     </html>

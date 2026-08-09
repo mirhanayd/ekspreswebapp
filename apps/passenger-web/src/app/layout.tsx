@@ -16,7 +16,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
+      <body
+        className={`${inter.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}
+      >
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-14 items-center">
             <div className="mr-4 hidden md:flex">
@@ -26,9 +28,7 @@ export default function RootLayout({
             </div>
           </div>
         </header>
-        <main className="flex-1">
-          {children}
-        </main>
+        <main className="flex-1">{children}</main>
       </body>
     </html>
   );

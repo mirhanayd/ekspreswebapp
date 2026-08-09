@@ -12,6 +12,6 @@
     "@ekspres/eslint-config": "workspace:*",
     "@ekspres/typescript-config": "workspace:*",
     "eslint": "^8.57.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.5.4"
   }
 }
