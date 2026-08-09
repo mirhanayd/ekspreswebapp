@@ -131,7 +131,7 @@ async function main() {
   }, TICK_RATE_MS);
 }
 
-main().catch((err) => {
+main().catch((err: Error) => {
   console.error('Fatal error in simulator:', err);
   process.exit(1);
 });
