@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo } from 'react';
-// @ts-ignore
-import Map, { Marker, NavigationControl } from 'react-map-gl';
+import { Map, Marker, NavigationControl } from 'react-map-gl/maplibre';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 export default function MapView({ stops }: { stops: any[] }) {
   // If there are no stops or the first stop has no coordinates, fallback to center of Turkey
@@ -23,28 +23,18 @@ export default function MapView({ stops }: { stops: any[] }) {
   }, [stops]);
 
   return (
-    // @ts-ignore
     <Map
-      // @ts-ignore
       initialViewState={initialViewState}
       mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
       attributionControl={false}
     >
-      {/* @ts-ignore */}
       <NavigationControl position="bottom-right" />
 
       {stops.map((stop: any, index: number) => {
         if (!stop.location?.coordinates?.coordinates) return null;
         const [lng, lat] = stop.location.coordinates.coordinates;
         return (
-          // @ts-ignore
-          <Marker
-            key={stop.id}
-            longitude={lng}
-            latitude={lat}
-            // @ts-ignore
-            anchor="bottom"
-          >
+          <Marker key={stop.id} longitude={lng} latitude={lat} anchor="bottom">
             <div className="flex items-center justify-center bg-blue-600 text-white w-6 h-6 rounded-full shadow-lg border-2 border-white transform translate-y-1/2">
               <span className="text-xs font-bold">{index + 1}</span>
             </div>

@@ -1,10 +1,6 @@
 import { notFound } from 'next/navigation';
 import { MapPin, Calendar, Clock, Bus, Map as MapIcon, ChevronRight } from 'lucide-react';
 
-// For map
-import 'maplibre-gl/dist/maplibre-gl.css';
-
-// We will create a client component for the map
 import MapView from './MapView';
 
 // A helper to format time
@@ -18,13 +14,14 @@ function formatDate(isoString: string) {
   return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-export default async function TripDetailPage({ params }: { params: { id: string } }) {
+export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   // Fetch trip details from our NestJS API
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let tripData;
 
   try {
-    const res = await fetch(`${apiUrl}/transport/trips/${params.id}`, {
+    const res = await fetch(`${apiUrl}/transport/trips/${id}`, {
       // In a real app we might want to revalidate occasionally
       cache: 'no-store',
     });
