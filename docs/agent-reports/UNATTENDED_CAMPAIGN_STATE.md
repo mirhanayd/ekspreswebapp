@@ -15,10 +15,11 @@
 - [x] **Stage 0: Stabilize PR #19** - Fixed TypeScript ESLint parser configuration, resolved TS version mismatches in dependencies, and pushed fixes to `chore/16-postgres-drizzle`.
 - [x] **Stage 1: API Infrastructure Foundation** - Configured Redis in docker compose, Pino logging, OpenAPI Swagger, and environment validation. Pushed to `chore/20-api-infra-foundation` and opened PR #21.
 - [x] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Pushed to `feat/22-ui-tailwind-layout` and opened PR #23.
+- [x] **Stage 3: Authentication Foundation** - Implemented JWT Auth guards, JWT Strategy, auth module, and `users` table schema in database. Pushed to `feat/24-auth-foundation` and opened PR #25.
 
 ## Next Stage
 
-- [ ] **Stage 3: Authentication Foundation** - TBD
+- [ ] **Stage 4: Transport Data Foundation (Locations, Routes, Buses, Trips)** - TBD
 
 ## Last Successful Validation
 
