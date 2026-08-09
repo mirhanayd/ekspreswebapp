@@ -8,6 +8,7 @@ import { TransportModule } from './transport/transport.module';
 import { SeatsModule } from './seats/seats.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { TicketsModule } from './tickets/tickets.module';
+import { TrackingModule } from './tracking/tracking.module';
 import { DatabaseModule } from './database';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -33,6 +34,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     SeatsModule,
     CheckoutModule,
     TicketsModule,
+    TrackingModule,
   ],
   controllers: [AppController],
   providers: [

@@ -179,12 +179,12 @@ export default async function TicketDetailPage({
               </div>
             </div>
             {isLiveEligible ? (
-              <button
-                disabled
-                className="bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium"
+              <Link
+                href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
               >
-                Yakında
-              </button>
+                Canlı İzle
+              </Link>
             ) : (
               <span className="text-xs text-gray-400">Uygun Değil</span>
             )}

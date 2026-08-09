@@ -11,22 +11,22 @@
 
 | Stage                            | Issue | Branch                 | PR  | Status         |
 | -------------------------------- | ----- | ---------------------- | --- | -------------- |
-| Previous work reconciliation     | 34    | feat/34-checkout-order | 35  | WAITING_FOR_CI |
-| Ticketing / My Tickets           |       |                        |     | NOT_STARTED    |
-| Live Tracking                    |       |                        |     | NOT_STARTED    |
+| Previous work reconciliation     | 34    | feat/34-checkout-order | 35  | DONE           |
+| Ticketing / My Tickets           | 11    | feat/11-tickets-qr     | 36  | DONE           |
+| Live Tracking                    | 12    | feat/12-live-tracking  | 37  | WAITING_FOR_CI |
 | Admin Demo                       |       |                        |     | NOT_STARTED    |
 | Demo QA / Presentation Readiness |       |                        |     | NOT_STARTED    |
 
 ## Current Blocker
 
-None. Waiting for CI on PR #35 (Checkout, order, demo payment).
+None. Waiting for CI on PR #37 (Live tracking WebSocket Gateway, Simulator, and MapLibre).
 
 ## Last Successful Validation
 
-- timestamp: 2026-08-09T12:28:11Z
-- command: git commit
+- timestamp: 2026-08-09T12:40:00Z
+- command: pnpm --filter api build; pnpm --filter passenger-web build
 - result: Success
 
 ## Next Autonomous Action
 
-Watch CI for PR #35, merge it when passed, and then begin Stage 1 (Ticketing / My Tickets).
+Watch CI for PR #37, merge it when passed, and then begin Stage 3 (Admin Demo).
