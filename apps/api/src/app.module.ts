@@ -6,6 +6,7 @@ import { validateEnv } from './config/env.config';
 import { AuthModule } from './auth/auth.module';
 import { TransportModule } from './transport/transport.module';
 import { SeatsModule } from './seats/seats.module';
+import { CheckoutModule } from './checkout/checkout.module';
 import { DatabaseModule } from './database';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -29,6 +30,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AuthModule,
     TransportModule,
     SeatsModule,
+    CheckoutModule,
   ],
   controllers: [AppController],
   providers: [
