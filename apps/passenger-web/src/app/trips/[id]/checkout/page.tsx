@@ -15,12 +15,8 @@ export default async function CheckoutPage({
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 text-center max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            Koltuk seçimi gerekli
-          </h2>
-          <p className="text-gray-500 mb-6">
-            Ödeme yapabilmek için önce bir koltuk seçmelisiniz.
-          </p>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Koltuk seçimi gerekli</h2>
+          <p className="text-gray-500 mb-6">Ödeme yapabilmek için önce bir koltuk seçmelisiniz.</p>
           <a
             href={`/trips/${id}/seats`}
             className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
@@ -33,8 +29,7 @@ export default async function CheckoutPage({
   }
 
   // Fetch trip info for route name
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let routeName = 'Sefer';
 
   try {
@@ -70,9 +65,7 @@ export default async function CheckoutPage({
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-blue-600" /> Ödeme
           </h1>
-          <p className="text-gray-500 mt-1">
-            Yolcu bilgilerinizi girin ve ödemenizi tamamlayın.
-          </p>
+          <p className="text-gray-500 mt-1">Yolcu bilgilerinizi girin ve ödemenizi tamamlayın.</p>
         </div>
 
         {/* Checkout Form */}

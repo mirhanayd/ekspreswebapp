@@ -57,10 +57,7 @@ export class CheckoutService {
 
     // Verify hold exists and belongs to the user
     const hold = await this.db.query.seatHolds.findFirst({
-      where: and(
-        eq(schema.seatHolds.id, input.holdId),
-        eq(schema.seatHolds.userId, input.userId),
-      ),
+      where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, input.userId)),
       with: {
         tripSeat: true,
       },
@@ -114,10 +111,7 @@ export class CheckoutService {
    */
   async processPayment(orderId: string, userId: string) {
     const order = await this.db.query.orders.findFirst({
-      where: and(
-        eq(schema.orders.id, orderId),
-        eq(schema.orders.userId, userId),
-      ),
+      where: and(eq(schema.orders.id, orderId), eq(schema.orders.userId, userId)),
     });
 
     if (!order) {
@@ -160,10 +154,7 @@ export class CheckoutService {
         .returning();
 
       // Update order status
-      await tx
-        .update(schema.orders)
-        .set({ status: 'paid' })
-        .where(eq(schema.orders.id, orderId));
+      await tx.update(schema.orders).set({ status: 'paid' }).where(eq(schema.orders.id, orderId));
 
       // Update seat status to purchased
       await tx

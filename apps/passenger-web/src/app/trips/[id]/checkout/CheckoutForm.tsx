@@ -25,8 +25,7 @@ export default function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'form' | 'paying' | 'success'>('form');
 
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,14 +63,11 @@ export default function CheckoutForm({
       setStep('paying');
 
       // Step 2: Process demo payment
-      const payRes = await fetch(
-        `${apiUrl}/checkout/order/${order.id}/pay`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: 'demo-user-id' }),
-        },
-      );
+      const payRes = await fetch(`${apiUrl}/checkout/order/${order.id}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: 'demo-user-id' }),
+      });
 
       if (!payRes.ok) {
         const errData = await payRes.json();
@@ -99,12 +95,8 @@ export default function CheckoutForm({
     return (
       <div className="text-center py-12 space-y-4">
         <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
-        <p className="text-lg font-semibold text-gray-900">
-          Ödeme işleniyor...
-        </p>
-        <p className="text-sm text-gray-500">
-          Demo ödeme simüle ediliyor. Lütfen bekleyin.
-        </p>
+        <p className="text-lg font-semibold text-gray-900">Ödeme işleniyor...</p>
+        <p className="text-sm text-gray-500">Demo ödeme simüle ediliyor. Lütfen bekleyin.</p>
       </div>
     );
   }
@@ -115,12 +107,8 @@ export default function CheckoutForm({
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
           <span className="text-3xl">✓</span>
         </div>
-        <p className="text-lg font-semibold text-green-800">
-          Ödeme başarılı!
-        </p>
-        <p className="text-sm text-gray-500">
-          Biletiniz oluşturuluyor, yönlendiriliyorsunuz...
-        </p>
+        <p className="text-lg font-semibold text-green-800">Ödeme başarılı!</p>
+        <p className="text-sm text-gray-500">Biletiniz oluşturuluyor, yönlendiriliyorsunuz...</p>
       </div>
     );
   }
@@ -134,9 +122,7 @@ export default function CheckoutForm({
             <p className="text-sm text-blue-700">{routeName}</p>
             <p className="font-semibold text-blue-900">Koltuk {seatNo}</p>
           </div>
-          <p className="text-xl font-bold text-blue-900">
-            {(priceMinor / 100).toFixed(2)} ₺
-          </p>
+          <p className="text-xl font-bold text-blue-900">{(priceMinor / 100).toFixed(2)} ₺</p>
         </div>
       </div>
 
@@ -145,9 +131,7 @@ export default function CheckoutForm({
         <h3 className="font-semibold text-gray-900">Yolcu Bilgileri</h3>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Ad *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ad *</label>
             <input
               type="text"
               value={firstName}
@@ -158,9 +142,7 @@ export default function CheckoutForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Soyad *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Soyad *</label>
             <input
               type="text"
               value={lastName}
@@ -172,9 +154,7 @@ export default function CheckoutForm({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Telefon
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
           <input
             type="tel"
             value={phone}
@@ -184,9 +164,7 @@ export default function CheckoutForm({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            E-posta
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
           <input
             type="email"
             value={email}

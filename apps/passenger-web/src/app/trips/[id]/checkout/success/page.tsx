@@ -11,8 +11,7 @@ export default async function CheckoutSuccessPage({
   const { orderId, ticketNo } = await searchParams;
 
   // Fetch order details
-  const apiUrl =
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let orderData: any = null;
 
   if (orderId) {
@@ -36,9 +35,7 @@ export default async function CheckoutSuccessPage({
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <CheckCircle className="h-10 w-10 text-green-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Biletiniz hazır!
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Biletiniz hazır!</h1>
           <p className="text-gray-500">
             Ödemeniz başarıyla tamamlandı. Bilet detaylarınız aşağıdadır.
           </p>
@@ -52,9 +49,7 @@ export default async function CheckoutSuccessPage({
                 <Ticket className="h-5 w-5" />
                 <span className="font-bold">Siirt Kurtalan Ekspres</span>
               </div>
-              <span className="text-blue-100 text-sm">
-                {ticketNo || 'TKT-XXXXXXXX'}
-              </span>
+              <span className="text-blue-100 text-sm">{ticketNo || 'TKT-XXXXXXXX'}</span>
             </div>
           </div>
 
@@ -71,17 +66,14 @@ export default async function CheckoutSuccessPage({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Koltuk</p>
-                    <p className="font-semibold text-gray-900">
-                      {orderData.tripSeat?.seatNo}
-                    </p>
+                    <p className="font-semibold text-gray-900">{orderData.tripSeat?.seatNo}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Yolcu</p>
                     <p className="font-semibold text-gray-900">
-                      {orderData.passengerFirstName}{' '}
-                      {orderData.passengerLastName}
+                      {orderData.passengerFirstName} {orderData.passengerLastName}
                     </p>
                   </div>
                   <div>
@@ -100,9 +92,7 @@ export default async function CheckoutSuccessPage({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Sipariş No</p>
-                    <p className="font-semibold text-gray-900">
-                      {orderData.orderNo}
-                    </p>
+                    <p className="font-semibold text-gray-900">{orderData.orderNo}</p>
                   </div>
                 </div>
               </>

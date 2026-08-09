@@ -31,10 +31,7 @@ export class CheckoutController {
   @Public()
   @Post('order/:orderId/pay')
   @ApiOperation({ summary: 'Process demo payment for an order' })
-  processPayment(
-    @Param('orderId') orderId: string,
-    @Body() body: { userId: string },
-  ) {
+  processPayment(@Param('orderId') orderId: string, @Body() body: { userId: string }) {
     return this.checkoutService.processPayment(orderId, body.userId);
   }
 
