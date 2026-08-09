@@ -12,18 +12,19 @@
 
 ## Completed Stages
 
-- [x] **Stage 0: Stabilize PR #19** - Fixed TypeScript ESLint parser configuration, resolved TS version mismatches in dependencies, and pushed fixes to `chore/16-postgres-drizzle`. Wait for CI passed.
+- [x] **Stage 0: Stabilize PR #19** - Fixed TypeScript ESLint parser configuration, resolved TS version mismatches in dependencies, and pushed fixes to `chore/16-postgres-drizzle`.
 - [x] **Stage 1: API Infrastructure Foundation** - Configured Redis in docker compose, Pino logging, OpenAPI Swagger, and environment validation. Pushed to `chore/20-api-infra-foundation` and opened PR #21.
+- [x] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Pushed to `feat/22-ui-tailwind-layout` and opened PR #23.
 
 ## Next Stage
 
-- [ ] **Stage 2: UI Layout Shells and Tailwind** - Setup TailwindCSS and base layout shells in `passenger-web`, `admin-web`, and `@ekspres/ui`. Created issue #22 for this.
+- [ ] **Stage 3: Authentication Foundation** - TBD
 
 ## Last Successful Validation
 
-- timestamp: none yet in this campaign
-- command: none
-- result: none
+- timestamp: 2026-08-09T09:27:30+03:00
+- command: pnpm --filter passenger-web --filter admin-web build
+- result: Success
 
 ## Current Blocker
 
@@ -31,4 +32,4 @@ None
 
 ## Next Autonomous Action
 
-Run Prettier and commit fixes to stabilize PR #19 CI, then check if PR #19 passes CI.
+Wait for CI and review on PR 19, 21, and 23. Proceed to Stage 3.
