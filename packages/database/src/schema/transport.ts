@@ -6,6 +6,7 @@ import {
   doublePrecision,
   integer,
   jsonb,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { sql, relations } from 'drizzle-orm';
 
@@ -118,7 +119,7 @@ export const busesRelations = relations(buses, ({ many }) => ({
   trips: many(trips),
 }));
 
-export const tripsRelations = relations(trips, ({ one }) => ({
+export const tripsRelations = relations(trips, ({ one, many }) => ({
   route: one(routes, {
     fields: [trips.routeId],
     references: [routes.id],
@@ -126,5 +127,55 @@ export const tripsRelations = relations(trips, ({ one }) => ({
   bus: one(buses, {
     fields: [trips.busId],
     references: [buses.id],
+  }),
+  seats: many(tripSeats),
+}));
+
+// ── Seat Inventory ──────────────────────────────────────────────
+
+export const tripSeats = pgTable(
+  'trip_seats',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tripId: uuid('trip_id')
+      .references(() => trips.id)
+      .notNull(),
+    seatNo: text('seat_no').notNull(),
+    seatType: text('seat_type').notNull().default('standard'), // standard, premium, disabled
+    priceMinor: integer('price_minor').notNull(), // price in kuruş (cents)
+    status: text('status').notNull().default('available'), // available, held, purchased, blocked
+    version: integer('version').notNull().default(1),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    tripSeatUnique: uniqueIndex('trip_seat_unique_idx').on(table.tripId, table.seatNo),
+  }),
+);
+
+export const tripSeatsRelations = relations(tripSeats, ({ one, many }) => ({
+  trip: one(trips, {
+    fields: [tripSeats.tripId],
+    references: [trips.id],
+  }),
+  holds: many(seatHolds),
+}));
+
+export const seatHolds = pgTable('seat_holds', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  tripSeatId: uuid('trip_seat_id')
+    .references(() => tripSeats.id)
+    .notNull(),
+  userId: uuid('user_id').notNull(),
+  sessionId: text('session_id'),
+  status: text('status').notNull().default('active'), // active, released, expired, consumed
+  expiresAt: timestamp('expires_at').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  releasedAt: timestamp('released_at'),
+});
+
+export const seatHoldsRelations = relations(seatHolds, ({ one }) => ({
+  tripSeat: one(tripSeats, {
+    fields: [seatHolds.tripSeatId],
+    references: [tripSeats.id],
   }),
 }));

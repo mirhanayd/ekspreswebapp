@@ -66,7 +66,32 @@ async function main() {
     { routeId: route.id, locationId: diyarbakir.id, stopOrder: 4, estimatedMinutesFromStart: 180 },
   ]);
 
-  console.log('Seeding buses...');
+  const seatLayoutItems = [];
+  // 2+1 layout: columns 1,2 on left, column 4 on right, column 3 is aisle
+  // Row 1: driver
+  seatLayoutItems.push({ type: 'driver', row: 1, column: 1 });
+  for (let row = 2; row <= 14; row++) {
+    const leftSeatNo = (row - 2) * 3 + 1;
+    seatLayoutItems.push({
+      type: 'seat',
+      seatNo: String(leftSeatNo),
+      row,
+      column: 1,
+    });
+    seatLayoutItems.push({
+      type: 'seat',
+      seatNo: String(leftSeatNo + 1),
+      row,
+      column: 2,
+    });
+    seatLayoutItems.push({ type: 'aisle', row, column: 3 });
+    seatLayoutItems.push({
+      type: 'seat',
+      seatNo: String(leftSeatNo + 2),
+      row,
+      column: 4,
+    });
+  }
 
   const [bus] = await db
     .insert(schema.buses)
@@ -74,31 +99,67 @@ async function main() {
       {
         plateNumber: '56 SKE 01',
         model: 'Travego 15 SHD',
-        seatLayout: { layout: '2+1', seats: 41 },
-        totalSeats: 41,
+        seatLayout: {
+          layout: '2+1',
+          rows: 14,
+          columns: 4,
+          items: seatLayoutItems,
+        },
+        totalSeats: 39,
       },
     ])
     .returning();
 
   console.log('Seeding trips...');
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(9, 0, 0, 0); // 09:00
+  const trips = [];
+  for (let dayOffset = 1; dayOffset <= 3; dayOffset++) {
+    const dep = new Date();
+    dep.setDate(dep.getDate() + dayOffset);
+    dep.setHours(9, 0, 0, 0);
+    const arr = new Date(dep);
+    arr.setHours(12, 0, 0, 0);
 
-  const arrival = new Date(tomorrow);
-  arrival.setHours(12, 0, 0, 0); // 12:00
+    const dep2 = new Date();
+    dep2.setDate(dep2.getDate() + dayOffset);
+    dep2.setHours(14, 0, 0, 0);
+    const arr2 = new Date(dep2);
+    arr2.setHours(17, 0, 0, 0);
 
-  await db.insert(schema.trips).values([
-    {
+    trips.push({
       routeId: route.id,
       busId: bus.id,
-      departureTime: tomorrow,
-      arrivalTime: arrival,
+      departureTime: dep,
+      arrivalTime: arr,
       status: 'scheduled',
       basePrice: 450.0,
-    },
-  ]);
+    });
+    trips.push({
+      routeId: route.id,
+      busId: bus.id,
+      departureTime: dep2,
+      arrivalTime: arr2,
+      status: 'scheduled',
+      basePrice: 450.0,
+    });
+  }
+
+  const insertedTrips = await db.insert(schema.trips).values(trips).returning();
+
+  console.log('Generating seat inventory...');
+
+  const seatSeeds = seatLayoutItems.filter((item) => item.type === 'seat');
+  for (const trip of insertedTrips) {
+    const seatRows = seatSeeds.map((item) => ({
+      tripId: trip.id,
+      seatNo: item.seatNo!,
+      seatType: 'standard',
+      priceMinor: Math.round(trip.basePrice * 100),
+      status: 'available',
+      version: 1,
+    }));
+    await db.insert(schema.tripSeats).values(seatRows);
+  }
 
   console.log('Seed complete!');
   process.exit(0);

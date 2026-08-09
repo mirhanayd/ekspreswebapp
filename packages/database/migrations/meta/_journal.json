@@ -22,6 +22,13 @@
       "when": 1786268254110,
       "tag": "0002_spooky_vargas",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786274147919,
+      "tag": "0003_seat-inventory",
+      "breakpoints": true
     }
   ]
 }
