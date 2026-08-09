@@ -13,6 +13,8 @@
   "dependencies": {
     "@ekspres/contracts": "workspace:*",
     "@ekspres/ui": "workspace:*",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.30.0",
     "next": "15.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
