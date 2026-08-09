@@ -1,20 +1,32 @@
-import { Card, CardContent, CardHeader, CardTitle, Badge, Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  Badge,
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 
 async function getTrips() {
   const cookieStore = await cookies();
   const token = cookieStore.get('accessToken')?.value;
-  
+
   if (!token) return [];
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   try {
     const res = await fetch(`${apiUrl}/trips`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     });
     if (!res.ok) return [];
     return await res.json();
@@ -56,11 +68,18 @@ export default async function TripsPage() {
                   <TableCell>{new Date(trip.departureTime).toLocaleString('tr-TR')}</TableCell>
                   <TableCell>
                     <Badge variant={trip.status === 'in_transit' ? 'default' : 'secondary'}>
-                      {trip.status === 'scheduled' ? 'Planlandı' : trip.status === 'in_transit' ? 'Yolda' : 'Tamamlandı'}
+                      {trip.status === 'scheduled'
+                        ? 'Planlandı'
+                        : trip.status === 'in_transit'
+                          ? 'Yolda'
+                          : 'Tamamlandı'}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Link href={`/operations/fleet`} className="text-primary hover:underline text-sm font-medium">
+                    <Link
+                      href={`/operations/fleet`}
+                      className="text-primary hover:underline text-sm font-medium"
+                    >
                       Haritada Gör
                     </Link>
                   </TableCell>

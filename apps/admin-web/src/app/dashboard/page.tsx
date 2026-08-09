@@ -5,16 +5,16 @@ import { cookies } from 'next/headers';
 async function getMetrics() {
   const cookieStore = await cookies();
   const token = cookieStore.get('accessToken')?.value;
-  
+
   if (!token) return { totalRevenue: 0, activeTrips: 0, dailyBookings: 0 };
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   try {
     const res = await fetch(`${apiUrl}/admin/metrics`, {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      cache: 'no-store'
+      cache: 'no-store',
     });
     if (!res.ok) return { totalRevenue: 0, activeTrips: 0, dailyBookings: 0 };
     return await res.json();
@@ -40,10 +40,12 @@ export default async function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₺{metrics.totalRevenue.toLocaleString('tr-TR')}</div>
+            <div className="text-2xl font-bold">
+              ₺{metrics.totalRevenue.toLocaleString('tr-TR')}
+            </div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Aktif Seferler</CardTitle>

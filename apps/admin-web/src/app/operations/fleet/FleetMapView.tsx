@@ -8,7 +8,7 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  
+
   // Keep track of markers by tripId
   const markersRef = useRef<{ [key: string]: maplibregl.Marker }>({});
 
@@ -25,7 +25,7 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
     map.current.on('load', () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
       const wsUrl = new URL(apiUrl).origin;
-      
+
       socketRef.current = io(wsUrl, {
         path: '/api/tracking',
         transports: ['websocket'],
@@ -33,16 +33,16 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
 
       socketRef.current.on('connect', () => {
         // Subscribe to all active trips
-        initialTrips.forEach(trip => {
+        initialTrips.forEach((trip) => {
           if (trip.status === 'in_transit') {
-             socketRef.current?.emit('subscribe_trip', trip.id);
+            socketRef.current?.emit('subscribe_trip', trip.id);
           }
         });
       });
 
       socketRef.current.on('location_update', (data: any) => {
         const { tripId, lng, lat } = data;
-        
+
         let marker = markersRef.current[tripId];
         if (!marker) {
           // Create marker
@@ -58,7 +58,7 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
           // Popup with trip info
           const popup = new maplibregl.Popup({ offset: 15 }).setHTML(`
             <div class="text-sm">
-              <strong>Sefer ID:</strong> ${tripId.substring(0,8)}...<br/>
+              <strong>Sefer ID:</strong> ${tripId.substring(0, 8)}...<br/>
               <strong>Hız:</strong> ${data.speed || 80} km/s
             </div>
           `);
@@ -67,7 +67,7 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
             .setLngLat([lng, lat])
             .setPopup(popup)
             .addTo(map.current!);
-            
+
           markersRef.current[tripId] = marker;
         } else {
           marker.setLngLat([lng, lat]);
@@ -85,7 +85,9 @@ export default function FleetMapView({ initialTrips }: { initialTrips: any[] }) 
     <div className="flex flex-col gap-4 h-[calc(100vh-100px)]">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Filo Haritası</h2>
-        <p className="text-muted-foreground">Aktif seferleri harita üzerinde gerçek zamanlı izleyin.</p>
+        <p className="text-muted-foreground">
+          Aktif seferleri harita üzerinde gerçek zamanlı izleyin.
+        </p>
       </div>
       <div className="flex-1 rounded-xl overflow-hidden border">
         <div ref={mapContainer} className="w-full h-full" />
