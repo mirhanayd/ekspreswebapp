@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
   title: 'Siirt Kurtalan Ekspres - Passenger',
@@ -12,9 +15,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>{children}</div>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background flex flex-col`}>
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-14 items-center">
+            <div className="mr-4 hidden md:flex">
+              <a className="mr-6 flex items-center space-x-2" href="/">
+                <span className="hidden font-bold sm:inline-block">Siirt Kurtalan Ekspres</span>
+              </a>
+            </div>
+          </div>
+        </header>
+        <main className="flex-1">
+          {children}
+        </main>
       </body>
     </html>
   );
