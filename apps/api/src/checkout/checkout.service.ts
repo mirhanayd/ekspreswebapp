@@ -34,30 +34,35 @@ export class CheckoutService {
   /**
    * Create an order from a held seat.
    */
-  async createOrder(input: {
-    userId: string;
-    tripId: string;
-    seatNo: string;
-    holdId: string;
-    passengerFirstName: string;
-    passengerLastName: string;
-    passengerPhone?: string;
-    passengerEmail?: string;
-    idempotencyKey?: string;
-  }) {
+  async createOrder(
+    userId: string,
+    input: {
+      tripId: string;
+      seatNo: string;
+      holdId: string;
+      passengerFirstName: string;
+      passengerLastName: string;
+      passengerPhone?: string;
+      passengerEmail?: string;
+      idempotencyKey?: string;
+    },
+  ) {
     // Check idempotency
     if (input.idempotencyKey) {
       const existing = await this.db.query.orders.findFirst({
         where: eq(schema.orders.idempotencyKey, input.idempotencyKey),
       });
       if (existing) {
+        if (existing.userId !== userId) {
+          throw new ConflictException('Idempotency key is already in use');
+        }
         return existing;
       }
     }
 
     // Verify hold exists and belongs to the user
     const hold = await this.db.query.seatHolds.findFirst({
-      where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, input.userId)),
+      where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, userId)),
       with: {
         tripSeat: true,
       },
@@ -87,7 +92,7 @@ export class CheckoutService {
       .insert(schema.orders)
       .values({
         orderNo: generateOrderNo(),
-        userId: input.userId,
+        userId,
         tripId: input.tripId,
         tripSeatId: tripSeat.id,
         status: 'pending',
@@ -192,9 +197,9 @@ export class CheckoutService {
   /**
    * Get order details with related data.
    */
-  async getOrder(orderId: string) {
+  async getOrder(orderId: string, userId: string) {
     const order = await this.db.query.orders.findFirst({
-      where: eq(schema.orders.id, orderId),
+      where: and(eq(schema.orders.id, orderId), eq(schema.orders.userId, userId)),
       with: {
         trip: {
           with: {

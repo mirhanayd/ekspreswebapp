@@ -1,6 +1,8 @@
-import { Controller, Get, Param, Request } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { TicketsService } from './tickets.service';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthenticatedPrincipal } from '../auth/authenticated-principal';
 
 @ApiTags('Tickets')
 @ApiBearerAuth()
@@ -10,22 +12,19 @@ export class TicketsController {
 
   @Get()
   @ApiOperation({ summary: 'List current user tickets' })
-  getMyTickets(@Request() req) {
-    // We assume JWT guard attaches user.id to req.user.id
-    // But for demo MVP passenger UI, we might not have real JWT wired in all pages.
-    // If not, we could fall back to a demo userId, but per requirements we should enforce ownership.
-    return this.ticketsService.getMyTickets(req.user?.id || 'demo-user-id');
+  getMyTickets(@CurrentUser() user: AuthenticatedPrincipal) {
+    return this.ticketsService.getMyTickets(user.userId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get ticket details' })
-  getTicketDetail(@Param('id') id: string, @Request() req) {
-    return this.ticketsService.getTicketDetail(id, req.user?.id || 'demo-user-id');
+  getTicketDetail(@Param('id') id: string, @CurrentUser() user: AuthenticatedPrincipal) {
+    return this.ticketsService.getTicketDetail(id, user.userId);
   }
 
   @Get(':id/qr')
   @ApiOperation({ summary: 'Get QR representation of ticket' })
-  getTicketQr(@Param('id') id: string, @Request() req) {
-    return this.ticketsService.getTicketQr(id, req.user?.id || 'demo-user-id');
+  getTicketQr(@Param('id') id: string, @CurrentUser() user: AuthenticatedPrincipal) {
+    return this.ticketsService.getTicketQr(id, user.userId);
   }
 }

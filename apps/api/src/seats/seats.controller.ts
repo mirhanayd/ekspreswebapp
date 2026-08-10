@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Delete, Param, Body, Req } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body } from '@nestjs/common';
 import { SeatsService } from './seats.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthenticatedPrincipal } from '../auth/authenticated-principal';
 
 @ApiTags('Seats')
 @Controller('seats')
@@ -22,17 +24,18 @@ export class SeatsController {
     return this.seatsService.generateSeatsForTrip(tripId);
   }
 
-  @Public() // For demo purposes; in production this would require auth
   @Post('hold')
   @ApiOperation({ summary: 'Create a seat hold' })
-  createHold(@Body() body: { tripId: string; seatNo: string; userId: string }) {
-    return this.seatsService.createHold(body.tripId, body.seatNo, body.userId);
+  createHold(
+    @Body() body: { tripId: string; seatNo: string },
+    @CurrentUser() user: AuthenticatedPrincipal,
+  ) {
+    return this.seatsService.createHold(body.tripId, body.seatNo, user.userId);
   }
 
-  @Public() // For demo purposes
   @Delete('hold/:holdId')
   @ApiOperation({ summary: 'Release a seat hold' })
-  releaseHold(@Param('holdId') holdId: string, @Body() body: { userId: string }) {
-    return this.seatsService.releaseHold(holdId, body.userId);
+  releaseHold(@Param('holdId') holdId: string, @CurrentUser() user: AuthenticatedPrincipal) {
+    return this.seatsService.releaseHold(holdId, user.userId);
   }
 }

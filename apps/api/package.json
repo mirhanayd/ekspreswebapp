@@ -10,7 +10,7 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:integration": "jest --runInBand --testRegex seats.integration.test.ts$"
+    "test:integration": "jest --runInBand --testRegex integration.test.ts$"
   },
   "dependencies": {
     "@ekspres/contracts": "workspace:*",
