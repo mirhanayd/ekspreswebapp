@@ -65,8 +65,11 @@ No real payment gateway, passenger UI, QR rendering, tracking, admin UI expansio
 
 ## CI Result
 
-Pending initial PR run.
+- PR: #45
+- Run: `31438109980`
+- Required check: `CI / Validate and Test`
+- Result: PASS (3m04s).
 
 ## Status
 
-READY_FOR_CI
+READY_TO_MERGE

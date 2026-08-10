@@ -13,7 +13,8 @@ Security and transactional integrity hardening
 
 - Issue #44: admin authorization and payment integrity.
 - Branch: `bugfix/44-admin-payment-integrity`.
-- Status: locally validated, awaiting PR/CI.
+- PR: #45.
+- Status: locally validated; initial required CI passed; awaiting merge.
 
 ## Completed Major Capabilities
 
