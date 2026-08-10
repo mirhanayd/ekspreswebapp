@@ -69,7 +69,9 @@ No real payment gateway, passenger UI, QR rendering, tracking, admin UI expansio
 - Run: `31438109980`
 - Required check: `CI / Validate and Test`
 - Result: PASS (3m04s).
+- Final documentation run: `31438364660`, PASS.
+- Merge commit: `943263f1ec15ba54476df0d4ae25125dac3272b0`.
 
 ## Status
 
-READY_TO_MERGE
+MERGED

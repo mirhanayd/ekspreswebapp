@@ -2,19 +2,25 @@
   "name": "@ekspres/database",
   "version": "0.0.0",
   "private": true,
-  "main": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "src/index.ts",
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "generate": "drizzle-kit generate",
     "migrate": "drizzle-kit migrate",
     "check": "drizzle-kit check",
     "verify": "node --import tsx src/scripts/verify.ts",
     "seed": "node --import tsx src/seed.ts",
+    "demo:reset": "node --import tsx src/seed.ts",
+    "demo:verify": "node --import tsx src/scripts/demo-verify.ts",
+    "demo:journey": "node --import tsx src/scripts/demo-journey.ts",
     "test:integration": "vitest run test/database.integration.test.ts",
     "test": "vitest run test/config.test.ts",
     "lint": "eslint src/ --ext .ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.23.0"
@@ -22,10 +28,10 @@
   "devDependencies": {
     "@ekspres/eslint-config": "workspace:*",
     "@ekspres/typescript-config": "workspace:^",
-    "eslint": "^8.57.0",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.21.0",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^8.57.0",
     "tsx": "^4.23.11",
     "typescript": "^5.5.4",
     "vitest": "^2.1.0"

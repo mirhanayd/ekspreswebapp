@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 type Seat = {
   id: string;
@@ -34,6 +35,7 @@ export default function SeatSelector({
   tripId: string;
   initialData: SeatMapData;
 }) {
+  const router = useRouter();
   const [seatMap, setSeatMap] = useState<SeatMapData>(initialData);
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [holdInfo, setHoldInfo] = useState<{
@@ -45,8 +47,6 @@ export default function SeatSelector({
   const [countdown, setCountdown] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
 
   // Countdown timer for hold
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function SeatSelector({
 
   const refreshSeatMap = useCallback(async () => {
     try {
-      const res = await fetch(`${apiUrl}/seats/trip/${tripId}`);
+      const res = await fetch(`/api/passenger/seats/trip/${tripId}`);
       if (res.ok) {
         const data = await res.json();
         setSeatMap(data);
@@ -79,7 +79,7 @@ export default function SeatSelector({
     } catch {
       // Silently fail on refresh
     }
-  }, [apiUrl, tripId]);
+  }, [tripId]);
 
   const handleSeatClick = async (seat: Seat) => {
     if (seat.status !== 'available' || loading) return;
@@ -92,17 +92,20 @@ export default function SeatSelector({
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiUrl}/seats/hold`, {
+      const res = await fetch('/api/passenger/seats/hold', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tripId,
           seatNo: seat.seatNo,
-          userId: 'demo-user-id', // Demo: in production this comes from auth
         }),
       });
 
       if (!res.ok) {
+        if (res.status === 401) {
+          router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
+          return;
+        }
         const errData = await res.json();
         throw new Error(errData.message || 'Failed to hold seat');
       }
@@ -121,10 +124,8 @@ export default function SeatSelector({
   const releaseCurrentHold = async () => {
     if (!holdInfo) return;
     try {
-      await fetch(`${apiUrl}/seats/hold/${holdInfo.holdId}`, {
+      await fetch(`/api/passenger/seats/hold/${holdInfo.holdId}`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'demo-user-id' }),
       });
     } catch {
       // Best-effort release
@@ -268,7 +269,14 @@ export default function SeatSelector({
             >
               Vazgeç
             </button>
-            <button className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-md">
+            <button
+              onClick={() =>
+                router.push(
+                  `/trips/${tripId}/checkout?seatNo=${encodeURIComponent(holdInfo.seatNo)}&holdId=${encodeURIComponent(holdInfo.holdId)}`,
+                )
+              }
+              className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-md"
+            >
               Devam Et
             </button>
           </div>

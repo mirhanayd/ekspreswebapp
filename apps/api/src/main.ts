@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.setGlobalPrefix('api/v1');
 
   // Use Pino for logging
   app.useLogger(app.get(Logger));

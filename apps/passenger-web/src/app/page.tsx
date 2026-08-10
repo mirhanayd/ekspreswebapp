@@ -1,115 +1,104 @@
-import { Search, Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, Search } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/server-api';
 
-export default function Home() {
+type Location = { id: string; name: string; type: string };
+
+export default async function Home() {
+  let locations: Location[] = [];
+  try {
+    const response = await fetch(`${API_BASE_URL}/transport/locations`, { cache: 'no-store' });
+    if (response.ok) locations = await response.json();
+  } catch {
+    // The form remains visible with an actionable infrastructure message.
+  }
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)]">
-      {/* Hero Section */}
-      <section className="relative bg-blue-900 text-white flex-1 flex items-center justify-center py-20 px-4">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute inset-0 bg-black/40" />
-        </div>
-
-        <div className="relative z-10 max-w-4xl w-full mx-auto space-y-8">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
-              Güvenli ve Konforlu Yolculuk
+    <div className="flex min-h-[calc(100vh-3.5rem)] flex-col">
+      <section className="flex flex-1 items-center bg-zinc-950 px-4 py-20 text-white">
+        <div className="mx-auto w-full max-w-5xl space-y-8">
+          <div className="space-y-3 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.24em] text-red-400">
+              Siirt Kurtalan Ekspres
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight md:text-6xl">
+              Güvenli ve konforlu yolculuk
             </h1>
-            <p className="text-lg md:text-xl text-blue-100 max-w-2xl mx-auto">
-              Siirt Kurtalan Ekspres ile Türkiye'nin her yerine güvenle seyahat edin.
+            <p className="mx-auto max-w-2xl text-lg text-zinc-300">
+              Siirt’ten Diyarbakır’a kolayca sefer bulun, koltuğunuzu seçin ve demo biletinizi alın.
             </p>
           </div>
 
-          {/* Search Card */}
-          <div className="bg-white rounded-2xl p-4 md:p-6 shadow-2xl max-w-4xl mx-auto">
-            <form className="grid grid-cols-1 md:grid-cols-4 gap-4" action="/search">
-              {/* Origin */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nereden</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    name="originId"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none"
+          <div className="rounded-2xl bg-white p-4 shadow-2xl md:p-6">
+            {locations.length > 0 ? (
+              <form className="grid grid-cols-1 gap-4 md:grid-cols-4" action="/search">
+                <LocationSelect label="Nereden" name="originId" locations={locations} />
+                <LocationSelect label="Nereye" name="destinationId" locations={locations} />
+                <label className="block text-sm font-medium text-gray-700">
+                  <span className="mb-1 block">Tarih</span>
+                  <span className="relative block">
+                    <Calendar className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <input
+                      type="date"
+                      name="date"
+                      defaultValue={tomorrow}
+                      min={new Date().toISOString().slice(0, 10)}
+                      required
+                      className="w-full rounded-xl border border-gray-300 bg-gray-50 py-3 pl-10 pr-3 text-gray-900"
+                    />
+                  </span>
+                </label>
+                <div className="flex items-end">
+                  <button
+                    type="submit"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-700 px-4 py-3 font-semibold text-white hover:bg-red-800"
                   >
-                    <option value="">Kalkış noktası seçin</option>
-                    <option value="siirt">Siirt</option>
-                    <option value="kurtalan">Kurtalan</option>
-                    <option value="batman">Batman</option>
-                    <option value="diyarbakir">Diyarbakır</option>
-                  </select>
+                    <Search className="h-5 w-5" /> Sefer Ara
+                  </button>
                 </div>
-              </div>
-
-              {/* Destination */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nereye</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <select
-                    name="destinationId"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50 appearance-none"
-                  >
-                    <option value="">Varış noktası seçin</option>
-                    <option value="siirt">Siirt</option>
-                    <option value="kurtalan">Kurtalan</option>
-                    <option value="batman">Batman</option>
-                    <option value="diyarbakir">Diyarbakır</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Date */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tarih</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="date"
-                    name="date"
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
-                  />
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2"
-                >
-                  <Search className="h-5 w-5" />
-                  Sefer Ara
-                </button>
-              </div>
-            </form>
+              </form>
+            ) : (
+              <p className="rounded-xl bg-red-50 p-4 text-center text-sm text-red-700">
+                Sefer noktaları yüklenemedi. API ve demo verisinin çalıştığını doğrulayın.
+              </p>
+            )}
           </div>
         </div>
       </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { title: 'Modern Filo', desc: 'Son model araçlarla konforlu ve güvenli yolculuk.' },
-            { title: '7/24 Destek', desc: 'Yolculuğunuzun her anında yanınızdayız.' },
-            { title: 'Kolay Rezervasyon', desc: 'Hızlı ve güvenli online bilet alma deneyimi.' },
-          ].map((feature, i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl shadow-sm text-center space-y-4">
-              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
-                {i + 1}
-              </div>
-              <h3 className="text-lg font-bold text-gray-900">{feature.title}</h3>
-              <p className="text-gray-600">{feature.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
     </div>
+  );
+}
+
+function LocationSelect({
+  label,
+  name,
+  locations,
+}: {
+  label: string;
+  name: string;
+  locations: Location[];
+}) {
+  return (
+    <label className="block text-sm font-medium text-gray-700">
+      <span className="mb-1 block">{label}</span>
+      <span className="relative block">
+        <MapPin className="pointer-events-none absolute left-3 top-3 h-5 w-5 text-gray-400" />
+        <select
+          name={name}
+          required
+          defaultValue=""
+          className="w-full appearance-none rounded-xl border border-gray-300 bg-gray-50 py-3 pl-10 pr-3 text-gray-900"
+        >
+          <option value="" disabled>
+            Terminal seçin
+          </option>
+          {locations.map((location) => (
+            <option key={location.id} value={location.id}>
+              {location.name}
+            </option>
+          ))}
+        </select>
+      </span>
+    </label>
   );
 }
