@@ -48,20 +48,26 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
 
 // ── Payments ────────────────────────────────────────────────────
 
-export const payments = pgTable('payments', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  orderId: uuid('order_id')
-    .references(() => orders.id)
-    .notNull(),
-  provider: text('provider').notNull().default('demo'), // demo, iyzico, etc.
-  providerPaymentId: text('provider_payment_id').unique(),
-  status: text('status').notNull().default('pending'), // pending, success, failed
-  amountMinor: integer('amount_minor').notNull(),
-  currency: text('currency').notNull().default('TRY'),
-  failureCode: text('failure_code'),
-  paidAt: timestamp('paid_at'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+export const payments = pgTable(
+  'payments',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    orderId: uuid('order_id')
+      .references(() => orders.id)
+      .notNull(),
+    provider: text('provider').notNull().default('demo'), // demo, iyzico, etc.
+    providerPaymentId: text('provider_payment_id').unique(),
+    status: text('status').notNull().default('pending'), // pending, success, failed
+    amountMinor: integer('amount_minor').notNull(),
+    currency: text('currency').notNull().default('TRY'),
+    failureCode: text('failure_code'),
+    paidAt: timestamp('paid_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  (table) => ({
+    orderPaymentUnique: uniqueIndex('payments_order_unique_idx').on(table.orderId),
+  }),
+);
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   order: one(orders, {

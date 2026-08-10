@@ -8,7 +8,7 @@ import {
 import { DRIZZLE } from '../database/database.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { schema } from '@ekspres/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt, sql } from 'drizzle-orm';
 import { randomUUID } from 'crypto';
 
 function generateOrderNo(): string {
@@ -47,67 +47,96 @@ export class CheckoutService {
       idempotencyKey?: string;
     },
   ) {
-    // Check idempotency
-    if (input.idempotencyKey) {
-      const existing = await this.db.query.orders.findFirst({
-        where: eq(schema.orders.idempotencyKey, input.idempotencyKey),
-      });
-      if (existing) {
-        if (existing.userId !== userId) {
-          throw new ConflictException('Idempotency key is already in use');
+    const result = await this.db.transaction(async (tx) => {
+      if (input.idempotencyKey) {
+        const existing = await tx.query.orders.findFirst({
+          where: eq(schema.orders.idempotencyKey, input.idempotencyKey),
+        });
+        if (existing) {
+          if (existing.userId !== userId) {
+            throw new ConflictException('Idempotency key is already in use');
+          }
+          return { state: 'existing' as const, order: existing };
         }
-        return existing;
       }
-    }
 
-    // Verify hold exists and belongs to the user
-    const hold = await this.db.query.seatHolds.findFirst({
-      where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, userId)),
-      with: {
-        tripSeat: true,
-      },
+      const requestedHold = await tx.query.seatHolds.findFirst({
+        where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, userId)),
+      });
+      if (!requestedHold) {
+        throw new NotFoundException('Hold not found');
+      }
+
+      await tx.execute(
+        sql`SELECT id FROM trip_seats WHERE id = ${requestedHold.tripSeatId} FOR UPDATE`,
+      );
+      const hold = await tx.query.seatHolds.findFirst({
+        where: and(eq(schema.seatHolds.id, input.holdId), eq(schema.seatHolds.userId, userId)),
+        with: { tripSeat: true },
+      });
+      if (!hold) {
+        throw new NotFoundException('Hold not found');
+      }
+      if (hold.status !== 'active') {
+        throw new ConflictException(`Hold is not active (status: ${hold.status})`);
+      }
+
+      const now = new Date();
+      if (hold.expiresAt <= now) {
+        await tx
+          .update(schema.seatHolds)
+          .set({ status: 'expired', releasedAt: now })
+          .where(eq(schema.seatHolds.id, hold.id));
+        await tx
+          .update(schema.tripSeats)
+          .set({ status: 'available' })
+          .where(eq(schema.tripSeats.id, hold.tripSeat.id));
+        return { state: 'expired-hold' as const };
+      }
+
+      const tripSeat = hold.tripSeat;
+      if (tripSeat.tripId !== input.tripId || tripSeat.seatNo !== input.seatNo) {
+        throw new BadRequestException('Hold does not match the requested seat');
+      }
+
+      const activeOrder = await tx.query.orders.findFirst({
+        where: and(
+          eq(schema.orders.userId, userId),
+          eq(schema.orders.tripSeatId, tripSeat.id),
+          eq(schema.orders.status, 'pending'),
+          gt(schema.orders.expiresAt, now),
+        ),
+      });
+      if (activeOrder) {
+        return { state: 'existing' as const, order: activeOrder };
+      }
+
+      const expiresAt = new Date(now.getTime() + ORDER_EXPIRY_SECONDS * 1000);
+      const [order] = await tx
+        .insert(schema.orders)
+        .values({
+          orderNo: generateOrderNo(),
+          userId,
+          tripId: input.tripId,
+          tripSeatId: tripSeat.id,
+          status: 'pending',
+          totalMinor: tripSeat.priceMinor,
+          currency: 'TRY',
+          idempotencyKey: input.idempotencyKey || randomUUID(),
+          passengerFirstName: input.passengerFirstName,
+          passengerLastName: input.passengerLastName,
+          passengerPhone: input.passengerPhone,
+          passengerEmail: input.passengerEmail,
+          expiresAt,
+        })
+        .returning();
+      return { state: 'created' as const, order };
     });
 
-    if (!hold) {
-      throw new NotFoundException('Hold not found');
-    }
-
-    if (hold.status !== 'active') {
-      throw new ConflictException(`Hold is not active (status: ${hold.status})`);
-    }
-
-    if (new Date() > hold.expiresAt) {
+    if (result.state === 'expired-hold') {
       throw new ConflictException('Hold has expired. Please select a seat again.');
     }
-
-    // Verify trip seat matches
-    const tripSeat = hold.tripSeat;
-    if (tripSeat.tripId !== input.tripId || tripSeat.seatNo !== input.seatNo) {
-      throw new BadRequestException('Hold does not match the requested seat');
-    }
-
-    const expiresAt = new Date(Date.now() + ORDER_EXPIRY_SECONDS * 1000);
-
-    const [order] = await this.db
-      .insert(schema.orders)
-      .values({
-        orderNo: generateOrderNo(),
-        userId,
-        tripId: input.tripId,
-        tripSeatId: tripSeat.id,
-        status: 'pending',
-        totalMinor: tripSeat.priceMinor,
-        currency: 'TRY',
-        idempotencyKey: input.idempotencyKey || randomUUID(),
-        passengerFirstName: input.passengerFirstName,
-        passengerLastName: input.passengerLastName,
-        passengerPhone: input.passengerPhone,
-        passengerEmail: input.passengerEmail,
-        expiresAt,
-      })
-      .returning();
-
-    return order;
+    return result.order;
   }
 
   /**
@@ -115,42 +144,92 @@ export class CheckoutService {
    * In production this would integrate with a real payment provider.
    */
   async processPayment(orderId: string, userId: string) {
-    const order = await this.db.query.orders.findFirst({
-      where: and(eq(schema.orders.id, orderId), eq(schema.orders.userId, userId)),
-    });
-
-    if (!order) {
-      throw new NotFoundException('Order not found');
-    }
-
-    if (order.status !== 'pending') {
-      throw new ConflictException(`Order is not pending (status: ${order.status})`);
-    }
-
-    // Check if payment already exists (idempotency)
-    const existingPayment = await this.db.query.payments.findFirst({
-      where: eq(schema.payments.orderId, orderId),
-    });
-
-    if (existingPayment && existingPayment.status === 'success') {
-      // Already paid, return the existing ticket
-      const existingTicket = await this.db.query.tickets.findFirst({
-        where: eq(schema.tickets.orderId, orderId),
-      });
-      return { payment: existingPayment, ticket: existingTicket, alreadyPaid: true };
-    }
-
-    // Demo payment: always succeeds after a simulated delay
-    const demoPaymentId = `demo_${randomUUID()}`;
-
     const result = await this.db.transaction(async (tx) => {
-      // Create payment record
+      const lockedOrder = await tx.execute<{ id: string }>(sql`
+        SELECT id
+        FROM orders
+        WHERE id = ${orderId} AND user_id = ${userId}
+        FOR UPDATE
+      `);
+      if (!lockedOrder.rows[0]) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const order = await tx.query.orders.findFirst({
+        where: and(eq(schema.orders.id, orderId), eq(schema.orders.userId, userId)),
+      });
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const existingPayment = await tx.query.payments.findFirst({
+        where: eq(schema.payments.orderId, orderId),
+      });
+      if (existingPayment?.status === 'success') {
+        const existingTicket = await tx.query.tickets.findFirst({
+          where: eq(schema.tickets.orderId, orderId),
+        });
+        return { state: 'paid' as const, payment: existingPayment, ticket: existingTicket };
+      }
+
+      if (order.status !== 'pending') {
+        throw new ConflictException(`Order is not pending (status: ${order.status})`);
+      }
+
+      const now = new Date();
+      if (order.expiresAt <= now) {
+        await tx
+          .update(schema.orders)
+          .set({ status: 'expired' })
+          .where(eq(schema.orders.id, orderId));
+        return { state: 'expired-order' as const };
+      }
+
+      await tx.execute(sql`SELECT id FROM trip_seats WHERE id = ${order.tripSeatId} FOR UPDATE`);
+      const activeHold = await tx.query.seatHolds.findFirst({
+        where: and(
+          eq(schema.seatHolds.tripSeatId, order.tripSeatId),
+          eq(schema.seatHolds.userId, userId),
+          eq(schema.seatHolds.status, 'active'),
+        ),
+      });
+
+      if (!activeHold || activeHold.expiresAt <= now) {
+        if (activeHold) {
+          await tx
+            .update(schema.seatHolds)
+            .set({ status: 'expired', releasedAt: now })
+            .where(eq(schema.seatHolds.id, activeHold.id));
+        }
+
+        const competingHold = await tx.query.seatHolds.findFirst({
+          where: and(
+            eq(schema.seatHolds.tripSeatId, order.tripSeatId),
+            eq(schema.seatHolds.status, 'active'),
+            gt(schema.seatHolds.expiresAt, now),
+          ),
+        });
+        if (!competingHold) {
+          await tx
+            .update(schema.tripSeats)
+            .set({ status: 'available' })
+            .where(
+              and(eq(schema.tripSeats.id, order.tripSeatId), eq(schema.tripSeats.status, 'held')),
+            );
+        }
+        await tx
+          .update(schema.orders)
+          .set({ status: 'expired' })
+          .where(eq(schema.orders.id, orderId));
+        return { state: 'expired-hold' as const };
+      }
+
       const [payment] = await tx
         .insert(schema.payments)
         .values({
           orderId,
           provider: 'demo',
-          providerPaymentId: demoPaymentId,
+          providerPaymentId: `demo_${randomUUID()}`,
           status: 'success',
           amountMinor: order.totalMinor,
           currency: order.currency,
@@ -158,22 +237,18 @@ export class CheckoutService {
         })
         .returning();
 
-      // Update order status
       await tx.update(schema.orders).set({ status: 'paid' }).where(eq(schema.orders.id, orderId));
 
-      // Update seat status to purchased
       await tx
         .update(schema.tripSeats)
         .set({ status: 'purchased' })
         .where(eq(schema.tripSeats.id, order.tripSeatId));
 
-      // Consume the hold
       await tx
         .update(schema.seatHolds)
         .set({ status: 'consumed' })
-        .where(eq(schema.seatHolds.tripSeatId, order.tripSeatId));
+        .where(eq(schema.seatHolds.id, activeHold.id));
 
-      // Create ticket
       const qrToken = randomUUID();
       const [ticket] = await tx
         .insert(schema.tickets)
@@ -188,10 +263,21 @@ export class CheckoutService {
         })
         .returning();
 
-      return { payment, ticket };
+      return { state: 'paid-now' as const, payment, ticket };
     });
 
-    return { ...result, alreadyPaid: false };
+    if (result.state === 'expired-order') {
+      throw new ConflictException('Order has expired');
+    }
+    if (result.state === 'expired-hold') {
+      throw new ConflictException('Seat hold has expired or is no longer active');
+    }
+
+    return {
+      payment: result.payment,
+      ticket: result.ticket,
+      alreadyPaid: result.state === 'paid',
+    };
   }
 
   /**

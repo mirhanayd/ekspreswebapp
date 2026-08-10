@@ -2,11 +2,12 @@ import { Injectable, Inject } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { schema } from '@ekspres/database';
 import { eq, count, sum } from 'drizzle-orm';
+import { DRIZZLE } from '../database/database.module';
 
 @Injectable()
 export class AdminService {
   constructor(
-    @Inject('DATABASE_CONNECTION')
+    @Inject(DRIZZLE)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 

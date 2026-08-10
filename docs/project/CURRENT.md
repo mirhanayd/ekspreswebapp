@@ -2,8 +2,8 @@
 
 ## Current Main
 
-- SHA: `c6d0ff43b55d86aefa7b74109f5850d1f2e9e754`
-- Baseline: PR #41 merged; seat-hold concurrency is fixed and runtime-proven.
+- SHA: `a257e606491e86037692783cd1c6a65c3b9a963b`
+- Baseline: PR #43 merged; seat concurrency and passenger ownership are runtime-proven.
 
 ## Current Phase
 
@@ -11,10 +11,9 @@ Security and transactional integrity hardening
 
 ## Current Campaign
 
-- Issue #42: authenticated passenger ownership.
-- Branch: `bugfix/42-passenger-ownership`.
-- PR: #43.
-- Status: locally validated; initial required CI passed; awaiting merge.
+- Issue #44: admin authorization and payment integrity.
+- Branch: `bugfix/44-admin-payment-integrity`.
+- Status: locally validated, awaiting PR/CI.
 
 ## Completed Major Capabilities
 
@@ -23,14 +22,15 @@ Security and transactional integrity hardening
 - Transport, trip search/detail, seat inventory, checkout, ticket, tracking, and admin foundations.
 - PostgreSQL-authoritative seat holds with row locking, active-hold uniqueness, expiry reconciliation, and 5/5 integration proof.
 - Authenticated passenger ownership for holds, orders, payments, tickets, and QR, with cross-user negative tests.
+- Admin-only API enforcement with passenger/unauthenticated denial tests.
+- Expired-order/hold payment rejection and serialized one-payment/one-ticket behavior.
 
 ## Remaining Work
 
-1. Admin role authorization and payment state/concurrency safety.
-2. Deterministic demo reset/data and complete authenticated passenger journey.
-3. Real QR, entitled route-based tracking, and functional admin operations.
-4. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
-5. Full release verification and final readiness audit.
+1. Deterministic demo reset/data and complete authenticated passenger journey.
+2. Real QR, entitled route-based tracking, and functional admin operations.
+3. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
+4. Full release verification and final readiness audit.
 
 ## Current Blocker
 
@@ -38,4 +38,4 @@ None.
 
 ## Next Campaign
 
-Admin role authorization plus expired/concurrent payment integrity.
+Deterministic demo reset/data plus the complete authenticated passenger journey.
