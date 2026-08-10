@@ -58,7 +58,7 @@ Real QR rendering, tracking entitlement and route projection, admin mutation wor
 
 ## CI Result
 
-- PR: pending publication.
+- PR: #47.
 - Required check: pending.
 
 ## Status
