@@ -59,8 +59,9 @@ Real QR rendering, tracking entitlement and route projection, admin mutation wor
 ## CI Result
 
 - PR: #47.
-- Required check: pending.
+- Required check: `CI / Validate and Test`.
+- Run: `31440878292`, PASS (3m29s).
 
 ## Status
 
-LOCAL_VALIDATION_COMPLETE
+READY_TO_MERGE

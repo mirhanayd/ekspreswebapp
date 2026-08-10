@@ -14,7 +14,7 @@ Deterministic presentation demo and passenger journey
 - Issue #46: deterministic demo and authenticated passenger journey.
 - Branch: `feature/46-demo-passenger-journey`.
 - PR: #47.
-- Status: locally validated; required PR CI is running.
+- Status: locally validated; required PR CI passed; ready to merge.
 
 ## Completed Major Capabilities
 

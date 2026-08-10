@@ -4,10 +4,10 @@ export const ApplicationStatus = {
   MAINTENANCE: 'maintenance',
 } as const;
 
-export type ApplicationStatus = (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
+export type ApplicationStatusValue = (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
 
 export type HealthCheckResponse = {
   service: string;
-  status: ApplicationStatus;
+  status: ApplicationStatusValue;
   timestamp: string;
 };
