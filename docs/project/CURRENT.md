@@ -13,8 +13,8 @@ Secure QR and ticket-entitled route tracking
 
 - Issue #48: secure QR and ticket-entitled route tracking.
 - Branch: `feature/48-secure-qr-tracking`.
-- PR: pending publication.
-- Status: implementation and runtime verification in progress.
+- PR: #49 open.
+- Status: implementation and runtime verification complete; CI in progress.
 
 ## Completed Major Capabilities
 

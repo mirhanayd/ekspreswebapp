@@ -46,8 +46,8 @@
 
 ## CI Result
 
-- PR: pending publication.
-- Required check: pending.
+- PR: #49.
+- Required check: in progress.
 
 ## Status
 
