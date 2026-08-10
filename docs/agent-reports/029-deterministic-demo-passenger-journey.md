@@ -60,8 +60,9 @@ Real QR rendering, tracking entitlement and route projection, admin mutation wor
 
 - PR: #47.
 - Required check: `CI / Validate and Test`.
-- Run: `31440878292`, PASS (3m29s).
+- Final head run: `31441167442`, PASS (3m27s).
+- Merge commit: `f185ad02c50942b95de49f8d648427fc6d129413`.
 
 ## Status
 
-READY_TO_MERGE
+MERGED

@@ -1,156 +1,217 @@
 'use client';
+
 import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { io, Socket } from 'socket.io-client';
-import { Bus, MapPin, ChevronLeft } from 'lucide-react';
+import { Bus, ChevronLeft, Clock3, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LiveMapView({ trip, ticketId }: { trip: any; ticketId?: string }) {
+type TrackingPosition = {
+  tripId: string;
+  busId: string;
+  longitude: number;
+  latitude: number;
+  speedKph: number;
+  headingDeg: number;
+  recordedAt: string;
+  sequence: number;
+  source: string;
+};
+
+type Bootstrap = {
+  ticketId: string;
+  accessToken: string;
+  routeGeometry: { type: 'LineString'; coordinates: Array<[number, number]> };
+  latestPosition: TrackingPosition | null;
+  trip: {
+    id: string;
+    arrivalTime: string;
+    bus: { plateNumber: string };
+    route: { origin: { name: string }; destination: { name: string } };
+  };
+};
+
+type TrackingState = 'connecting' | 'live' | 'delayed' | 'stale' | 'offline' | 'forbidden';
+
+function stateFromAge(recordedAt: string | null, connected: boolean): TrackingState {
+  if (!recordedAt) return connected ? 'connecting' : 'offline';
+  const ageSeconds = (Date.now() - new Date(recordedAt).getTime()) / 1000;
+  if (!connected && ageSeconds > 15) return 'offline';
+  if (ageSeconds <= 15) return 'live';
+  if (ageSeconds <= 60) return 'delayed';
+  if (ageSeconds <= 180) return 'stale';
+  return 'offline';
+}
+
+const stateLabels: Record<TrackingState, string> = {
+  connecting: 'Canlı konum bekleniyor',
+  live: 'Canlı takip aktif',
+  delayed: 'Konum gecikmeli geliyor',
+  stale: 'Son konum eski olabilir',
+  offline: 'Araç bağlantısı yok',
+  forbidden: 'Takip yetkisi sona erdi',
+};
+
+export default function LiveMapView({
+  bootstrap,
+  socketOrigin,
+}: {
+  bootstrap: Bootstrap;
+  socketOrigin: string;
+}) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const socketRef = useRef<Socket | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
-
-  const [eta, setEta] = useState<string>('Hesaplanıyor...');
-  const [speed, setSpeed] = useState<number>(0);
+  const markerIconRef = useRef<HTMLSpanElement | null>(null);
+  const [position, setPosition] = useState<TrackingPosition | null>(bootstrap.latestPosition);
   const [connected, setConnected] = useState(false);
+  const [trackingState, setTrackingState] = useState<TrackingState>(
+    stateFromAge(bootstrap.latestPosition?.recordedAt || null, false),
+  );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTrackingState((current) =>
+        current === 'forbidden' ? current : stateFromAge(position?.recordedAt || null, connected),
+      );
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [connected, position?.recordedAt]);
 
   useEffect(() => {
     if (!mapContainer.current) return;
-
-    const originCoords = trip.route.origin.coordinates.coordinates;
-    const destCoords = trip.route.destination.coordinates.coordinates;
+    const coordinates = bootstrap.routeGeometry.coordinates;
+    const first = coordinates[0];
+    const last = coordinates[coordinates.length - 1];
+    const initial = bootstrap.latestPosition
+      ? [bootstrap.latestPosition.longitude, bootstrap.latestPosition.latitude]
+      : first;
 
     map.current = new maplibregl.Map({
       container: mapContainer.current,
-      style: `https://api.maptiler.com/maps/streets-v2/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL`, // Using a demo public map style
-      center: originCoords,
+      style: 'https://demotiles.maplibre.org/style.json',
+      center: initial as [number, number],
       zoom: 8,
     });
-
     map.current.on('load', () => {
-      // Add origin and destination markers
-      new maplibregl.Marker({ color: '#3b82f6' })
-        .setLngLat(originCoords)
-        .setPopup(new maplibregl.Popup().setText(trip.route.origin.name))
+      map.current?.addSource('demo-route', {
+        type: 'geojson',
+        data: { type: 'Feature', properties: {}, geometry: bootstrap.routeGeometry },
+      });
+      map.current?.addLayer({
+        id: 'demo-route-line',
+        type: 'line',
+        source: 'demo-route',
+        paint: { 'line-color': '#b91c1c', 'line-width': 5, 'line-opacity': 0.8 },
+      });
+      const bounds = coordinates.reduce(
+        (value, coordinate) => value.extend(coordinate),
+        new maplibregl.LngLatBounds(first, first),
+      );
+      map.current?.fitBounds(bounds, { padding: 70, maxZoom: 10 });
+      new maplibregl.Marker({ color: '#0f172a' }).setLngLat(first).addTo(map.current!);
+      new maplibregl.Marker({ color: '#b91c1c' }).setLngLat(last).addTo(map.current!);
+
+      const markerElement = document.createElement('div');
+      markerElement.className =
+        'flex h-10 w-10 items-center justify-center rounded-full border-4 border-white bg-red-700 shadow-lg';
+      markerElement.innerHTML = '<span aria-hidden="true" style="font-size:20px">🚌</span>';
+      markerIconRef.current = markerElement.querySelector('span');
+      markerRef.current = new maplibregl.Marker({ element: markerElement })
+        .setLngLat(initial as [number, number])
         .addTo(map.current!);
+    });
 
-      new maplibregl.Marker({ color: '#ef4444' })
-        .setLngLat(destCoords)
-        .setPopup(new maplibregl.Popup().setText(trip.route.destination.name))
-        .addTo(map.current!);
-
-      // Bus marker (will be updated)
-      const el = document.createElement('div');
-      el.className = 'bus-marker';
-      el.style.width = '32px';
-      el.style.height = '32px';
-      el.style.backgroundImage = `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="%233b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bus-front"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m18 22-2-3"/><path d="M8 15h.01"/><path d="M16 15h.01"/></svg>')`;
-      el.style.backgroundColor = 'white';
-      el.style.borderRadius = '50%';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-
-      markerRef.current = new maplibregl.Marker({ element: el })
-        .setLngLat(originCoords) // initial
-        .addTo(map.current!);
-
-      // Connect to WebSocket
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-      // extract base url
-      const wsUrl = new URL(apiUrl).origin;
-
-      socketRef.current = io(wsUrl, {
-        path: '/api/tracking',
-        transports: ['websocket'],
-      });
-
-      socketRef.current.on('connect', () => {
-        setConnected(true);
-        socketRef.current?.emit('subscribe_trip', trip.id);
-      });
-
-      socketRef.current.on('disconnect', () => {
-        setConnected(false);
-      });
-
-      socketRef.current.on('location_update', (data: any) => {
-        if (markerRef.current) {
-          markerRef.current.setLngLat([data.lng, data.lat]);
-
-          // Smoothly pan map to bus if we want
-          // map.current?.panTo([data.lng, data.lat], { duration: 1000 });
-        }
-        if (data.speed !== undefined) setSpeed(data.speed);
-
-        // Very rough ETA calculation for demo
-        const dx = destCoords[0] - data.lng;
-        const dy = destCoords[1] - data.lat;
-        const dist = Math.sqrt(dx * dx + dy * dy) * 111; // rough km
-        const spd = data.speed || 80;
-        const hrs = dist / spd;
-        if (hrs < 0.1) setEta('Yaklaşıyor');
-        else setEta(`~${Math.round(hrs * 60)} dk`);
-      });
+    socketRef.current = io(socketOrigin, {
+      path: '/api/tracking',
+      transports: ['websocket'],
+      auth: { token: bootstrap.accessToken },
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 15000,
+    });
+    socketRef.current.on('tracking:ready', () => setConnected(true));
+    socketRef.current.on('disconnect', () => setConnected(false));
+    socketRef.current.on('connect_error', () => setConnected(false));
+    socketRef.current.on('tracking:error', () => setTrackingState('forbidden'));
+    socketRef.current.on('tracking:position', (next: TrackingPosition) => {
+      if (next.tripId !== bootstrap.trip.id) return;
+      setPosition(next);
+      setTrackingState('live');
+      markerRef.current?.setLngLat([next.longitude, next.latitude]);
+      if (markerIconRef.current) {
+        markerIconRef.current.style.display = 'inline-block';
+        markerIconRef.current.style.transform = `rotate(${next.headingDeg}deg)`;
+      }
     });
 
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-      if (map.current) {
-        map.current.remove();
-      }
+      socketRef.current?.disconnect();
+      map.current?.remove();
     };
-  }, [trip]);
+  }, [bootstrap, socketOrigin]);
+
+  const etaMinutes = Math.max(
+    0,
+    Math.round((new Date(bootstrap.trip.arrivalTime).getTime() - Date.now()) / 60000),
+  );
+  const indicatorColor =
+    trackingState === 'live'
+      ? 'bg-emerald-500'
+      : trackingState === 'delayed' || trackingState === 'stale'
+        ? 'bg-amber-500'
+        : 'bg-red-500';
 
   return (
-    <div className="relative h-screen w-full flex flex-col">
-      {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4">
-        <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg p-4 flex items-center justify-between">
+    <div className="relative flex h-screen w-full flex-col">
+      <div className="absolute left-0 right-0 top-0 z-10 p-4">
+        <div className="mx-auto flex max-w-3xl items-center justify-between rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur-md">
           <Link
-            href={`/tickets/${ticketId || ''}`}
-            className="text-gray-500 hover:text-gray-900 bg-gray-100 p-2 rounded-full"
+            href={`/tickets/${bootstrap.ticketId}`}
+            className="rounded-full bg-gray-100 p-2 text-gray-600"
           >
             <ChevronLeft className="h-5 w-5" />
           </Link>
           <div className="text-center">
             <h1 className="font-bold text-gray-900">
-              {trip.route.origin.name} → {trip.route.destination.name}
+              {bootstrap.trip.route.origin.name} → {bootstrap.trip.route.destination.name}
             </h1>
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-              <span
-                className={`inline-block w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
-              ></span>
-              {connected ? 'Canlı Takip Aktif' : 'Bağlantı Bekleniyor...'}
-            </div>
+            <p className="flex items-center justify-center gap-2 text-sm text-gray-600">
+              <span className={`h-2.5 w-2.5 rounded-full ${indicatorColor}`} />
+              {stateLabels[trackingState]}
+            </p>
           </div>
-          <div className="w-9"></div>
+          <div className="w-9" />
         </div>
       </div>
 
-      {/* Map Container */}
-      <div ref={mapContainer} className="flex-1 w-full" />
+      <div ref={mapContainer} className="w-full flex-1" />
 
-      {/* Bottom Info Overlay */}
       <div className="absolute bottom-8 left-4 right-4 z-10">
-        <div className="bg-white rounded-2xl shadow-xl p-4 border border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="bg-blue-100 text-blue-600 p-3 rounded-full">
-              <Bus className="h-6 w-6" />
-            </div>
+        <div className="mx-auto grid max-w-3xl grid-cols-3 gap-3 rounded-2xl border bg-white p-4 shadow-xl">
+          <div className="flex items-center gap-3">
+            <Bus className="h-6 w-6 text-red-700" />
             <div>
-              <p className="text-sm text-gray-500">Tahmini Varış</p>
-              <p className="text-xl font-bold text-gray-900">{eta}</p>
+              <p className="text-xs text-gray-500">Araç</p>
+              <p className="font-bold text-gray-900">{bootstrap.trip.bus.plateNumber}</p>
             </div>
           </div>
-
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Hız</p>
-            <p className="text-xl font-bold text-gray-900">
-              {speed} <span className="text-sm font-normal">km/s</span>
-            </p>
+          <div className="flex items-center justify-center gap-3 border-x">
+            <Clock3 className="h-5 w-5 text-gray-500" />
+            <div>
+              <p className="text-xs text-gray-500">Planlı varış</p>
+              <p className="font-bold text-gray-900">
+                {etaMinutes > 0 ? `~${etaMinutes} dk` : 'Yaklaşıyor'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            {trackingState === 'offline' ? <WifiOff className="h-5 w-5 text-red-600" /> : null}
+            <div className="text-right">
+              <p className="text-xs text-gray-500">Hız</p>
+              <p className="font-bold text-gray-900">{Math.round(position?.speedKph || 0)} km/sa</p>
+            </div>
           </div>
         </div>
       </div>

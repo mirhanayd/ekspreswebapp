@@ -26,9 +26,11 @@
     "db:check": "pnpm --filter @ekspres/database check",
     "db:verify": "pnpm --filter @ekspres/database verify",
     "db:test:integration": "pnpm --filter @ekspres/database test:integration",
-    "demo:reset": "pnpm db:migrate && pnpm --filter @ekspres/database demo:reset",
+    "demo:reset": "pnpm db:migrate && pnpm --filter @ekspres/database demo:reset && pnpm tracking:reset",
     "demo:verify": "pnpm --filter @ekspres/database demo:verify",
-    "demo:journey": "pnpm --filter @ekspres/database demo:journey"
+    "demo:journey": "pnpm --filter @ekspres/database demo:journey",
+    "tracking:simulate": "pnpm --filter @ekspres/database build && pnpm --filter tracking-simulator build && pnpm --filter tracking-simulator start",
+    "tracking:reset": "pnpm --filter tracking-simulator reset"
   },
   "devDependencies": {
     "@vercel/style-guide": "^6.0.0",

@@ -9,7 +9,9 @@
     "REDIS_PORT",
     "JWT_SECRET",
     "API_URL",
-    "NEXT_PUBLIC_API_URL"
+    "NEXT_PUBLIC_API_URL",
+    "SIMULATOR_START_PERCENT",
+    "WEB_ORIGIN"
   ],
   "tasks": {
     "build": {

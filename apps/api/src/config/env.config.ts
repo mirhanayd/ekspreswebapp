@@ -7,6 +7,7 @@ export const envSchema = z.object({
   REDIS_URL: z.string().url().default('redis://127.0.0.1:6379'),
   REDIS_PORT: z.coerce.number().default(6379),
   JWT_SECRET: z.string().min(32),
+  WEB_ORIGIN: z.string().url().default('http://localhost:3000'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

@@ -17,6 +17,7 @@ async function main() {
       seat_count: string;
       route_geometry_count: string;
       active_ticket_count: string;
+      secure_qr_count: string;
       live_trip_count: string;
     }>(
       `SELECT
@@ -26,6 +27,7 @@ async function main() {
          (SELECT count(*) FROM trip_seats WHERE trip_id IN ($5, $6, $7, $8))::text AS seat_count,
          (SELECT count(*) FROM routes WHERE id = $9 AND ST_GeometryType(geometry) = 'ST_LineString')::text AS route_geometry_count,
          (SELECT count(*) FROM tickets WHERE id = $10 AND user_id = $1 AND status = 'active')::text AS active_ticket_count,
+         (SELECT count(*) FROM tickets WHERE id = $10 AND qr_token_hash ~ '^[0-9a-f]{64}$')::text AS secure_qr_count,
          (SELECT count(*) FROM trips WHERE id = $8 AND status = 'in_transit')::text AS live_trip_count`,
       [
         DEMO_IDS.passenger,
@@ -48,6 +50,7 @@ async function main() {
       result.seat_count === '156' &&
       result.route_geometry_count === '1' &&
       result.active_ticket_count === '1' &&
+      result.secure_qr_count === '1' &&
       result.live_trip_count === '1';
     if (!valid) throw new Error(`Demo verification failed: ${JSON.stringify(result)}`);
     console.log(
