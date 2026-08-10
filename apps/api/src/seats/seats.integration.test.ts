@@ -32,7 +32,8 @@ describe('SeatsService PostgreSQL integration', () => {
     loadDatabaseUrl();
     const url = process.env.DATABASE_URL;
     if (!url) throw new Error('Integration tests require DATABASE_URL.');
-    if (url.includes('production')) throw new Error('SAFETY GUARD: Suspicious production database URL detected.');
+    if (url.includes('production'))
+      throw new Error('SAFETY GUARD: Suspicious production database URL detected.');
 
     client = createDatabaseClient({ url });
     service = new SeatsService(client.db as any);
@@ -68,7 +69,12 @@ describe('SeatsService PostgreSQL integration', () => {
 
     await client.pool.query(
       `INSERT INTO locations (id, name, type) VALUES ($1, $2, 'terminal'), ($3, $4, 'terminal')`,
-      [originId, `Concurrency origin ${routeId}`, destinationId, `Concurrency destination ${routeId}`],
+      [
+        originId,
+        `Concurrency origin ${routeId}`,
+        destinationId,
+        `Concurrency destination ${routeId}`,
+      ],
     );
     await client.pool.query(
       `INSERT INTO routes (id, name, origin_id, destination_id) VALUES ($1, $2, $3, $4)`,
@@ -140,7 +146,9 @@ describe('SeatsService PostgreSQL integration', () => {
        VALUES ($1, $2, 'active', now() - interval '1 minute')`,
       [seat.tripSeatId, expiredOwner],
     );
-    await client.pool.query(`UPDATE trip_seats SET status = 'held' WHERE id = $1`, [seat.tripSeatId]);
+    await client.pool.query(`UPDATE trip_seats SET status = 'held' WHERE id = $1`, [
+      seat.tripSeatId,
+    ]);
 
     const map = await service.getSeatMap(seat.tripId);
     expect(map.seats[0].status).toBe('available');
@@ -153,7 +161,9 @@ describe('SeatsService PostgreSQL integration', () => {
     expect(holds.rows.filter((hold) => hold.status === 'active')).toEqual([
       expect.objectContaining({ user_id: newOwner, status: 'active' }),
     ]);
-    expect(holds.rows.some((hold) => hold.user_id === expiredOwner && hold.status === 'expired')).toBe(true);
+    expect(
+      holds.rows.some((hold) => hold.user_id === expiredOwner && hold.status === 'expired'),
+    ).toBe(true);
   });
 
   it('does not allow an unexpired active hold to be stolen', async () => {
@@ -176,7 +186,9 @@ describe('SeatsService PostgreSQL integration', () => {
     const secondOwner = randomUUID();
     const firstHold = await service.createHold(seat.tripId, seat.seatNo, firstOwner);
 
-    await expect(service.releaseHold(firstHold.holdId, firstOwner)).resolves.toEqual({ released: true });
+    await expect(service.releaseHold(firstHold.holdId, firstOwner)).resolves.toEqual({
+      released: true,
+    });
     await expect(service.createHold(seat.tripId, seat.seatNo, secondOwner)).resolves.toEqual(
       expect.objectContaining({ seatNo: seat.seatNo }),
     );

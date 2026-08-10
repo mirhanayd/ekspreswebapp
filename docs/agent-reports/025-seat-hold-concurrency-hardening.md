@@ -46,31 +46,30 @@ Release still requires the existing hold ID and owner ID. It now runs in a trans
 - Database used: configured local PostgreSQL via `DATABASE_URL`.
 - Synchronization method: two `SeatsService.createHold` promises are started together with `Promise.allSettled` against the same fixture seat; each service call opens an independent PostgreSQL transaction.
 - Requests: two distinct UUID owners, same trip and seat.
-- Actual result: not runtime-executed because PostgreSQL at `127.0.0.1:5432` refused the connection and Docker is unavailable in this environment.
-- Expected final active hold count: 1. Expected final seat state: `held` and owned by the sole successful caller.
+- Actual result: PASS. Exactly one concurrent request succeeded and one was rejected; the final active hold count was 1 and the seat remained `held` by the successful caller.
 
 ## 10. Other Integration Tests
 
-| Test | Result | Evidence |
-| --- | --- | --- |
-| Expired hold reclaim | NOT_RUNTIME_EXECUTED | Test creates expired active hold, verifies map availability, then verifies new owner and old `expired` record. |
-| Unexpired hold rejection | NOT_RUNTIME_EXECUTED | Test verifies second owner receives `ConflictException` and original active hold remains. |
-| Release/reacquire | NOT_RUNTIME_EXECUTED | Test releases first owner then verifies second owner can acquire. |
-| Repeated release | NOT_RUNTIME_EXECUTED | Test expects conflict and verifies zero active holds with available seat. |
+| Test                     | Result | Evidence                                                                                                              |
+| ------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| Expired hold reclaim     | PASS   | Test created an expired active hold, verified map availability, then verified the new owner and old `expired` record. |
+| Unexpired hold rejection | PASS   | Test verified the second owner received `ConflictException` and the original active hold remained.                    |
+| Release/reacquire        | PASS   | Test released the first owner, then verified the second owner could acquire.                                          |
+| Repeated release         | PASS   | Test received the expected conflict and verified zero active holds with the seat available.                           |
 
 ## 11. Validation Results
 
-| Command | Result | Notes |
-| --- | --- | --- |
-| `pnpm --filter @ekspres/database generate --name seat-hold-active-unique` | PASS | Generated migration, metadata journal, and snapshot. |
-| `pnpm --filter api test` | PASS | Existing API Jest test passed. |
-| `pnpm --filter api test:integration` | BLOCKED | Test loaded successfully but PostgreSQL connection to `127.0.0.1:5432` was refused. |
-| `pnpm db:test:integration` | BLOCKED | Existing DB smoke tests also failed with the same refused PostgreSQL connection. |
-| `pnpm format:check` | FAIL | Existing repository formatting issues plus new generated metadata/test formatting warnings. |
-| `pnpm lint` | PASS_WITH_WARNINGS | Completed; repository has pre-existing warnings and Jest globals warnings in the new integration test. |
-| `pnpm typecheck` | PASS | All seven Turbo typecheck tasks passed. |
-| `pnpm test` | PASS | Default suite passed; integration test is intentionally separate. |
-| `git diff --check` | PASS | No whitespace errors; line-ending warnings only. |
+| Command                                                                   | Result             | Notes                                                                                                  |
+| ------------------------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `pnpm --filter @ekspres/database generate --name seat-hold-active-unique` | PASS               | Generated migration, metadata journal, and snapshot.                                                   |
+| `pnpm --filter api test`                                                  | PASS               | Existing API Jest test passed.                                                                         |
+| `pnpm --filter api test:integration`                                      | PASS               | PostgreSQL seat integration suite passed 5/5.                                                          |
+| `pnpm db:test:integration`                                                | PASS               | Database integration smoke passed 2/2, including PostgreSQL connectivity and PostGIS availability.     |
+| `pnpm format:check`                                                       | PASS               | CI-reported formatting issues were corrected in the affected test, report, and generated metadata.     |
+| `pnpm lint`                                                               | PASS_WITH_WARNINGS | Completed; repository has pre-existing warnings and Jest globals warnings in the new integration test. |
+| `pnpm typecheck`                                                          | PASS               | All seven Turbo typecheck tasks passed.                                                                |
+| `pnpm test`                                                               | PASS               | Default suite passed; integration test is intentionally separate.                                      |
+| `git diff --check`                                                        | PASS               | No whitespace errors; line-ending warnings only.                                                       |
 
 ## 12. Files Changed
 
@@ -89,14 +88,13 @@ None.
 
 ## 14. Deviations
 
-Runtime PostgreSQL validation could not run because Docker is unavailable and the configured local PostgreSQL port refused connections. No infrastructure was started or installed.
+The original execution environment lacked a reachable PostgreSQL instance. Runtime validation was subsequently completed against local Docker PostgreSQL/PostGIS with all seat and database integration tests passing.
 
 ## 15. Remaining Related Risks
 
-- The new integration suite must run against a migrated PostgreSQL database before P0-01 can be considered proven.
 - Checkout still consumes holds by seat ID without participating in the new seat-row lock protocol; checkout hardening is explicitly out of scope and should be reviewed separately.
 - Expired holds are reconciled lazily on hold attempts; no background sweeper changes stale database rows when no later attempt occurs.
 
 ## 16. Handoff
 
-**FIXED_BUT_NOT_RUNTIME_PROVEN.** Source now serializes same-seat holds using PostgreSQL `FOR UPDATE` and adds a database partial unique index as a second guard. Expiry is server-authoritative during acquisition, and the seat map no longer displays expired holds as indefinitely held. The integration suite exercises the required concurrent, reclaim, rejection, release, and repeated-release paths using a real PostgreSQL client and isolated rows. It could not execute because Docker is not installed in this environment and the configured database endpoint at `127.0.0.1:5432` refused connections. The next coordinator should bring up PostgreSQL, apply migration `0006`, run `pnpm --filter api test:integration`, and only then mark P0-01 fixed and proven.
+**FIXED_AND_PROVEN.** Source serializes same-seat holds using PostgreSQL `FOR UPDATE` and adds a database partial unique index as a second guard. Expiry is server-authoritative during acquisition, and the seat map no longer displays expired holds as indefinitely held. Runtime verification against migrated local PostgreSQL/PostGIS passed all five seat integration tests and both database smoke tests, including connectivity and PostGIS availability.
