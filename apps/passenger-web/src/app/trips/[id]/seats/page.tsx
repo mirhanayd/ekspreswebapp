@@ -1,18 +1,18 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { ChevronRight, Armchair } from 'lucide-react';
 import SeatSelector from './SeatSelector';
+import { API_BASE_URL } from '@/lib/server-api';
 
 export default async function SeatSelectionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
   let seatMapData;
   let tripData;
 
   try {
     const [seatRes, tripRes] = await Promise.all([
-      fetch(`${apiUrl}/seats/trip/${id}`, { cache: 'no-store' }),
-      fetch(`${apiUrl}/transport/trips/${id}`, { cache: 'no-store' }),
+      fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
+      fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' }),
     ]);
 
     if (!seatRes.ok || !tripRes.ok) {
@@ -37,13 +37,13 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
       <div className="max-w-2xl mx-auto px-4 space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <a href="/" className="hover:text-gray-700">
+          <Link href="/" className="hover:text-gray-700">
             Ana Sayfa
-          </a>
+          </Link>
           <ChevronRight className="h-4 w-4" />
-          <a href={`/trips/${id}`} className="hover:text-gray-700">
+          <Link href={`/trips/${id}`} className="hover:text-gray-700">
             Sefer Detayı
-          </a>
+          </Link>
           <ChevronRight className="h-4 w-4" />
           <span className="text-gray-900 font-medium">Koltuk Seçimi</span>
         </nav>

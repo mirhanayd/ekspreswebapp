@@ -25,7 +25,10 @@
     "db:migrate": "pnpm --filter @ekspres/database migrate",
     "db:check": "pnpm --filter @ekspres/database check",
     "db:verify": "pnpm --filter @ekspres/database verify",
-    "db:test:integration": "pnpm --filter @ekspres/database test:integration"
+    "db:test:integration": "pnpm --filter @ekspres/database test:integration",
+    "demo:reset": "pnpm db:migrate && pnpm --filter @ekspres/database demo:reset",
+    "demo:verify": "pnpm --filter @ekspres/database demo:verify",
+    "demo:journey": "pnpm --filter @ekspres/database demo:journey"
   },
   "devDependencies": {
     "@vercel/style-guide": "^6.0.0",

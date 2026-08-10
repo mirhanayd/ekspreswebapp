@@ -5,7 +5,9 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "prestart": "pnpm --filter @ekspres/contracts build && pnpm --filter @ekspres/database build",
     "start": "nest start",
+    "predev": "pnpm --filter @ekspres/contracts build && pnpm --filter @ekspres/database build",
     "dev": "nest start --watch",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "typecheck": "tsc --noEmit",

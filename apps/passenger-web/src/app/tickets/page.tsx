@@ -1,20 +1,16 @@
 import { Ticket } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { authenticatedApiFetch } from '@/lib/server-api';
 
 export default async function MyTicketsPage() {
-  // For demo MVP, we will use a demo user id
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let active = [];
   let past = [];
   let cancelled = [];
+  const res = await authenticatedApiFetch('/tickets');
+  if (!res || res.status === 401) redirect('/login?returnTo=/tickets');
 
   try {
-    const res = await fetch(`${apiUrl}/tickets`, {
-      headers: {
-        Authorization: `Bearer demo-token`,
-      },
-      cache: 'no-store',
-    });
     if (res.ok) {
       const data = await res.json();
       active = data.active || [];

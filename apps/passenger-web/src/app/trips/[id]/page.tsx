@@ -1,5 +1,7 @@
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { MapPin, Calendar, Clock, Bus, Map as MapIcon, ChevronRight } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/server-api';
 
 import MapView from './MapView';
 
@@ -17,11 +19,10 @@ function formatDate(isoString: string) {
 export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   // Fetch trip details from our NestJS API
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let tripData;
 
   try {
-    const res = await fetch(`${apiUrl}/transport/trips/${id}`, {
+    const res = await fetch(`${API_BASE_URL}/transport/trips/${id}`, {
       // In a real app we might want to revalidate occasionally
       cache: 'no-store',
     });
@@ -39,7 +40,8 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
     );
   }
 
-  const { trip, bus, route } = tripData;
+  const trip = tripData;
+  const { bus, route } = tripData;
   const stops = route.stops || [];
 
   return (
@@ -144,12 +146,12 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
               <MapView stops={stops} />
             </div>
 
-            <a
+            <Link
               href={`/trips/${id}/seats`}
               className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-xl shadow-md transition-colors text-lg text-center"
             >
               Koltuk Seç
-            </a>
+            </Link>
             <p className="text-sm text-center text-gray-500 mt-4">
               Otobüs koltuk haritasını görüntüleyin ve koltuğunuzu seçin.
             </p>

@@ -27,6 +27,19 @@ export const geometryType = customType<{
   },
 });
 
+export const routeGeometryType = customType<{
+  data: { type: 'LineString'; coordinates: number[][] };
+  driverData: string;
+}>({
+  dataType() {
+    return 'geometry(LineString, 4326)';
+  },
+  toDriver(value) {
+    const points = value.coordinates.map(([longitude, latitude]) => `${longitude} ${latitude}`);
+    return `SRID=4326;LINESTRING(${points.join(', ')})`;
+  },
+});
+
 export const locations = pgTable('locations', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: text('name').notNull(),
@@ -44,6 +57,7 @@ export const routes = pgTable('routes', {
   destinationId: uuid('destination_id')
     .references(() => locations.id)
     .notNull(),
+  geometry: routeGeometryType('geometry'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

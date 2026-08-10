@@ -33,11 +33,33 @@ This project is a Turborepo-managed monorepo containing:
 ### Setup
 
 1. Install dependencies: `pnpm install`
-2. Create environment file: `cp .env.example .env` (Local only)
+2. Copy `.env.example` to `.env` (local only).
 3. Start local infrastructure: `pnpm infra:up`
-4. Apply database migrations: `pnpm db:migrate`
-5. Verify database setup: `pnpm db:verify`
+4. Create the deterministic demo: `pnpm demo:reset`
+5. Verify the demo data: `pnpm demo:verify`
 6. Run development servers: `pnpm dev`
+
+### Presentation Demo
+
+`pnpm demo:reset` is a guarded, local-only reset. It applies idempotent migrations and recreates stable accounts, locations, a PostGIS route, a 39-seat bus, future trips, an in-progress trip, and an active ticket. It is safe to rerun against the documented local database and refuses remote or production-like database targets.
+
+Demo accounts:
+
+| Role      | Email                      | Password    |
+| --------- | -------------------------- | ----------- |
+| Passenger | `yolcu@siirtkurtalan.demo` | `Demo123!`  |
+| Admin     | `admin@siirtkurtalan.demo` | `Admin123!` |
+
+For the passenger journey, run the API and passenger app in separate terminals:
+
+```bash
+pnpm --filter api dev
+pnpm --filter passenger-web dev
+```
+
+Open `http://localhost:3000`, sign in as the demo passenger, search tomorrow's Siirt → Diyarbakır service, select a seat, complete the simulated payment, and open the issued ticket. With the API running, `pnpm demo:journey` independently verifies login → hold → order → payment → ticket → QR through real HTTP requests.
+
+The API is served at `http://localhost:3001/api/v1`; Swagger is available at `http://localhost:3001/api/docs`.
 
 ### Local Database
 
@@ -56,12 +78,11 @@ The local Postgres database runs on port `5432` mapped to `127.0.0.1`.
 - `pnpm db:verify`: Validate Postgres and PostGIS connection.
 - `pnpm db:test:integration`: Run database smoke tests.
 
-_Note: No product-domain tables exist yet in `@ekspres/database`._
-
 ### Troubleshooting
 
 - **Docker not running**: Verify Docker Desktop is started.
 - **Port already in use**: Ensure port 5432 is free.
 - **Unhealthy container**: Check logs via `pnpm infra:logs`.
 - **Missing DATABASE_URL**: Make sure `.env` is created from `.env.example`.
+- **Authentication configuration**: Set a unique `JWT_SECRET` of at least 32 characters outside local development. Production startup rejects a missing secret.
 - **Migration/PostGIS failure**: Reset via `pnpm infra:reset` and `infra:up` then retry `db:migrate`.

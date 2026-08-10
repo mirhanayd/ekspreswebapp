@@ -6,12 +6,18 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url().default('redis://127.0.0.1:6379'),
   REDIS_PORT: z.coerce.number().default(6379),
+  JWT_SECRET: z.string().min(32),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
 
 export const validateEnv = (config: Record<string, unknown>) => {
-  const parsed = envSchema.safeParse(config);
+  const parsed = envSchema.safeParse({
+    ...config,
+    JWT_SECRET:
+      config.JWT_SECRET ||
+      (config.NODE_ENV !== 'production' ? 'local-development-only-secret-change-me' : undefined),
+  });
 
   if (!parsed.success) {
     console.error('❌ Invalid environment variables:', parsed.error.format());

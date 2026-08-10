@@ -25,8 +25,6 @@ export default function CheckoutForm({
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'form' | 'paying' | 'success'>('form');
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) {
@@ -39,11 +37,10 @@ export default function CheckoutForm({
 
     try {
       // Step 1: Create order
-      const orderRes = await fetch(`${apiUrl}/checkout/order`, {
+      const orderRes = await fetch('/api/passenger/checkout/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'demo-user-id',
           tripId,
           seatNo,
           holdId,
@@ -51,10 +48,15 @@ export default function CheckoutForm({
           passengerLastName: lastName,
           passengerPhone: phone || undefined,
           passengerEmail: email || undefined,
+          idempotencyKey: crypto.randomUUID(),
         }),
       });
 
       if (!orderRes.ok) {
+        if (orderRes.status === 401) {
+          router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
+          return;
+        }
         const errData = await orderRes.json();
         throw new Error(errData.message || 'Sipariş oluşturulamadı');
       }
@@ -63,10 +65,8 @@ export default function CheckoutForm({
       setStep('paying');
 
       // Step 2: Process demo payment
-      const payRes = await fetch(`${apiUrl}/checkout/order/${order.id}/pay`, {
+      const payRes = await fetch(`/api/passenger/checkout/order/${order.id}/pay`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: 'demo-user-id' }),
       });
 
       if (!payRes.ok) {
@@ -74,14 +74,12 @@ export default function CheckoutForm({
         throw new Error(errData.message || 'Ödeme işlemi başarısız');
       }
 
-      const result = await payRes.json();
+      await payRes.json();
       setStep('success');
 
       // Redirect to success page after brief delay
       setTimeout(() => {
-        router.push(
-          `/trips/${tripId}/checkout/success?orderId=${order.id}&ticketNo=${result.ticket.ticketNo}`,
-        );
+        router.push(`/trips/${tripId}/checkout/success?orderId=${order.id}`);
       }, 1500);
     } catch (err: any) {
       setError(err.message);

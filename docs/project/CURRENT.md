@@ -2,19 +2,19 @@
 
 ## Current Main
 
-- SHA: `a257e606491e86037692783cd1c6a65c3b9a963b`
-- Baseline: PR #43 merged; seat concurrency and passenger ownership are runtime-proven.
+- SHA: `943263f1ec15ba54476df0d4ae25125dac3272b0`
+- Baseline: PR #45 merged; seat concurrency, passenger ownership, admin authorization, and payment integrity are runtime-proven.
 
 ## Current Phase
 
-Security and transactional integrity hardening
+Deterministic presentation demo and passenger journey
 
 ## Current Campaign
 
-- Issue #44: admin authorization and payment integrity.
-- Branch: `bugfix/44-admin-payment-integrity`.
-- PR: #45.
-- Status: locally validated; initial required CI passed; awaiting merge.
+- Issue #46: deterministic demo and authenticated passenger journey.
+- Branch: `feature/46-demo-passenger-journey`.
+- PR: pending publication.
+- Status: locally validated; awaiting PR CI.
 
 ## Completed Major Capabilities
 
@@ -25,13 +25,15 @@ Security and transactional integrity hardening
 - Authenticated passenger ownership for holds, orders, payments, tickets, and QR, with cross-user negative tests.
 - Admin-only API enforcement with passenger/unauthenticated denial tests.
 - Expired-order/hold payment rejection and serialized one-payment/one-ticket behavior.
+- Deterministic, guarded demo reset with stable accounts, PostGIS route geometry, future trips, seats, active ticket, and live scenario.
+- Cookie-backed passenger login/register/logout, trip search, authenticated seat hold, server-priced checkout, payment, ticket list/detail, and QR retrieval.
+- Real HTTP demo journey verification from login through QR.
 
 ## Remaining Work
 
-1. Deterministic demo reset/data and complete authenticated passenger journey.
-2. Real QR, entitled route-based tracking, and functional admin operations.
-3. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
-4. Full release verification and final readiness audit.
+1. Real QR rendering, entitled route-based tracking, and functional admin operations.
+2. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
+3. Full release verification and final readiness audit.
 
 ## Current Blocker
 
@@ -39,4 +41,4 @@ None.
 
 ## Next Campaign
 
-Deterministic demo reset/data plus the complete authenticated passenger journey.
+QR rendering, tracking entitlement/route realism, and functional admin operations.

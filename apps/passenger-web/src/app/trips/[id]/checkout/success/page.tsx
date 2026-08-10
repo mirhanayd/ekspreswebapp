@@ -1,24 +1,29 @@
-import { CheckCircle, Ticket, ChevronRight } from 'lucide-react';
+import { CheckCircle, Ticket } from 'lucide-react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { authenticatedApiFetch } from '@/lib/server-api';
 
 export default async function CheckoutSuccessPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ orderId?: string; ticketNo?: string }>;
+  searchParams: Promise<{ orderId?: string }>;
 }) {
   const { id } = await params;
-  const { orderId, ticketNo } = await searchParams;
+  const { orderId } = await searchParams;
 
   // Fetch order details
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
   let orderData: any = null;
+  const res = orderId ? await authenticatedApiFetch(`/checkout/order/${orderId}`) : null;
+  if (!res || res.status === 401) {
+    redirect(
+      `/login?returnTo=${encodeURIComponent(`/trips/${id}/checkout/success?orderId=${orderId || ''}`)}`,
+    );
+  }
 
   if (orderId) {
     try {
-      const res = await fetch(`${apiUrl}/checkout/order/${orderId}`, {
-        cache: 'no-store',
-      });
       if (res.ok) {
         orderData = await res.json();
       }
@@ -49,7 +54,9 @@ export default async function CheckoutSuccessPage({
                 <Ticket className="h-5 w-5" />
                 <span className="font-bold">Siirt Kurtalan Ekspres</span>
               </div>
-              <span className="text-blue-100 text-sm">{ticketNo || 'TKT-XXXXXXXX'}</span>
+              <span className="text-blue-100 text-sm">
+                {orderData?.ticket?.ticketNo || 'TKT-XXXXXXXX'}
+              </span>
             </div>
           </div>
 
@@ -98,7 +105,7 @@ export default async function CheckoutSuccessPage({
               </>
             ) : (
               <div className="text-center text-gray-500">
-                <p>Bilet No: {ticketNo}</p>
+                <p>Sipariş bilgileriniz yükleniyor.</p>
               </div>
             )}
 
@@ -116,18 +123,18 @@ export default async function CheckoutSuccessPage({
 
         {/* Actions */}
         <div className="flex gap-3">
-          <a
+          <Link
             href="/"
             className="flex-1 text-center py-3 px-4 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
           >
             Ana Sayfa
-          </a>
-          <a
-            href={`/trips/${id}`}
+          </Link>
+          <Link
+            href={orderData?.ticket?.id ? `/tickets/${orderData.ticket.id}` : `/trips/${id}`}
             className="flex-1 text-center py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-semibold shadow-md"
           >
             Sefer Detayı
-          </a>
+          </Link>
         </div>
       </div>
     </div>

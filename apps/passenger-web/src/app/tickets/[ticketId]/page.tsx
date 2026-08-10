@@ -1,5 +1,7 @@
 import { ChevronLeft, QrCode, MapPin, Clock, Bus, User, Map } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { authenticatedApiFetch } from '@/lib/server-api';
 
 export default async function TicketDetailPage({
   params,
@@ -7,25 +9,18 @@ export default async function TicketDetailPage({
   params: Promise<{ ticketId: string }>;
 }) {
   const { ticketId } = await params;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
   let ticket: any = null;
   let qrToken: string | null = null;
   let error = null;
+  const res = await authenticatedApiFetch(`/tickets/${ticketId}`);
+  if (!res || res.status === 401) redirect(`/login?returnTo=/tickets/${ticketId}`);
 
   try {
-    const res = await fetch(`${apiUrl}/tickets/${ticketId}`, {
-      headers: { Authorization: `Bearer demo-token` },
-      cache: 'no-store',
-    });
     if (!res.ok) throw new Error('Bilet bulunamadı veya erişim yetkiniz yok');
     ticket = await res.json();
 
-    const qrRes = await fetch(`${apiUrl}/tickets/${ticketId}/qr`, {
-      headers: { Authorization: `Bearer demo-token` },
-      cache: 'no-store',
-    });
-    if (qrRes.ok) {
+    const qrRes = await authenticatedApiFetch(`/tickets/${ticketId}/qr`);
+    if (qrRes?.ok) {
       const qrData = await qrRes.json();
       qrToken = qrData.qrToken;
     }
