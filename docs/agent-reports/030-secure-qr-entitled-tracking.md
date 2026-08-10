@@ -47,8 +47,8 @@
 ## CI Result
 
 - PR: #49.
-- Required check: in progress.
+- Required check: PASS (`CI` run `31443184157`, 2m52s).
 
 ## Status
 
-LOCAL_RUNTIME_VALIDATION_COMPLETE
+READY_TO_MERGE
