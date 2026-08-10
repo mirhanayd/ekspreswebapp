@@ -51,8 +51,11 @@ Admin role authorization, expired/concurrent payment safety, passenger login UI,
 
 ## CI Result
 
-Pending initial PR run.
+- PR: #43
+- Run: `31436854770`
+- Required check: `CI / Validate and Test`
+- Result: PASS (3m12s).
 
 ## Status
 
-READY_FOR_CI
+READY_TO_MERGE

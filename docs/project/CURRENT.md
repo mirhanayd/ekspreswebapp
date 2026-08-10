@@ -13,7 +13,8 @@ Security and transactional integrity hardening
 
 - Issue #42: authenticated passenger ownership.
 - Branch: `bugfix/42-passenger-ownership`.
-- Status: locally validated, awaiting PR/CI.
+- PR: #43.
+- Status: locally validated; initial required CI passed; awaiting merge.
 
 ## Completed Major Capabilities
 
