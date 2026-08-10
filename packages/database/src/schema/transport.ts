@@ -160,18 +160,26 @@ export const tripSeatsRelations = relations(tripSeats, ({ one, many }) => ({
   holds: many(seatHolds),
 }));
 
-export const seatHolds = pgTable('seat_holds', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  tripSeatId: uuid('trip_seat_id')
-    .references(() => tripSeats.id)
-    .notNull(),
-  userId: uuid('user_id').notNull(),
-  sessionId: text('session_id'),
-  status: text('status').notNull().default('active'), // active, released, expired, consumed
-  expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  releasedAt: timestamp('released_at'),
-});
+export const seatHolds = pgTable(
+  'seat_holds',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    tripSeatId: uuid('trip_seat_id')
+      .references(() => tripSeats.id)
+      .notNull(),
+    userId: uuid('user_id').notNull(),
+    sessionId: text('session_id'),
+    status: text('status').notNull().default('active'), // active, released, expired, consumed
+    expiresAt: timestamp('expires_at').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    releasedAt: timestamp('released_at'),
+  },
+  (table) => ({
+    oneActiveHoldPerSeat: uniqueIndex('seat_holds_one_active_per_seat_idx')
+      .on(table.tripSeatId)
+      .where(sql`${table.status} = 'active'`),
+  }),
+);
 
 export const seatHoldsRelations = relations(seatHolds, ({ one }) => ({
   tripSeat: one(tripSeats, {

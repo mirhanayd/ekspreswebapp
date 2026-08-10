@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException, ConflictException } from '@nestj
 import { DRIZZLE } from '../database/database.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { schema } from '@ekspres/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, gt, inArray, lte, sql } from 'drizzle-orm';
 
 const HOLD_TTL_SECONDS = 300; // 5 minutes
 
@@ -30,17 +30,29 @@ export class SeatsService {
       where: eq(schema.tripSeats.tripId, tripId),
     });
 
-    // Check for expired holds and mark them available
-    const now = new Date();
+    const activeHolds =
+      seats.length === 0
+        ? []
+        : await this.db.query.seatHolds.findMany({
+            where: and(
+              inArray(
+                schema.seatHolds.tripSeatId,
+                seats.map((seat) => seat.id),
+              ),
+              eq(schema.seatHolds.status, 'active'),
+              gt(schema.seatHolds.expiresAt, new Date()),
+            ),
+          });
+    const activelyHeldSeatIds = new Set(activeHolds.map((hold) => hold.tripSeatId));
+
     const processedSeats = seats.map((seat) => {
-      // If a seat is held but we don't have active hold info here,
-      // the status is computed from the DB. We trust the DB status.
       return {
         id: seat.id,
         seatNo: seat.seatNo,
         seatType: seat.seatType,
         priceMinor: seat.priceMinor,
-        status: seat.status,
+        status:
+          seat.status === 'held' && !activelyHeldSeatIds.has(seat.id) ? 'available' : seat.status,
       };
     });
 
@@ -103,43 +115,54 @@ export class SeatsService {
     return { generated: seatRows.length };
   }
 
-  /**
-   * Create a hold on a seat. Uses DB-level locking for concurrency safety.
-   */
+  /** Create a hold using a PostgreSQL row lock as the concurrency authority. */
   async createHold(tripId: string, seatNo: string, userId: string) {
-    // Find the trip seat
-    const tripSeat = await this.db.query.tripSeats.findFirst({
-      where: and(eq(schema.tripSeats.tripId, tripId), eq(schema.tripSeats.seatNo, seatNo)),
-    });
-
-    if (!tripSeat) {
-      throw new NotFoundException('Seat not found for this trip');
-    }
-
-    if (tripSeat.status !== 'available') {
-      throw new ConflictException(`Seat ${seatNo} is not available (status: ${tripSeat.status})`);
-    }
-
-    const expiresAt = new Date(Date.now() + HOLD_TTL_SECONDS * 1000);
-
-    // Update seat status and create hold in a transaction
     const result = await this.db.transaction(async (tx) => {
-      // Re-check status inside transaction for concurrency safety
-      const currentSeat = await tx.query.tripSeats.findFirst({
-        where: and(eq(schema.tripSeats.tripId, tripId), eq(schema.tripSeats.seatNo, seatNo)),
-      });
+      const lockedSeatResult = await tx.execute<{
+        id: string;
+        status: string;
+        version: number;
+      }>(sql`
+        SELECT id, status, version
+        FROM trip_seats
+        WHERE trip_id = ${tripId} AND seat_no = ${seatNo}
+        FOR UPDATE
+      `);
+      const currentSeat = lockedSeatResult.rows[0];
 
-      if (!currentSeat || currentSeat.status !== 'available') {
-        throw new ConflictException(`Seat ${seatNo} was taken by another user`);
+      if (!currentSeat) {
+        throw new NotFoundException('Seat not found for this trip');
       }
 
-      // Update seat status to held
+      const now = new Date();
+      await tx
+        .update(schema.seatHolds)
+        .set({ status: 'expired', releasedAt: now })
+        .where(
+          and(
+            eq(schema.seatHolds.tripSeatId, currentSeat.id),
+            eq(schema.seatHolds.status, 'active'),
+            lte(schema.seatHolds.expiresAt, now),
+          ),
+        );
+
+      const activeHold = await tx.query.seatHolds.findFirst({
+        where: and(
+          eq(schema.seatHolds.tripSeatId, currentSeat.id),
+          eq(schema.seatHolds.status, 'active'),
+        ),
+      });
+
+      if (activeHold || !['available', 'held'].includes(currentSeat.status)) {
+        throw new ConflictException(`Seat ${seatNo} is not available`);
+      }
+
+      const expiresAt = new Date(now.getTime() + HOLD_TTL_SECONDS * 1000);
       await tx
         .update(schema.tripSeats)
         .set({ status: 'held', version: currentSeat.version + 1 })
         .where(eq(schema.tripSeats.id, currentSeat.id));
 
-      // Create hold record
       const [hold] = await tx
         .insert(schema.seatHolds)
         .values({
@@ -165,29 +188,36 @@ export class SeatsService {
    * Release a hold on a seat.
    */
   async releaseHold(holdId: string, userId: string) {
-    const hold = await this.db.query.seatHolds.findFirst({
-      where: and(eq(schema.seatHolds.id, holdId), eq(schema.seatHolds.userId, userId)),
-      with: {
-        tripSeat: true,
-      },
-    });
-
-    if (!hold) {
-      throw new NotFoundException('Hold not found');
-    }
-
-    if (hold.status !== 'active') {
-      throw new ConflictException(`Hold is not active (status: ${hold.status})`);
-    }
-
     await this.db.transaction(async (tx) => {
-      // Release the hold
+      const requestedHold = await tx.query.seatHolds.findFirst({
+        where: and(eq(schema.seatHolds.id, holdId), eq(schema.seatHolds.userId, userId)),
+      });
+
+      if (!requestedHold) {
+        throw new NotFoundException('Hold not found');
+      }
+
+      await tx.execute(
+        sql`SELECT id FROM trip_seats WHERE id = ${requestedHold.tripSeatId} FOR UPDATE`,
+      );
+
+      const hold = await tx.query.seatHolds.findFirst({
+        where: and(eq(schema.seatHolds.id, holdId), eq(schema.seatHolds.userId, userId)),
+      });
+
+      if (!hold) {
+        throw new NotFoundException('Hold not found');
+      }
+
+      if (hold.status !== 'active') {
+        throw new ConflictException(`Hold is not active (status: ${hold.status})`);
+      }
+
       await tx
         .update(schema.seatHolds)
         .set({ status: 'released', releasedAt: new Date() })
         .where(eq(schema.seatHolds.id, holdId));
 
-      // Set seat back to available
       await tx
         .update(schema.tripSeats)
         .set({ status: 'available' })

@@ -43,6 +43,13 @@
       "when": 1786278875648,
       "tag": "0005_ticket_seat_unique_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786323142869,
+      "tag": "0006_seat-hold-active-unique",
+      "breakpoints": true
     }
   ]
 }
