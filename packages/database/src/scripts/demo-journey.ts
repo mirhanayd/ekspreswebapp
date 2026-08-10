@@ -65,9 +65,12 @@ async function main() {
   });
   if (ticket.orderId !== order.id)
     throw new Error('Issued ticket is not linked to the paid order.');
-  await request<{ qrToken: string }>(`/tickets/${ticket.id}/qr`, {
+  const qr = await request<{ payload: string; expiresAt: string }>(`/tickets/${ticket.id}/qr`, {
     headers: authenticatedHeaders,
   });
+  if (qr.payload.split('.').length !== 3 || new Date(qr.expiresAt) <= new Date()) {
+    throw new Error('Ticket QR payload is not a valid short-lived signed token.');
+  }
 
   console.log('Demo passenger journey verified: login -> hold -> order -> pay -> ticket -> QR.');
 }

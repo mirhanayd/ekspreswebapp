@@ -1,37 +1,37 @@
+import { redirect } from 'next/navigation';
 import LiveMapView from './LiveMapView';
-import { notFound } from 'next/navigation';
+import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
 
 export default async function LiveTrackingPage({
-  params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ ticketId?: string }>;
 }) {
-  const { id } = await params;
   const { ticketId } = await searchParams;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+  if (!ticketId) redirect('/tickets');
 
-  let trip = null;
-
-  try {
-    const res = await fetch(`${apiUrl}/transport/trips/${id}`, {
-      cache: 'no-store',
-    });
-    if (res.ok) {
-      trip = await res.json();
-    }
-  } catch (err) {
-    console.error('Failed to fetch trip for live tracking', err);
+  const response = await authenticatedApiFetch(`/tracking/tickets/${ticketId}/bootstrap`);
+  if (!response || response.status === 401) {
+    redirect(`/login?returnTo=${encodeURIComponent(`/tickets/${ticketId}`)}`);
   }
-
-  if (!trip) {
-    return notFound();
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
+          <h1 className="text-xl font-bold text-gray-900">Canlı takip kullanılamıyor</h1>
+          <p className="mt-2 text-gray-600">
+            {payload.message || 'Bu bilet canlı takip için uygun değil.'}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="h-screen w-full overflow-hidden bg-gray-50">
-      <LiveMapView trip={trip} ticketId={ticketId} />
+      <LiveMapView bootstrap={await response.json()} socketOrigin={new URL(API_BASE_URL).origin} />
     </div>
   );
 }

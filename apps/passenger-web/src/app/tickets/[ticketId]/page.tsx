@@ -2,6 +2,7 @@ import { ChevronLeft, QrCode, MapPin, Clock, Bus, User, Map } from 'lucide-react
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
+import QRCode from 'qrcode';
 
 export default async function TicketDetailPage({
   params,
@@ -10,7 +11,8 @@ export default async function TicketDetailPage({
 }) {
   const { ticketId } = await params;
   let ticket: any = null;
-  let qrToken: string | null = null;
+  let qrImage: string | null = null;
+  let qrExpiresAt: string | null = null;
   let error = null;
   const res = await authenticatedApiFetch(`/tickets/${ticketId}`);
   if (!res || res.status === 401) redirect(`/login?returnTo=/tickets/${ticketId}`);
@@ -22,7 +24,12 @@ export default async function TicketDetailPage({
     const qrRes = await authenticatedApiFetch(`/tickets/${ticketId}/qr`);
     if (qrRes?.ok) {
       const qrData = await qrRes.json();
-      qrToken = qrData.qrToken;
+      qrImage = await QRCode.toDataURL(qrData.payload, {
+        errorCorrectionLevel: 'M',
+        margin: 2,
+        width: 256,
+      });
+      qrExpiresAt = qrData.expiresAt;
     }
   } catch (err: any) {
     error = err.message;
@@ -54,7 +61,8 @@ export default async function TicketDetailPage({
     });
   };
 
-  const isLiveEligible = ticket.status === 'active'; // Future/Live tracking logic
+  const isLiveEligible =
+    ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
 
   return (
     <div className="min-h-screen bg-gray-50 pb-8">
@@ -142,14 +150,29 @@ export default async function TicketDetailPage({
 
             {/* QR Section */}
             <div className="border-t border-dashed border-gray-200 pt-6 text-center">
-              <div className="inline-block p-4 border-2 border-gray-100 rounded-2xl bg-white mb-2">
-                <QrCode className="h-32 w-32 text-gray-800" />
+              <div className="inline-block p-3 border-2 border-gray-100 rounded-2xl bg-white mb-2">
+                {qrImage ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={qrImage}
+                    alt={`${ticket.ticketNo} bilet QR kodu`}
+                    width={192}
+                    height={192}
+                  />
+                ) : (
+                  <QrCode className="h-32 w-32 text-gray-300" />
+                )}
               </div>
               <p className="text-xs text-gray-500 max-w-xs mx-auto">
                 Bu QR kodunu bilet kontrol noktasında okutunuz.
-                {qrToken && (
-                  <span className="block mt-1 opacity-50 break-all">
-                    {qrToken.substring(0, 16)}...
+                {qrExpiresAt && (
+                  <span className="block mt-1">
+                    Güvenli kod{' '}
+                    {new Date(qrExpiresAt).toLocaleTimeString('tr-TR', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    saatine kadar geçerlidir.
                   </span>
                 )}
               </p>

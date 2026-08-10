@@ -1,4 +1,11 @@
-import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { DRIZZLE } from '../database/database.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { schema } from '@ekspres/database';
@@ -6,7 +13,10 @@ import { eq, desc, and } from 'drizzle-orm';
 
 @Injectable()
 export class TicketsService {
-  constructor(@Inject(DRIZZLE) private db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject(DRIZZLE) private db: NodePgDatabase<typeof schema>,
+    private jwtService: JwtService,
+  ) {}
 
   async getMyTickets(userId: string) {
     const userTickets = await this.db.query.tickets.findMany({
@@ -37,7 +47,10 @@ export class TicketsService {
     for (const ticket of userTickets) {
       if (ticket.status === 'cancelled') {
         cancelled.push(ticket);
-      } else if (new Date(ticket.trip.departureTime) < now) {
+      } else if (
+        new Date(ticket.trip.departureTime) < now &&
+        !['boarding', 'in_transit'].includes(ticket.trip.status)
+      ) {
         past.push(ticket);
       } else {
         active.push(ticket);
@@ -91,9 +104,20 @@ export class TicketsService {
     if (ticket.userId !== userId) {
       throw new ForbiddenException('You do not have access to this ticket');
     }
+    if (ticket.status !== 'active') throw new ConflictException('Ticket is not active');
 
-    // In a real app, generate a fresh short-lived JWT or signed URL
-    // Here we return the token hash/string which the UI will render as QR
-    return { qrToken: ticket.qrTokenHash };
+    const expiresInSeconds = 5 * 60;
+    return {
+      payload: this.jwtService.sign(
+        {
+          purpose: 'ticket-qr',
+          sub: ticket.id,
+          ticketNo: ticket.ticketNo,
+          tripId: ticket.tripId,
+        },
+        { expiresIn: expiresInSeconds },
+      ),
+      expiresAt: new Date(Date.now() + expiresInSeconds * 1000).toISOString(),
+    };
   }
 }

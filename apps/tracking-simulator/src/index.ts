@@ -1,137 +1,110 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { schema } from '@ekspres/database';
-import { eq, or } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import Redis from 'ioredis';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { Coordinate, headingBetween, pointAtProgress } from './route-progress.js';
 
-dotenv.config({ path: path.resolve(__dirname, '../../../../.env') }); // Load workspace .env
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 const TICK_RATE_MS = 2000;
-const SPEED_MULTIPLIER = 10; // To make the demo move faster
+const PROGRESS_PER_TICK = 0.01;
+const START_PROGRESS = Number(process.env.SIMULATOR_START_PERCENT || 18) / 100;
+
+type ActiveTripRow = {
+  tripId: string;
+  busId: string;
+  geometry: string;
+};
+
+type ActiveTripState = ActiveTripRow & {
+  coordinates: Coordinate[];
+  progress: number;
+  sequence: number;
+};
 
 async function main() {
-  console.log('🚀 Starting Tracking Simulator...');
+  console.log('Tracking simulator starting...');
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('DATABASE_URL is required.');
+  const pool = new Pool({ connectionString });
+  const db = drizzle(pool);
+  const redis = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+  const activeTrips = new Map<string, ActiveTripState>();
 
-  // Connect to Postgres
-  const dbUrl =
-    process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/ekspres_db';
-  const pool = new Pool({ connectionString: dbUrl });
-  const db = drizzle(pool, { schema });
-
-  // Connect to Redis
-  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-  const redis = new Redis(redisUrl);
-
-  redis.on('connect', () => console.log('✅ Connected to Redis'));
-  redis.on('error', (err) => console.error('❌ Redis error', err));
-
-  // State to hold active trips and their progress
-  const activeTrips: Record<
-    string,
-    {
-      tripId: string;
-      routeLines: [number, number][]; // [lng, lat]
-      currentIdx: number;
-      completed: boolean;
+  async function syncActiveTrip() {
+    const result = await db.execute<ActiveTripRow>(sql`
+      SELECT
+        t.id AS "tripId",
+        t.bus_id AS "busId",
+        ST_AsGeoJSON(r.geometry)::text AS geometry
+      FROM trips t
+      INNER JOIN routes r ON r.id = t.route_id
+      WHERE t.status = 'in_transit' AND r.geometry IS NOT NULL
+    `);
+    const currentIds = new Set(result.rows.map((trip) => trip.tripId));
+    for (const tripId of activeTrips.keys()) {
+      if (!currentIds.has(tripId)) activeTrips.delete(tripId);
     }
-  > = {};
-
-  const syncActiveTrips = async () => {
-    // console.log('Syncing active trips from database...');
-    const trips = await db.query.trips.findMany({
-      where: or(
-        eq(schema.trips.status, 'in_transit'),
-        eq(schema.trips.status, 'boarding'),
-        eq(schema.trips.status, 'scheduled'),
-      ),
-      with: {
-        route: {
-          with: {
-            origin: true,
-            destination: true,
-          },
-        },
-      },
-    });
-
-    for (const trip of trips) {
-      if (!activeTrips[trip.id]) {
-        // We need a path. We'll generate a simple interpolated line between origin and destination for the demo if actual route line isn't detailed
-        const originGeo = trip.route.origin.coordinates as {
-          type: string;
-          coordinates: [number, number];
-        };
-        const destGeo = trip.route.destination.coordinates as {
-          type: string;
-          coordinates: [number, number];
-        };
-
-        const pathCoords: [number, number][] = [];
-        const steps = 100;
-        for (let i = 0; i <= steps; i++) {
-          const lng =
-            originGeo.coordinates[0] +
-            (destGeo.coordinates[0] - originGeo.coordinates[0]) * (i / steps);
-          const lat =
-            originGeo.coordinates[1] +
-            (destGeo.coordinates[1] - originGeo.coordinates[1]) * (i / steps);
-          pathCoords.push([lng, lat]);
-        }
-
-        activeTrips[trip.id] = {
-          tripId: trip.id,
-          routeLines: pathCoords,
-          currentIdx: 0,
-          completed: false,
-        };
-        console.log(
-          `➕ Added trip ${trip.id} to simulator (${trip.route.origin.name} -> ${trip.route.destination.name})`,
-        );
-      }
-    }
-  };
-
-  // Initial sync
-  await syncActiveTrips();
-
-  // Simulation Loop
-  setInterval(async () => {
-    await syncActiveTrips();
-
-    for (const tripId in activeTrips) {
-      const state = activeTrips[tripId];
-      if (state.completed) continue;
-
-      const coord = state.routeLines[Math.floor(state.currentIdx)];
-
-      // Publish to Redis
-      const message = JSON.stringify({
-        tripId,
-        location: {
-          lng: coord[0],
-          lat: coord[1],
-          heading: 0, // Placeholder
-          speed: 80,
-          timestamp: new Date().toISOString(),
-        },
+    for (const trip of result.rows) {
+      if (activeTrips.has(trip.tripId)) continue;
+      const geoJson = JSON.parse(trip.geometry) as { type: string; coordinates: Coordinate[] };
+      if (geoJson.type !== 'LineString' || geoJson.coordinates.length < 2) continue;
+      activeTrips.set(trip.tripId, {
+        ...trip,
+        coordinates: geoJson.coordinates,
+        progress: START_PROGRESS,
+        sequence: 0,
       });
+      console.log(`Simulating in-transit trip ${trip.tripId} on its PostGIS route.`);
+    }
+  }
 
-      redis.publish('trip_locations', message);
-
-      // Advance
-      state.currentIdx += (1 * SPEED_MULTIPLIER) / 10; // tune speed
-      if (state.currentIdx >= state.routeLines.length - 1) {
-        state.currentIdx = state.routeLines.length - 1;
-        state.completed = true;
-        console.log(`🏁 Trip ${tripId} has reached destination.`);
+  await syncActiveTrip();
+  let ticking = false;
+  const interval = setInterval(async () => {
+    if (ticking) return;
+    ticking = true;
+    try {
+      await syncActiveTrip();
+      for (const state of activeTrips.values()) {
+        const coordinate = pointAtProgress(state.coordinates, state.progress);
+        const lookAhead = pointAtProgress(state.coordinates, Math.min(1, state.progress + 0.005));
+        const position = {
+          tripId: state.tripId,
+          busId: state.busId,
+          longitude: coordinate[0],
+          latitude: coordinate[1],
+          speedKph: state.progress >= 1 ? 0 : 72,
+          headingDeg: headingBetween(coordinate, lookAhead),
+          recordedAt: new Date().toISOString(),
+          sequence: ++state.sequence,
+          source: 'SIMULATOR' as const,
+        };
+        const message = JSON.stringify(position);
+        await redis
+          .multi()
+          .set(`tracking:latest:${state.tripId}`, message, 'EX', 300)
+          .publish('trip_locations', message)
+          .exec();
+        state.progress = state.progress >= 1 ? START_PROGRESS : state.progress + PROGRESS_PER_TICK;
       }
+    } finally {
+      ticking = false;
     }
   }, TICK_RATE_MS);
+
+  async function shutdown() {
+    clearInterval(interval);
+    await redis.quit();
+    await pool.end();
+  }
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
 }
 
-main().catch((err: Error) => {
-  console.error('Fatal error in simulator:', err);
+main().catch((error: Error) => {
+  console.error('Tracking simulator failed:', error.message);
   process.exit(1);
 });

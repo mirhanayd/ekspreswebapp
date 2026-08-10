@@ -209,7 +209,7 @@ async function insertActiveTicketScenario(client: PoolClient) {
       DEMO_IDS.liveTrip,
       tripSeatId,
       DEMO_IDS.activeOrder,
-      DEMO_IDS.activeQrToken,
+      DEMO_IDS.activeQrTokenHash,
     ],
   );
 }

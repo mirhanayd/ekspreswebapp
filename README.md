@@ -59,6 +59,14 @@ pnpm --filter passenger-web dev
 
 Open `http://localhost:3000`, sign in as the demo passenger, search tomorrow's Siirt → Diyarbakır service, select a seat, complete the simulated payment, and open the issued ticket. With the API running, `pnpm demo:journey` independently verifies login → hold → order → payment → ticket → QR through real HTTP requests.
 
+For the live-tracking segment, start the deterministic simulator in a third terminal:
+
+```bash
+pnpm tracking:simulate
+```
+
+Open the seeded active ticket from **Biletlerim** and choose **Canlı İzle**. The simulator publishes only the in-transit demo trip, follows its PostGIS LineString, and refreshes the entitled map every two seconds. `pnpm demo:reset` also clears the last Redis tracking snapshot; `pnpm tracking:reset` can clear only that snapshot.
+
 The API is served at `http://localhost:3001/api/v1`; Swagger is available at `http://localhost:3001/api/docs`.
 
 ### Local Database

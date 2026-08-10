@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 import { TrackingGateway } from './tracking.gateway';
+import { isTrackingPosition } from './tracking.types';
 
 @Injectable()
 export class TrackingService implements OnModuleInit, OnModuleDestroy {
@@ -37,10 +38,9 @@ export class TrackingService implements OnModuleInit, OnModuleDestroy {
     this.subscriber.on('message', (channel, message) => {
       if (channel === 'trip_locations') {
         try {
-          const data = JSON.parse(message);
-          if (data.tripId && data.location) {
-            // Forward to connected clients in the trip's room
-            this.trackingGateway.broadcastLocation(data.tripId, data.location);
+          const data: unknown = JSON.parse(message);
+          if (isTrackingPosition(data)) {
+            this.trackingGateway.broadcastLocation(data);
           }
         } catch (e) {
           this.logger.error('Failed to parse location message', e);

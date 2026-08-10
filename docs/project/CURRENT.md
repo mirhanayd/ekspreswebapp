@@ -2,19 +2,19 @@
 
 ## Current Main
 
-- SHA: `943263f1ec15ba54476df0d4ae25125dac3272b0`
-- Baseline: PR #45 merged; seat concurrency, passenger ownership, admin authorization, and payment integrity are runtime-proven.
+- SHA: `f185ad02c50942b95de49f8d648427fc6d129413`
+- Baseline: PR #47 merged; the deterministic authenticated passenger journey is presentation-ready.
 
 ## Current Phase
 
-Deterministic presentation demo and passenger journey
+Secure QR and ticket-entitled route tracking
 
 ## Current Campaign
 
-- Issue #46: deterministic demo and authenticated passenger journey.
-- Branch: `feature/46-demo-passenger-journey`.
-- PR: #47.
-- Status: locally validated; required PR CI passed; ready to merge.
+- Issue #48: secure QR and ticket-entitled route tracking.
+- Branch: `feature/48-secure-qr-tracking`.
+- PR: #49 open.
+- Status: implementation and runtime verification complete; required CI passed.
 
 ## Completed Major Capabilities
 
@@ -28,10 +28,12 @@ Deterministic presentation demo and passenger journey
 - Deterministic, guarded demo reset with stable accounts, PostGIS route geometry, future trips, seats, active ticket, and live scenario.
 - Cookie-backed passenger login/register/logout, trip search, authenticated seat hold, server-priced checkout, payment, ticket list/detail, and QR retrieval.
 - Real HTTP demo journey verification from login through QR.
+- Real scannable QR rendering with short-lived signed payloads and hashed-at-rest ticket secrets.
+- Ticket-entitled tracking bootstrap/socket access with Redis snapshot and PostGIS-route simulator movement.
 
 ## Remaining Work
 
-1. Real QR rendering, entitled route-based tracking, and functional admin operations.
+1. Functional authenticated admin operations.
 2. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
 3. Full release verification and final readiness audit.
 
@@ -41,4 +43,4 @@ None.
 
 ## Next Campaign
 
-QR rendering, tracking entitlement/route realism, and functional admin operations.
+Functional authenticated admin operations and demo controls.

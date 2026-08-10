@@ -16,6 +16,9 @@ import { SeatsController } from '../seats/seats.controller';
 import { SeatsService } from '../seats/seats.service';
 import { TicketsController } from '../tickets/tickets.controller';
 import { TicketsService } from '../tickets/tickets.service';
+import { TrackingController } from '../tracking/tracking.controller';
+import { TrackingAccessService } from '../tracking/tracking-access.service';
+import { TrackingLatestService } from '../tracking/tracking-latest.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -70,18 +73,26 @@ describe('Passenger ownership HTTP integration', () => {
           signOptions: { expiresIn: '1d' },
         }),
       ],
-      controllers: [AuthController, SeatsController, CheckoutController, TicketsController],
+      controllers: [
+        AuthController,
+        SeatsController,
+        CheckoutController,
+        TicketsController,
+        TrackingController,
+      ],
       providers: [
         AuthService,
         SeatsService,
         CheckoutService,
         TicketsService,
+        TrackingAccessService,
         JwtStrategy,
         {
           provide: ConfigService,
           useValue: { get: (key: string) => (key === 'JWT_SECRET' ? TEST_JWT_SECRET : undefined) },
         },
         { provide: DRIZZLE, useValue: client.db },
+        { provide: TrackingLatestService, useValue: { get: async () => null } },
         { provide: APP_GUARD, useClass: JwtAuthGuard },
       ],
     }).compile();
@@ -186,6 +197,7 @@ describe('Passenger ownership HTTP integration', () => {
       () => request(app.getHttpServer()).get('/tickets'),
       () => request(app.getHttpServer()).get(`/tickets/${id}`),
       () => request(app.getHttpServer()).get(`/tickets/${id}/qr`),
+      () => request(app.getHttpServer()).get(`/tracking/tickets/${id}/bootstrap`),
     ];
 
     for (const makeRequest of unauthorizedRequests) {
@@ -273,6 +285,44 @@ describe('Passenger ownership HTTP integration', () => {
 
     await request(app.getHttpServer()).get(`/checkout/order/${orderId}`).set(asUserA).expect(200);
     await request(app.getHttpServer()).get(`/tickets/${ticketId}`).set(asUserA).expect(200);
-    await request(app.getHttpServer()).get(`/tickets/${ticketId}/qr`).set(asUserA).expect(200);
+    const qrResponse = await request(app.getHttpServer())
+      .get(`/tickets/${ticketId}/qr`)
+      .set(asUserA)
+      .expect(200);
+    expect(qrResponse.body.payload.split('.')).toHaveLength(3);
+    const storedQr = await client.pool.query<{ qr_token_hash: string }>(
+      'SELECT qr_token_hash FROM tickets WHERE id = $1',
+      [ticketId],
+    );
+    expect(qrResponse.body.payload).not.toContain(storedQr.rows[0].qr_token_hash);
+
+    await client.pool.query(
+      `UPDATE routes
+       SET geometry = ST_GeomFromText('LINESTRING(41.9419 37.9274, 40.2189 37.9144)', 4326)
+       WHERE id = $1`,
+      [seat.routeId],
+    );
+    await client.pool.query("UPDATE trips SET status = 'in_transit' WHERE id = $1", [seat.tripId]);
+    await request(app.getHttpServer())
+      .get(`/tracking/tickets/${ticketId}/bootstrap`)
+      .set(asUserB)
+      .expect(404);
+    const trackingResponse = await request(app.getHttpServer())
+      .get(`/tracking/tickets/${ticketId}/bootstrap`)
+      .set(asUserA)
+      .expect(200);
+    expect(trackingResponse.body.routeGeometry.type).toBe('LineString');
+    const accessService = app.get(TrackingAccessService);
+    const claims = await accessService.authorizeSocketToken(trackingResponse.body.accessToken);
+    expect(claims.ticketId).toBe(ticketId);
+
+    await client.pool.query(
+      "UPDATE tickets SET status = 'cancelled', cancelled_at = now() WHERE id = $1",
+      [ticketId],
+    );
+    await request(app.getHttpServer()).get(`/tickets/${ticketId}/qr`).set(asUserA).expect(409);
+    await expect(
+      accessService.authorizeSocketToken(trackingResponse.body.accessToken),
+    ).rejects.toThrow('Ticket is not entitled to live tracking');
   });
 });

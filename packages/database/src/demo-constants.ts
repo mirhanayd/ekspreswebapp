@@ -26,5 +26,5 @@ export const DEMO_IDS = {
   activeOrder: demoUuid('order:active-ticket'),
   activePayment: demoUuid('payment:active-ticket'),
   activeTicket: demoUuid('ticket:active'),
-  activeQrToken: demoUuid('ticket:active:qr'),
+  activeQrTokenHash: createHash('sha256').update('siirt-kurtalan-demo:ticket-qr').digest('hex'),
 } as const;

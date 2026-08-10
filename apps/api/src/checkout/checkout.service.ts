@@ -9,7 +9,7 @@ import { DRIZZLE } from '../database/database.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { schema } from '@ekspres/database';
 import { eq, and, gt, sql } from 'drizzle-orm';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 
 function generateOrderNo(): string {
   const now = new Date();
@@ -249,7 +249,7 @@ export class CheckoutService {
         .set({ status: 'consumed' })
         .where(eq(schema.seatHolds.id, activeHold.id));
 
-      const qrToken = randomUUID();
+      const qrTokenHash = createHash('sha256').update(randomUUID()).digest('hex');
       const [ticket] = await tx
         .insert(schema.tickets)
         .values({
@@ -259,7 +259,7 @@ export class CheckoutService {
           tripSeatId: order.tripSeatId,
           orderId,
           status: 'active',
-          qrTokenHash: qrToken, // In production: hash this
+          qrTokenHash,
         })
         .returning();
 
