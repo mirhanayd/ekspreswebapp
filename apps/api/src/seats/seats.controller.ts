@@ -4,6 +4,7 @@ import { Public } from '../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AuthenticatedPrincipal } from '../auth/authenticated-principal';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 @ApiTags('Seats')
 @Controller('seats')
@@ -17,8 +18,8 @@ export class SeatsController {
     return this.seatsService.getSeatMap(tripId);
   }
 
-  @Public()
   @Post('trip/:tripId/generate')
+  @Roles('admin')
   @ApiOperation({ summary: 'Generate seats for a trip (admin/seed)' })
   generateSeats(@Param('tripId') tripId: string) {
     return this.seatsService.generateSeatsForTrip(tripId);

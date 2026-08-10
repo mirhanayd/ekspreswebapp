@@ -74,6 +74,9 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - **NEVER** print or expose tokens, credentials, cookies, SSH keys, or secret values.
 - **NEVER** change the repository visibility from PRIVATE.
 - Do not commit `.env` files with actual secrets; use `.env.example`.
+- Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
+- Admin APIs must declare `@Roles('admin')` and remain protected by the global JWT and roles guards.
+- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, and ticket concurrency invariants.
 
 ## 11. Migration Rules
 

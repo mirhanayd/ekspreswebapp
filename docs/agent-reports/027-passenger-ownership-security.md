@@ -55,7 +55,9 @@ Admin role authorization, expired/concurrent payment safety, passenger login UI,
 - Run: `31436854770`
 - Required check: `CI / Validate and Test`
 - Result: PASS (3m12s).
+- Final documentation run: `31437135377`, PASS (3m23s).
+- Merge commit: `a257e606491e86037692783cd1c6a65c3b9a963b`.
 
 ## Status
 
-READY_TO_MERGE
+MERGED
