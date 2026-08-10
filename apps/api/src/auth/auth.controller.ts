@@ -1,8 +1,10 @@
-import { Controller, Post, Body, Get, Request } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { RegisterDto, RegisterDtoSchema, LoginDto, LoginDtoSchema } from './dto/auth.dto';
+import { RegisterDtoSchema, LoginDtoSchema } from './dto/auth.dto';
 import { Public } from './decorators/public.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { AuthenticatedPrincipal } from './authenticated-principal';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -28,7 +30,7 @@ export class AuthController {
   @Get('me')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
-  getProfile(@Request() req: any) {
-    return this.authService.me(req.user.userId);
+  getProfile(@CurrentUser() user: AuthenticatedPrincipal) {
+    return this.authService.me(user.userId);
   }
 }

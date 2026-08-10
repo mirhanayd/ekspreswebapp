@@ -1,20 +1,19 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { CheckoutService } from './checkout.service';
-import { Public } from '../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { AuthenticatedPrincipal } from '../auth/authenticated-principal';
 
 @ApiTags('Checkout')
 @Controller('checkout')
 export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
-  @Public() // For demo purposes
   @Post('order')
   @ApiOperation({ summary: 'Create an order from a held seat' })
   createOrder(
     @Body()
     body: {
-      userId: string;
       tripId: string;
       seatNo: string;
       holdId: string;
@@ -24,21 +23,20 @@ export class CheckoutController {
       passengerEmail?: string;
       idempotencyKey?: string;
     },
+    @CurrentUser() user: AuthenticatedPrincipal,
   ) {
-    return this.checkoutService.createOrder(body);
+    return this.checkoutService.createOrder(user.userId, body);
   }
 
-  @Public()
   @Post('order/:orderId/pay')
   @ApiOperation({ summary: 'Process demo payment for an order' })
-  processPayment(@Param('orderId') orderId: string, @Body() body: { userId: string }) {
-    return this.checkoutService.processPayment(orderId, body.userId);
+  processPayment(@Param('orderId') orderId: string, @CurrentUser() user: AuthenticatedPrincipal) {
+    return this.checkoutService.processPayment(orderId, user.userId);
   }
 
-  @Public()
   @Get('order/:orderId')
   @ApiOperation({ summary: 'Get order details' })
-  getOrder(@Param('orderId') orderId: string) {
-    return this.checkoutService.getOrder(orderId);
+  getOrder(@Param('orderId') orderId: string, @CurrentUser() user: AuthenticatedPrincipal) {
+    return this.checkoutService.getOrder(orderId, user.userId);
   }
 }
