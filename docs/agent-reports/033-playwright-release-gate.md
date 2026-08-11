@@ -33,25 +33,25 @@ browser proof while guaranteeing explicit cleanup and truthful exit codes.
 
 ## Local Validation
 
-| Check                                     | Result |
-| ----------------------------------------- | ------ |
-| Demo reset before suite                   | PASS   |
-| Passenger purchase/QR/live journey        | PASS   |
-| Passenger-to-admin denial                 | 403    |
-| Admin dashboard/tickets/live fleet        | PASS   |
-| MapLibre canvas and simulator live values | PASS   |
-| Mobile page-level overflow assertions     | PASS   |
-| Exact service process cleanup             | PASS   |
-| End-to-end runner terminal result         | PASS   |
-| Formatting                               | PASS   |
-| Lint                                     | PASS (0 errors; 117 existing API warnings) |
-| Typecheck                                | PASS   |
-| Unit tests                               | PASS   |
-| Production build                         | PASS   |
-| API integration                          | PASS (12/12) |
-| Database integration                     | PASS (2/2) |
-| PostgreSQL/PostGIS verification           | PASS   |
-| Deterministic demo verification           | PASS   |
+| Check                                     | Result                                     |
+| ----------------------------------------- | ------------------------------------------ |
+| Demo reset before suite                   | PASS                                       |
+| Passenger purchase/QR/live journey        | PASS                                       |
+| Passenger-to-admin denial                 | 403                                        |
+| Admin dashboard/tickets/live fleet        | PASS                                       |
+| MapLibre canvas and simulator live values | PASS                                       |
+| Mobile page-level overflow assertions     | PASS                                       |
+| Exact service process cleanup             | PASS                                       |
+| End-to-end runner terminal result         | PASS                                       |
+| Formatting                                | PASS                                       |
+| Lint                                      | PASS (0 errors; 117 existing API warnings) |
+| Typecheck                                 | PASS                                       |
+| Unit tests                                | PASS                                       |
+| Production build                          | PASS                                       |
+| API integration                           | PASS (12/12)                               |
+| Database integration                      | PASS (2/2)                                 |
+| PostgreSQL/PostGIS verification           | PASS                                       |
+| Deterministic demo verification           | PASS                                       |
 
 ## CI Result
 
