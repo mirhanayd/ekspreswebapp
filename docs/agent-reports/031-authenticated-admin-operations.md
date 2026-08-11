@@ -49,8 +49,8 @@ trips, one ticket, one active/live vehicle, one daily-sales row, and a real deri
 
 ## CI Result
 
-- PR: pending publication.
-- Required check: pending.
+- PR: #51.
+- Required check: in progress.
 
 ## Status
 

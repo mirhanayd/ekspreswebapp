@@ -13,7 +13,7 @@ Authenticated admin operations
 
 - Issue #50: complete authenticated admin operations.
 - Branch: `feature/50-admin-operations`.
-- PR: pending publication.
+- PR: #51 open.
 - Status: implementation, production runtime proof, and all local validation complete.
 
 ## Completed Major Capabilities
