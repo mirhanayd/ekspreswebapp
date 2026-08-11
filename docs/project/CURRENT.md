@@ -1,20 +1,22 @@
 # Current Project Status
 
-## Current Main
+## Verified Release Baseline
 
 - SHA: `63339e21ae419583051219bd9eec68f9ba041d97`
 - Baseline: PR #54 merged; the deterministic Playwright release gate is required and green.
+- Closure artifact: PR #56 final release-readiness audit and roadmap reconciliation.
 
 ## Current Phase
 
-Final release readiness audit
+Demo MVP presentation release complete
 
 ## Current Campaign
 
 - Issue #55: final release readiness audit and roadmap reconciliation.
 - Branch: `docs/55-final-release-readiness-audit`.
 - PR: #56.
-- Status: audit published and all historical roadmap issues reconciled; exact-head CI pending.
+- Status: final audit complete; all historical roadmap issues reconciled; audit evidence head passed
+  full CI run `31488289474`.
 
 ## Completed Major Capabilities
 
@@ -40,9 +42,8 @@ Final release readiness audit
 
 ## Remaining Work
 
-1. Merge the final audit through green CI.
-2. Before an external presentation, run the deterministic preflight on the presentation machine and
-   prepare an offline recording fallback.
+No remaining Demo MVP engineering work. Before an external presentation, run the deterministic
+preflight on the presentation machine and prepare an offline recording fallback.
 
 ## Current Blocker
 
