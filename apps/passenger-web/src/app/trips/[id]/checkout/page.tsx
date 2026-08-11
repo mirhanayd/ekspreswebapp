@@ -1,4 +1,4 @@
-import { ChevronRight, CreditCard } from 'lucide-react';
+import { ArrowRight, CreditCard, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import CheckoutForm from './CheckoutForm';
 import { API_BASE_URL } from '@/lib/server-api';
@@ -12,75 +12,70 @@ export default async function CheckoutPage({
 }) {
   const { id } = await params;
   const { seatNo, holdId } = await searchParams;
-
-  if (!seatNo || !holdId) {
+  if (!seatNo || !holdId)
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 text-center max-w-md">
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Koltuk seçimi gerekli</h2>
-          <p className="text-gray-500 mb-6">Ödeme yapabilmek için önce bir koltuk seçmelisiniz.</p>
-          <Link
-            href={`/trips/${id}/seats`}
-            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-          >
-            Koltuk Seçimine Dön
+      <div className="page-shell grid place-items-center">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-xl font-black">Koltuk seçimi gerekli</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Ödeme adımına geçmeden önce uygun bir koltuk ayırın.
+          </p>
+          <Link href={`/trips/${id}/seats`} className="primary-action mt-6">
+            Koltuk seçimine dön
           </Link>
         </div>
       </div>
     );
-  }
-
-  // Fetch trip info for route name
-  const apiUrl = API_BASE_URL;
   let routeName = 'Sefer';
   let priceMinor: number | null = null;
-
   try {
-    const [tripRes, seatRes] = await Promise.all([
-      fetch(`${apiUrl}/transport/trips/${id}`, { cache: 'no-store' }),
-      fetch(`${apiUrl}/seats/trip/${id}`, { cache: 'no-store' }),
+    const [tripResponse, seatResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' }),
+      fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
     ]);
-    if (tripRes.ok && seatRes.ok) {
-      const [tripData, seatData] = await Promise.all([tripRes.json(), seatRes.json()]);
-      routeName = `${tripData.route?.origin?.name || ''} → ${tripData.route?.destination?.name || ''}`;
+    if (tripResponse.ok && seatResponse.ok) {
+      const [trip, seats] = await Promise.all([tripResponse.json(), seatResponse.json()]);
+      routeName = `${trip.route?.origin?.name || ''} → ${trip.route?.destination?.name || ''}`;
       priceMinor =
-        seatData.seats?.find((seat: { seatNo: string }) => seat.seatNo === seatNo)?.priceMinor ??
-        null;
+        seats.seats?.find((seat: { seatNo: string }) => seat.seatNo === seatNo)?.priceMinor ?? null;
     }
   } catch {
-    // Use default route name
+    // The verified price guard below prevents checkout with incomplete data.
   }
-
-  if (priceMinor === null) {
-    return <div className="p-8 text-center text-red-700">Koltuk fiyatı doğrulanamadı.</div>;
-  }
-
+  if (priceMinor === null)
+    return (
+      <div className="page-shell grid place-items-center">
+        <p className="rounded-xl bg-red-50 p-5 font-semibold text-red-800">
+          Koltuk fiyatı doğrulanamadı.
+        </p>
+      </div>
+    );
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-lg mx-auto px-4 space-y-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-gray-500">
-          <Link href="/" className="hover:text-gray-700">
-            Ana Sayfa
+    <div className="page-shell">
+      <div className="mx-auto max-w-3xl space-y-5">
+        <nav className="flex items-center gap-2 text-sm font-semibold text-slate-500">
+          <Link href={`/trips/${id}/seats`} className="hover:text-red-700">
+            Koltuk seçimi
           </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href={`/trips/${id}/seats`} className="hover:text-gray-700">
-            Koltuk Seçimi
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-gray-900 font-medium">Ödeme</span>
+          <ArrowRight className="h-4 w-4" />
+          <span className="text-slate-900">Yolcu ve ödeme</span>
         </nav>
-
-        {/* Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-blue-600" /> Ödeme
-          </h1>
-          <p className="text-gray-500 mt-1">Yolcu bilgilerinizi girin ve ödemenizi tamamlayın.</p>
-        </div>
-
-        {/* Checkout Form */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+        <header className="rounded-2xl bg-slate-950 p-6 text-white">
+          <div className="flex items-center gap-3">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-red-700">
+              <CreditCard />
+            </span>
+            <div>
+              <p className="eyebrow !text-red-400">Son adım</p>
+              <h1 className="text-2xl font-black">Biletinizi tamamlayın</h1>
+            </div>
+          </div>
+          <p className="mt-4 flex items-center gap-2 text-sm text-slate-300">
+            <ShieldCheck className="h-4 w-4 text-red-400" /> Fiyat sunucu tarafından doğrulanır.
+            Kart bilgisi alınmaz.
+          </p>
+        </header>
+        <div className="surface-card p-5 sm:p-7">
           <CheckoutForm
             tripId={id}
             seatNo={seatNo}

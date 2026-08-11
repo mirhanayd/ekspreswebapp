@@ -164,7 +164,7 @@ export default function LiveMapView({
         : 'bg-red-500';
 
   return (
-    <div className="relative flex h-screen w-full flex-col">
+    <div className="relative flex h-full w-full flex-col">
       <div className="absolute left-0 right-0 top-0 z-10 p-4">
         <div className="mx-auto flex max-w-3xl items-center justify-between rounded-2xl bg-white/95 p-4 shadow-lg backdrop-blur-md">
           <Link
@@ -189,7 +189,7 @@ export default function LiveMapView({
       <div ref={mapContainer} className="w-full flex-1" />
 
       <div className="absolute bottom-8 left-4 right-4 z-10">
-        <div className="mx-auto grid max-w-3xl grid-cols-3 gap-3 rounded-2xl border bg-white p-4 shadow-xl">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-3 rounded-2xl border bg-white p-4 shadow-xl sm:grid-cols-3">
           <div className="flex items-center gap-3">
             <Bus className="h-6 w-6 text-red-700" />
             <div>
@@ -197,7 +197,7 @@ export default function LiveMapView({
               <p className="font-bold text-gray-900">{bootstrap.trip.bus.plateNumber}</p>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-3 border-x">
+          <div className="flex items-center justify-end gap-3 border-l pl-3 sm:justify-center sm:border-x sm:px-3">
             <Clock3 className="h-5 w-5 text-gray-500" />
             <div>
               <p className="text-xs text-gray-500">Planlı varış</p>
@@ -206,7 +206,7 @@ export default function LiveMapView({
               </p>
             </div>
           </div>
-          <div className="flex items-center justify-end gap-3">
+          <div className="col-span-2 flex items-center justify-between gap-3 border-t pt-3 sm:col-span-1 sm:justify-end sm:border-t-0 sm:pt-0">
             {trackingState === 'offline' ? <WifiOff className="h-5 w-5 text-red-600" /> : null}
             <div className="text-right">
               <p className="text-xs text-gray-500">Hız</p>

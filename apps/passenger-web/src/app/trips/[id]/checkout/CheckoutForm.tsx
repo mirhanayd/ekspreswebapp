@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, CreditCard, LoaderCircle, LockKeyhole, Ticket } from 'lucide-react';
 
 export default function CheckoutForm({
   tripId,
@@ -24,20 +25,16 @@ export default function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'form' | 'paying' | 'success'>('form');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
     if (!firstName.trim() || !lastName.trim()) {
       setError('Ad ve soyad zorunludur.');
       return;
     }
-
     setLoading(true);
     setError(null);
-
     try {
-      // Step 1: Create order
-      const orderRes = await fetch('/api/passenger/checkout/order', {
+      const orderResponse = await fetch('/api/passenger/checkout/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -51,145 +48,141 @@ export default function CheckoutForm({
           idempotencyKey: crypto.randomUUID(),
         }),
       });
-
-      if (!orderRes.ok) {
-        if (orderRes.status === 401) {
-          router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
-          return;
-        }
-        const errData = await orderRes.json();
-        throw new Error(errData.message || 'Sipariş oluşturulamadı');
+      if (orderResponse.status === 401) {
+        router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
+        return;
       }
-
-      const order = await orderRes.json();
+      const order = await orderResponse.json();
+      if (!orderResponse.ok) throw new Error(order.message || 'Sipariş oluşturulamadı.');
       setStep('paying');
-
-      // Step 2: Process demo payment
-      const payRes = await fetch(`/api/passenger/checkout/order/${order.id}/pay`, {
+      const paymentResponse = await fetch(`/api/passenger/checkout/order/${order.id}/pay`, {
         method: 'POST',
       });
-
-      if (!payRes.ok) {
-        const errData = await payRes.json();
-        throw new Error(errData.message || 'Ödeme işlemi başarısız');
-      }
-
-      await payRes.json();
+      const payment = await paymentResponse.json();
+      if (!paymentResponse.ok) throw new Error(payment.message || 'Demo ödeme tamamlanamadı.');
       setStep('success');
-
-      // Redirect to success page after brief delay
-      setTimeout(() => {
-        router.push(`/trips/${tripId}/checkout/success?orderId=${order.id}`);
-      }, 1500);
-    } catch (err: any) {
-      setError(err.message);
+      window.setTimeout(
+        () => router.push(`/trips/${tripId}/checkout/success?orderId=${order.id}`),
+        900,
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'İşlem tamamlanamadı.');
       setStep('form');
     } finally {
       setLoading(false);
     }
-  };
-
-  if (step === 'paying') {
+  }
+  if (step !== 'form')
     return (
-      <div className="text-center py-12 space-y-4">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
-        <p className="text-lg font-semibold text-gray-900">Ödeme işleniyor...</p>
-        <p className="text-sm text-gray-500">Demo ödeme simüle ediliyor. Lütfen bekleyin.</p>
+      <div className="py-14 text-center">
+        {step === 'paying' ? (
+          <LoaderCircle className="mx-auto h-14 w-14 animate-spin text-red-700" />
+        ) : (
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100">
+            <Check className="h-9 w-9 text-emerald-700" />
+          </span>
+        )}
+        <h2 className="mt-5 text-xl font-black">
+          {step === 'paying' ? 'Demo ödeme işleniyor' : 'Ödeme başarılı'}
+        </h2>
+        <p className="mt-2 text-sm text-slate-500">
+          {step === 'paying' ? 'Güvenli durum geçişi doğrulanıyor…' : 'Biletiniz hazırlanıyor…'}
+        </p>
       </div>
     );
-  }
-
-  if (step === 'success') {
-    return (
-      <div className="text-center py-12 space-y-4">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-          <span className="text-3xl">✓</span>
-        </div>
-        <p className="text-lg font-semibold text-green-800">Ödeme başarılı!</p>
-        <p className="text-sm text-gray-500">Biletiniz oluşturuluyor, yönlendiriliyorsunuz...</p>
-      </div>
-    );
-  }
-
+  const field = 'field-control';
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Order Summary */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <div className="flex justify-between items-center">
+    <form onSubmit={submit} className="space-y-7">
+      <section className="rounded-2xl border border-red-100 bg-red-50 p-5">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm text-blue-700">{routeName}</p>
-            <p className="font-semibold text-blue-900">Koltuk {seatNo}</p>
+            <p className="text-xs font-black uppercase tracking-widest text-red-700">
+              Sipariş özeti
+            </p>
+            <p className="mt-2 font-black text-slate-950">{routeName}</p>
+            <p className="mt-1 text-sm text-slate-600">Koltuk {seatNo}</p>
           </div>
-          <p className="text-xl font-bold text-blue-900">{(priceMinor / 100).toFixed(2)} ₺</p>
+          <p className="text-2xl font-black whitespace-nowrap">
+            {(priceMinor / 100).toLocaleString('tr-TR')} ₺
+          </p>
         </div>
-      </div>
-
-      {/* Passenger Form */}
-      <div className="space-y-4">
-        <h3 className="font-semibold text-gray-900">Yolcu Bilgileri</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ad *</label>
+      </section>
+      <section>
+        <h2 className="flex items-center gap-2 text-lg font-black">
+          <Ticket className="h-5 w-5 text-red-700" /> Yolcu bilgileri
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Field label="Ad *">
             <input
-              type="text"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
-              placeholder="Adınız"
+              className={field}
               required
+              autoComplete="given-name"
             />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Soyad *</label>
+          </Field>
+          <Field label="Soyad *">
             <input
-              type="text"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
-              placeholder="Soyadınız"
+              className={field}
               required
+              autoComplete="family-name"
             />
+          </Field>
+          <Field label="Telefon">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className={field}
+              placeholder="05XX XXX XX XX"
+              autoComplete="tel"
+            />
+          </Field>
+          <Field label="E-posta">
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={field}
+              placeholder="ornek@email.com"
+              autoComplete="email"
+            />
+          </Field>
+        </div>
+      </section>
+      <section className="rounded-2xl border border-stone-200 p-5">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-950 text-white">
+            <CreditCard className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="font-black">Demo ödeme</p>
+            <p className="text-xs text-slate-500">Gerçek kart veya banka işlemi yapılmaz.</p>
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
-            placeholder="05XX XXX XX XX"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">E-posta</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-gray-50"
-            placeholder="ornek@email.com"
-          />
-        </div>
-      </div>
-
+      </section>
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-800"
+        >
           {error}
-        </div>
+        </p>
       )}
-
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-semibold py-4 px-4 rounded-xl shadow-md transition-colors text-lg"
-      >
-        {loading ? 'İşleniyor...' : `${(priceMinor / 100).toFixed(2)} ₺ Öde`}
+      <button type="submit" disabled={loading} className="primary-action w-full text-lg">
+        <LockKeyhole className="h-5 w-5" />{' '}
+        {loading ? 'İşleniyor…' : `${(priceMinor / 100).toLocaleString('tr-TR')} ₺ Demo Öde`}
       </button>
-
-      <p className="text-xs text-center text-gray-400">
-        Bu bir demo ödemesidir. Gerçek ödeme işlemi yapılmaz.
-      </p>
     </form>
+  );
+}
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      <span className="mb-2 block">{label}</span>
+      {children}
+    </label>
   );
 }

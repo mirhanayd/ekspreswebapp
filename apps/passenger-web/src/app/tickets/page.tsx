@@ -1,97 +1,120 @@
-import { Ticket } from 'lucide-react';
+import { ArrowRight, CalendarDays, Ticket } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
 
-export default async function MyTicketsPage() {
-  let active = [];
-  let past = [];
-  let cancelled = [];
-  const res = await authenticatedApiFetch('/tickets');
-  if (!res || res.status === 401) redirect('/login?returnTo=/tickets');
+type PassengerTicket = {
+  id: string;
+  ticketNo: string;
+  status: string;
+  trip: {
+    departureTime: string;
+    route: { origin: { name: string }; destination: { name: string } };
+  };
+  tripSeat: { seatNo: string };
+};
 
+export default async function MyTicketsPage() {
+  let active: PassengerTicket[] = [];
+  let past: PassengerTicket[] = [];
+  let cancelled: PassengerTicket[] = [];
+  const response = await authenticatedApiFetch('/tickets');
+  if (!response || response.status === 401) redirect('/login?returnTo=/tickets');
   try {
-    if (res.ok) {
-      const data = await res.json();
+    if (response.ok) {
+      const data = await response.json();
       active = data.active || [];
       past = data.past || [];
       cancelled = data.cancelled || [];
     }
-  } catch (error) {
-    console.error('Failed to fetch tickets:', error);
+  } catch {
+    // Render the safe empty state if the ticket response cannot be decoded.
   }
-
-  const renderTicketCard = (ticket: any) => (
-    <Link
-      href={`/tickets/${ticket.id}`}
-      key={ticket.id}
-      className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition-shadow"
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <p className="text-sm text-gray-500 mb-1">
-            {new Date(ticket.trip?.departureTime).toLocaleDateString('tr-TR', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900">{ticket.trip?.route?.origin?.name}</span>
-            <span className="text-gray-400">→</span>
-            <span className="font-semibold text-gray-900">
-              {ticket.trip?.route?.destination?.name}
-            </span>
-          </div>
-        </div>
-        <div className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">
-          Koltuk {ticket.tripSeat?.seatNo}
-        </div>
-      </div>
-      <div className="flex justify-between items-center text-sm border-t border-gray-100 pt-3">
-        <span className="text-gray-500">{ticket.ticketNo}</span>
-        <span className="flex items-center gap-1 text-blue-600 font-medium">Detayları Gör</span>
-      </div>
-    </Link>
-  );
-
+  const groups = [
+    {
+      title: 'Aktif biletler',
+      copy: 'Yaklaşan ve devam eden yolculuklar',
+      tickets: active,
+      emphasized: true,
+    },
+    { title: 'Geçmiş seferler', copy: 'Tamamlanan yolculuklar', tickets: past, emphasized: false },
+    {
+      title: 'İptal edilenler',
+      copy: 'Geçerliliği sona eren biletler',
+      tickets: cancelled,
+      emphasized: false,
+    },
+  ];
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-lg mx-auto px-4 space-y-8">
-        <div className="flex items-center gap-3">
-          <Ticket className="h-6 w-6 text-blue-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Biletlerim</h1>
-        </div>
-
-        {active.length === 0 && past.length === 0 && cancelled.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center text-gray-500">
-            Henüz biletiniz bulunmuyor.
+    <div className="page-shell">
+      <div className="mx-auto max-w-5xl space-y-7">
+        <header className="rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
+          <p className="eyebrow !text-red-400">Yolculuk cüzdanı</p>
+          <div className="mt-2 flex items-center gap-3">
+            <Ticket className="h-8 w-8 text-red-500" />
+            <h1 className="text-3xl font-black">Biletlerim</h1>
+          </div>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
+            Aktif biletinizi, güvenli QR kodunuzu ve canlı takip bağlantınızı tek yerden yönetin.
+          </p>
+        </header>
+        {!active.length && !past.length && !cancelled.length ? (
+          <div className="surface-card p-10 text-center">
+            <Ticket className="mx-auto h-12 w-12 text-stone-300" />
+            <h2 className="mt-4 text-xl font-black">Henüz biletiniz yok</h2>
+            <p className="mt-2 text-sm text-slate-500">İlk yolculuğunuz için sefer arayın.</p>
+            <Link href="/#sefer-ara" className="primary-action mt-6">
+              Sefer ara
+            </Link>
           </div>
         ) : (
-          <div className="space-y-6">
-            {active.length > 0 && (
-              <section className="space-y-3">
-                <h2 className="font-semibold text-gray-900 px-1">Aktif Biletler</h2>
-                <div className="space-y-3">{active.map(renderTicketCard)}</div>
-              </section>
-            )}
-
-            {past.length > 0 && (
-              <section className="space-y-3 mt-8">
-                <h2 className="font-semibold text-gray-900 px-1">Geçmiş Seferler</h2>
-                <div className="space-y-3 opacity-75">{past.map(renderTicketCard)}</div>
-              </section>
-            )}
-
-            {cancelled.length > 0 && (
-              <section className="space-y-3 mt-8">
-                <h2 className="font-semibold text-gray-900 px-1">İptal Edilenler</h2>
-                <div className="space-y-3 opacity-50 grayscale">
-                  {cancelled.map(renderTicketCard)}
+          groups
+            .filter((group) => group.tickets.length)
+            .map((group) => (
+              <section key={group.title}>
+                <div className="mb-3">
+                  <h2 className="text-xl font-black">{group.title}</h2>
+                  <p className="text-sm text-slate-500">{group.copy}</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {group.tickets.map((ticket) => (
+                    <Link
+                      href={`/tickets/${ticket.id}`}
+                      key={ticket.id}
+                      className={`surface-card group block overflow-hidden border-l-4 p-5 transition hover:-translate-y-0.5 hover:shadow-lg ${group.emphasized ? 'border-l-red-700' : 'border-l-stone-300 opacity-80'}`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-mono text-xs font-bold text-red-700">
+                            {ticket.ticketNo}
+                          </p>
+                          <h3 className="mt-2 flex items-center gap-2 font-black">
+                            <span>{ticket.trip.route.origin.name}</span>
+                            <ArrowRight className="h-4 w-4 text-red-700" />
+                            <span>{ticket.trip.route.destination.name}</span>
+                          </h3>
+                        </div>
+                        <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
+                          Koltuk {ticket.tripSeat.seatNo}
+                        </span>
+                      </div>
+                      <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-4 text-sm">
+                        <span className="flex items-center gap-2 text-slate-500">
+                          <CalendarDays className="h-4 w-4" />
+                          {new Date(ticket.trip.departureTime).toLocaleDateString('tr-TR', {
+                            day: 'numeric',
+                            month: 'long',
+                          })}
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-red-700">
+                          Detay <ArrowRight className="h-4 w-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </section>
-            )}
-          </div>
+            ))
         )}
       </div>
     </div>

@@ -3,16 +3,16 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { ArrowRight, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import { safeReturnTo } from '@/lib/auth';
 
 export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; returnTo?: string }) {
   const router = useRouter();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fields, setFields] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const update = (name: keyof typeof fields, value: string) =>
+    setFields((current) => ({ ...current, [name]: value }));
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -22,11 +22,7 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
       const response = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          ...(mode === 'register' ? { firstName, lastName } : {}),
-        }),
+        body: JSON.stringify(fields),
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'İşlem tamamlanamadı.');
@@ -39,74 +35,97 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
     }
   }
 
+  const inputClass = 'field-control pl-11';
   return (
     <form onSubmit={submit} className="space-y-4">
       {mode === 'register' && (
-        <div className="grid grid-cols-2 gap-3">
-          <label className="space-y-1 text-sm font-medium text-gray-700">
-            <span>Ad</span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Ad" icon={<UserRound />}>
             <input
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              value={fields.firstName}
+              onChange={(e) => update('firstName', e.target.value)}
               required
               minLength={2}
               autoComplete="given-name"
-              className="w-full rounded-xl border border-gray-300 px-3 py-3"
+              className={inputClass}
             />
-          </label>
-          <label className="space-y-1 text-sm font-medium text-gray-700">
-            <span>Soyad</span>
+          </Field>
+          <Field label="Soyad" icon={<UserRound />}>
             <input
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              value={fields.lastName}
+              onChange={(e) => update('lastName', e.target.value)}
               required
               minLength={2}
               autoComplete="family-name"
-              className="w-full rounded-xl border border-gray-300 px-3 py-3"
+              className={inputClass}
             />
-          </label>
+          </Field>
         </div>
       )}
-      <label className="block space-y-1 text-sm font-medium text-gray-700">
-        <span>E-posta</span>
+      <Field label="E-posta" icon={<Mail />}>
         <input
           type="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          value={fields.email}
+          onChange={(e) => update('email', e.target.value)}
           required
           autoComplete="email"
-          className="w-full rounded-xl border border-gray-300 px-3 py-3"
+          className={inputClass}
         />
-      </label>
-      <label className="block space-y-1 text-sm font-medium text-gray-700">
-        <span>Şifre</span>
+      </Field>
+      <Field label="Şifre" icon={<LockKeyhole />}>
         <input
           type="password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
+          value={fields.password}
+          onChange={(e) => update('password', e.target.value)}
           required
           minLength={mode === 'register' ? 8 : 1}
           autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-          className="w-full rounded-xl border border-gray-300 px-3 py-3"
+          className={inputClass}
         />
-      </label>
-      {error && <p className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-red-700 px-4 py-3 font-semibold text-white disabled:opacity-60"
-      >
+      </Field>
+      {error && (
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800"
+        >
+          {error}
+        </p>
+      )}
+      <button type="submit" disabled={loading} className="primary-action w-full">
         {loading ? 'İşleniyor…' : mode === 'login' ? 'Giriş Yap' : 'Hesap Oluştur'}
+        <ArrowRight className="h-5 w-5" />
       </button>
-      <p className="text-center text-sm text-gray-500">
-        {mode === 'login' ? 'Hesabınız yok mu?' : 'Zaten hesabınız var mı?'}{' '}
+      <p className="text-center text-sm text-slate-500">
+        {mode === 'login' ? 'Henüz hesabınız yok mu?' : 'Zaten hesabınız var mı?'}{' '}
         <Link
           href={mode === 'login' ? '/register' : '/login'}
-          className="font-semibold text-red-700"
+          className="font-bold text-red-700 hover:underline"
         >
           {mode === 'login' ? 'Kayıt olun' : 'Giriş yapın'}
         </Link>
       </p>
     </form>
+  );
+}
+
+function Field({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block text-sm font-bold text-slate-700">
+      <span className="mb-2 block">{label}</span>
+      <span className="relative block">
+        <span className="pointer-events-none absolute left-3.5 top-3.5 text-red-700 [&>svg]:h-5 [&>svg]:w-5">
+          {icon}
+        </span>
+        {children}
+      </span>
+    </label>
   );
 }
