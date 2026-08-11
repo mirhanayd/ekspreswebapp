@@ -50,8 +50,8 @@ trips, one ticket, one active/live vehicle, one daily-sales row, and a real deri
 ## CI Result
 
 - PR: #51.
-- Required check: in progress.
+- Required check: PASS (`CI` run `31445460581`, 3m15s).
 
 ## Status
 
-LOCAL_RUNTIME_VALIDATION_COMPLETE
+READY_TO_MERGE
