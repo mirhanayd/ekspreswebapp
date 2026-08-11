@@ -12,6 +12,6 @@ import { TrackingLatestService } from './tracking-latest.service';
   imports: [ConfigModule, DatabaseModule, AuthModule],
   controllers: [TrackingController],
   providers: [TrackingGateway, TrackingService, TrackingLatestService, TrackingAccessService],
-  exports: [TrackingService, TrackingGateway, TrackingAccessService],
+  exports: [TrackingService, TrackingGateway, TrackingAccessService, TrackingLatestService],
 })
 export class TrackingModule {}

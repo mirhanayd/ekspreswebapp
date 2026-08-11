@@ -50,11 +50,13 @@ Demo accounts:
 | Passenger | `yolcu@siirtkurtalan.demo` | `Demo123!`  |
 | Admin     | `admin@siirtkurtalan.demo` | `Admin123!` |
 
-For the passenger journey, run the API and passenger app in separate terminals:
+For the passenger journey and operations view, run the API, passenger app, and admin app in
+separate terminals:
 
 ```bash
 pnpm --filter api dev
 pnpm --filter passenger-web dev
+pnpm --filter admin-web dev
 ```
 
 Open `http://localhost:3000`, sign in as the demo passenger, search tomorrow's Siirt → Diyarbakır service, select a seat, complete the simulated payment, and open the issued ticket. With the API running, `pnpm demo:journey` independently verifies login → hold → order → payment → ticket → QR through real HTTP requests.
@@ -68,6 +70,9 @@ pnpm tracking:simulate
 Open the seeded active ticket from **Biletlerim** and choose **Canlı İzle**. The simulator publishes only the in-transit demo trip, follows its PostGIS LineString, and refreshes the entitled map every two seconds. `pnpm demo:reset` also clears the last Redis tracking snapshot; `pnpm tracking:reset` can clear only that snapshot.
 
 The API is served at `http://localhost:3001/api/v1`; Swagger is available at `http://localhost:3001/api/docs`.
+The authenticated admin operations center is served at `http://localhost:3002`. Sign in with the
+local demo admin account to inspect dashboard metrics, transport data, tickets, reports, and the
+simulator-backed live fleet.
 
 ### Local Database
 

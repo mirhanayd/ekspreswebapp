@@ -19,6 +19,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['../../.env', '.env'],
       validate: validateEnv,
     }),
     LoggerModule.forRoot({

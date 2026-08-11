@@ -1,81 +1,79 @@
+import { Activity, BusFront, CircleUserRound, ReceiptText, Ticket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui';
-import { Activity, CreditCard, DollarSign, Users } from 'lucide-react';
-import { cookies } from 'next/headers';
-
-async function getMetrics() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('accessToken')?.value;
-
-  if (!token) return { totalRevenue: 0, activeTrips: 0, dailyBookings: 0 };
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-  try {
-    const res = await fetch(`${apiUrl}/admin/metrics`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      cache: 'no-store',
-    });
-    if (!res.ok) return { totalRevenue: 0, activeTrips: 0, dailyBookings: 0 };
-    return await res.json();
-  } catch (e) {
-    return { totalRevenue: 0, activeTrips: 0, dailyBookings: 0 };
-  }
-}
+import { AdminOverview } from '@/lib/admin-types';
+import { adminApiJson } from '@/lib/server-api';
 
 export default async function DashboardPage() {
-  const metrics = await getMetrics();
+  const metrics = await adminApiJson<AdminOverview>('/admin/overview');
+  const cards = [
+    {
+      label: 'Toplam Demo Geliri',
+      value: `${(metrics.revenueMinor / 100).toLocaleString('tr-TR')} ₺`,
+      detail: `${metrics.paidOrders} başarılı sipariş`,
+      icon: ReceiptText,
+    },
+    {
+      label: 'Aktif Sefer',
+      value: metrics.activeTrips.toString(),
+      detail: 'Biniş veya yolculuk aşamasında',
+      icon: BusFront,
+    },
+    {
+      label: 'Bugün Kesilen Bilet',
+      value: metrics.ticketsToday.toString(),
+      detail: 'Sunucu saatine göre',
+      icon: Ticket,
+    },
+    {
+      label: 'Kayıtlı Yolcu',
+      value: metrics.passengers.toString(),
+      detail: 'Yolcu rolündeki hesaplar',
+      icon: CircleUserRound,
+    },
+  ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">Platformunuzun genel durumunu izleyin.</p>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold uppercase tracking-[0.16em] text-red-700">Genel Bakış</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight">Operasyon özeti</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Canlı ve işlem verilerinin tek ekranda özeti.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+          <Activity className="h-4 w-4" /> {metrics.liveVehicles} canlı araç
+        </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Toplam Gelir</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₺{metrics.totalRevenue.toLocaleString('tr-TR')}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Aktif Seferler</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.activeTrips}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Bugünkü Biletler</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics.dailyBookings}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Yeni Kullanıcılar</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+12</div>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {cards.map(({ label, value, detail, icon: Icon }) => (
+          <Card key={label}>
+            <CardHeader className="flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm text-slate-600">{label}</CardTitle>
+              <Icon className="h-5 w-5 text-red-700" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-black">{value}</p>
+              <p className="mt-2 text-xs text-slate-500">{detail}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
+
+      <Card className="border-l-4 border-l-red-700">
+        <CardContent className="pt-6">
+          <p className="font-semibold">Sunum ortamı hazır</p>
+          <p className="mt-1 text-sm text-slate-600">
+            Rakamlar API üzerinden PostgreSQL'den, araç durumu ise Redis izleme anlık görüntüsünden
+            üretilir. Bu panelde statik satış veya filo sayısı kullanılmaz.
+          </p>
+          <p className="mt-3 text-xs text-slate-500">
+            Son veri üretimi: {new Date(metrics.generatedAt).toLocaleString('tr-TR')}
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
