@@ -55,9 +55,9 @@ browser proof while guaranteeing explicit cleanup and truthful exit codes.
 
 ## CI Result
 
-- PR: pending.
+- PR: #54.
 - Required check: pending.
 
 ## Status
 
-LOCAL_PROOF_COMPLETE
+CI_PENDING
