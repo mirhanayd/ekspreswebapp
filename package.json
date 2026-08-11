@@ -12,8 +12,12 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
+    "test:e2e": "node scripts/run-e2e.mjs",
+    "test:e2e:full": "pnpm build && pnpm test:e2e",
+    "test:e2e:headed": "node scripts/run-e2e.mjs --headed",
+    "test:e2e:install": "playwright install chromium",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" \"playwright.config.mjs\" \"e2e/**/*.mjs\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\" \"playwright.config.mjs\" \"e2e/**/*.mjs\" \"scripts/**/*.mjs\"",
     "clean": "turbo clean && rm -rf node_modules",
     "infra:config": "docker compose config",
     "infra:up": "docker compose up -d postgres redis",
@@ -33,6 +37,7 @@
     "tracking:reset": "pnpm --filter tracking-simulator reset"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@vercel/style-guide": "^6.0.0",
     "eslint-config-turbo": "^2.10.9",
     "eslint-plugin-only-warn": "^1.2.1",

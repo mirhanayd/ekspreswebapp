@@ -4,6 +4,9 @@ node_modules
 
 # testing
 coverage
+playwright-report/
+test-results/
+*.tsbuildinfo
 
 # next.js
 .next/

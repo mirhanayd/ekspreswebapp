@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import Redis from 'ioredis';
 import * as dotenv from 'dotenv';
 import path from 'path';
+import { createServer } from 'node:http';
 import { Coordinate, headingBetween, pointAtProgress } from './route-progress.js';
 
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
@@ -62,6 +63,18 @@ async function main() {
   }
 
   await syncActiveTrip();
+  const healthPort = Number(process.env.SIMULATOR_HEALTH_PORT || 0);
+  const healthServer = healthPort
+    ? createServer((request, response) => {
+        if (request.url !== '/status') {
+          response.writeHead(404).end();
+          return;
+        }
+        response
+          .writeHead(200, { 'Content-Type': 'application/json' })
+          .end(JSON.stringify({ status: 'ok', activeTrips: activeTrips.size }));
+      }).listen(healthPort, '127.0.0.1')
+    : null;
   let ticking = false;
   const interval = setInterval(async () => {
     if (ticking) return;
@@ -97,6 +110,11 @@ async function main() {
 
   async function shutdown() {
     clearInterval(interval);
+    if (healthServer) {
+      await new Promise<void>((resolve, reject) =>
+        healthServer.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
     await redis.quit();
     await pool.end();
   }
