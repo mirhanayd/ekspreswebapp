@@ -55,8 +55,8 @@ and tracking simulator.
 ## CI Result
 
 - PR: #52.
-- Required check: pending.
+- Required check: PASS (`CI` run `31447437742`, 4m22s).
 
 ## Status
 
-WAITING_FOR_CI
+READY_TO_MERGE

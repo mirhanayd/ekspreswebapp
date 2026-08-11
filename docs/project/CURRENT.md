@@ -14,7 +14,7 @@ Presentation-ready responsive UI
 - Issue #22: deliver a presentation-ready responsive UI system.
 - Branch: `feature/22-presentation-ui`.
 - PR: #52 open.
-- Status: implementation, responsive browser QA, and local validation complete; required CI pending.
+- Status: implementation, responsive browser QA, local validation, and required CI complete.
 
 ## Completed Major Capabilities
 
