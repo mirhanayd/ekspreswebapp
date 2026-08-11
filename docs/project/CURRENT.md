@@ -2,19 +2,19 @@
 
 ## Current Main
 
-- SHA: `f185ad02c50942b95de49f8d648427fc6d129413`
-- Baseline: PR #47 merged; the deterministic authenticated passenger journey is presentation-ready.
+- SHA: `490ad2d93008b9de613cd3df5a65bb65235b89f1`
+- Baseline: PR #49 merged; QR and ticket-entitled route tracking are presentation-ready.
 
 ## Current Phase
 
-Secure QR and ticket-entitled route tracking
+Authenticated admin operations
 
 ## Current Campaign
 
-- Issue #48: secure QR and ticket-entitled route tracking.
-- Branch: `feature/48-secure-qr-tracking`.
-- PR: #49 open.
-- Status: implementation and runtime verification complete; required CI passed.
+- Issue #50: complete authenticated admin operations.
+- Branch: `feature/50-admin-operations`.
+- PR: pending publication.
+- Status: implementation, production runtime proof, and all local validation complete.
 
 ## Completed Major Capabilities
 
@@ -33,8 +33,8 @@ Secure QR and ticket-entitled route tracking
 
 ## Remaining Work
 
-1. Functional authenticated admin operations.
-2. Passenger/admin UI redesign, responsiveness, accessibility, and Playwright.
+1. Passenger/admin UI redesign, responsiveness, and accessibility.
+2. Playwright critical-journey coverage.
 3. Full release verification and final readiness audit.
 
 ## Current Blocker
@@ -43,4 +43,4 @@ None.
 
 ## Next Campaign
 
-Functional authenticated admin operations and demo controls.
+Branded passenger/admin UI and responsive accessibility campaign.

@@ -3,7 +3,7 @@ import { join } from 'path';
 import { createDatabaseClient } from '../client.js';
 
 // Load .env from the repository root if available
-dotenv.config({ path: join(__dirname, '../../../.env') });
+dotenv.config({ path: join(process.cwd(), '../../.env') });
 
 async function verify() {
   console.log('Starting database verification...');
@@ -13,7 +13,7 @@ async function verify() {
     process.exit(1);
   }
 
-  const { db, pool, close } = createDatabaseClient();
+  const { pool, close } = createDatabaseClient();
 
   try {
     // 1. Check basic connectivity

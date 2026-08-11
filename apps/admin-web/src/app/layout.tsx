@@ -1,67 +1,83 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import './globals.css';
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import {
+  Activity,
+  BusFront,
+  ChartNoAxesCombined,
+  LayoutDashboard,
+  LogOut,
+  Ticket,
+} from 'lucide-react';
+import { ADMIN_ACCESS_TOKEN_COOKIE } from '@/lib/auth';
+import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export const metadata: Metadata = {
-  title: 'Siirt Kurtalan Ekspres - Admin',
-  description: 'Demo MVP admin application',
+  title: 'Siirt Kurtalan Ekspres | Operasyon Merkezi',
+  description: 'Siirt Kurtalan Ekspres demo operasyon merkezi',
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased min-h-screen bg-background flex`}>
-        {/* Sidebar */}
-        <aside className="w-64 border-r bg-muted/40 hidden md:block">
-          <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <span className="">Admin Panel</span>
-            </Link>
-          </div>
-          <div className="flex-1">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4 mt-4 space-y-1">
-              <Link
-                href="/dashboard"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-              >
-                Dashboard
-              </Link>
-              <Link
-                href="/operations/trips"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-              >
-                Trips Overview
-              </Link>
-              <Link
-                href="/operations/fleet"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-              >
-                Fleet Map
-              </Link>
-              <Link
-                href="/reports"
-                className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
-              >
-                Reports
-              </Link>
-            </nav>
-          </div>
-        </aside>
+const navigation = [
+  { href: '/dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
+  { href: '/operations/trips', label: 'Ulaşım Operasyonları', icon: BusFront },
+  { href: '/tickets', label: 'Biletler', icon: Ticket },
+  { href: '/operations/fleet', label: 'Canlı Filo', icon: Activity },
+  { href: '/reports', label: 'Raporlar', icon: ChartNoAxesCombined },
+];
 
-        {/* Main content */}
-        <div className="flex flex-col flex-1">
-          <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-            <span className="font-semibold text-lg md:hidden">Admin Panel</span>
-          </header>
-          <main className="flex-1 p-4 lg:p-6">{children}</main>
-        </div>
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const authenticated = (await cookies()).has(ADMIN_ACCESS_TOKEN_COOKIE);
+
+  return (
+    <html lang="tr" suppressHydrationWarning>
+      <body
+        className={`${inter.variable} min-h-screen bg-slate-50 font-sans text-slate-950 antialiased`}
+      >
+        {!authenticated ? (
+          children
+        ) : (
+          <div className="min-h-screen md:grid md:grid-cols-[260px_1fr]">
+            <aside className="border-b bg-slate-950 text-white md:min-h-screen md:border-b-0 md:border-r md:border-slate-800">
+              <div className="border-b border-slate-800 px-5 py-5">
+                <Link href="/dashboard" className="block">
+                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
+                    Siirt Kurtalan
+                  </span>
+                  <span className="mt-1 block text-xl font-black">Ekspres Operasyon</span>
+                </Link>
+              </div>
+              <nav className="flex gap-1 overflow-x-auto p-3 md:grid md:overflow-visible md:p-4">
+                {navigation.map(({ href, label, icon: Icon }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                  >
+                    <Icon className="h-4 w-4 text-red-400" />
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+            </aside>
+            <div className="min-w-0">
+              <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
+                <div>
+                  <p className="text-sm font-semibold">Demo Operasyon Merkezi</p>
+                  <p className="text-xs text-slate-500">PostgreSQL ve Redis çalışma verisi</p>
+                </div>
+                <form action="/api/auth/logout" method="post">
+                  <button className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-slate-50">
+                    <LogOut className="h-4 w-4" /> Çıkış
+                  </button>
+                </form>
+              </header>
+              <main className="p-4 md:p-6 lg:p-8">{children}</main>
+            </div>
+          </div>
+        )}
       </body>
     </html>
   );

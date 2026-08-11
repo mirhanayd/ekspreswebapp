@@ -19,6 +19,8 @@ import { JwtStrategy } from '../auth/strategies/jwt.strategy';
 import { DRIZZLE } from '../database/database.module';
 import { SeatsController } from '../seats/seats.controller';
 import { SeatsService } from '../seats/seats.service';
+import { TrackingLatestService } from '../tracking/tracking-latest.service';
+import { TrackingPosition } from '../tracking/tracking.types';
 import { CheckoutService } from './checkout.service';
 
 type Fixture = {
@@ -53,6 +55,7 @@ describe('Admin authorization and payment integrity integration', () => {
   let checkoutService: CheckoutService;
   let fixture: Fixture | undefined;
   const userIds = new Set<string>();
+  const trackingSnapshots = new Map<string, TrackingPosition>();
 
   beforeAll(async () => {
     loadDatabaseUrl();
@@ -79,6 +82,10 @@ describe('Admin authorization and payment integrity integration', () => {
           useValue: { get: (key: string) => (key === 'JWT_SECRET' ? TEST_JWT_SECRET : undefined) },
         },
         { provide: DRIZZLE, useValue: client.db },
+        {
+          provide: TrackingLatestService,
+          useValue: { get: async (tripId: string) => trackingSnapshots.get(tripId) || null },
+        },
         { provide: APP_GUARD, useClass: JwtAuthGuard },
         { provide: APP_GUARD, useClass: RolesGuard },
       ],
@@ -91,6 +98,7 @@ describe('Admin authorization and payment integrity integration', () => {
   });
 
   afterEach(async () => {
+    trackingSnapshots.clear();
     if (fixture) {
       await client.pool.query('DELETE FROM tickets WHERE trip_id = $1', [fixture.tripId]);
       await client.pool.query(
@@ -212,6 +220,24 @@ describe('Admin authorization and payment integrity integration', () => {
       .get('/admin/metrics')
       .set('Authorization', `Bearer ${admin.accessToken}`)
       .expect(200);
+
+    for (const path of [
+      '/admin/overview',
+      '/admin/transport',
+      '/admin/tickets',
+      '/admin/fleet',
+      '/admin/reports',
+    ]) {
+      await request(app.getHttpServer()).get(path).expect(401);
+      await request(app.getHttpServer())
+        .get(path)
+        .set('Authorization', `Bearer ${passenger.accessToken}`)
+        .expect(403);
+      await request(app.getHttpServer())
+        .get(path)
+        .set('Authorization', `Bearer ${admin.accessToken}`)
+        .expect(200);
+    }
 
     await request(app.getHttpServer()).post(`/seats/trip/${unknownTripId}/generate`).expect(401);
     await request(app.getHttpServer())
@@ -335,5 +361,94 @@ describe('Admin authorization and payment integrity integration', () => {
       payments: '1',
       tickets: '1',
     });
+  });
+
+  it('returns real transport, ticket, report, and live fleet operations to admins', async () => {
+    const seat = await createFixture();
+    const passenger = await registerUser('OperationsPassenger', 'passenger');
+    const admin = await registerUser('OperationsAdmin', 'admin');
+    const { order } = await createOrder(passenger, seat);
+    const payment = await checkoutService.processPayment(order.id, passenger.id);
+    const ticketId = payment.ticket?.id;
+    expect(ticketId).toBeTruthy();
+
+    await client.pool.query(`UPDATE trips SET status = 'in_transit' WHERE id = $1`, [seat.tripId]);
+    trackingSnapshots.set(seat.tripId, {
+      tripId: seat.tripId,
+      busId: seat.busId,
+      longitude: 41.94,
+      latitude: 37.93,
+      speedKph: 72,
+      headingDeg: 110,
+      recordedAt: new Date().toISOString(),
+      sequence: 7,
+      source: 'SIMULATOR',
+    });
+
+    const authorization = { Authorization: `Bearer ${admin.accessToken}` };
+    const overview = await request(app.getHttpServer())
+      .get('/admin/overview')
+      .set(authorization)
+      .expect(200);
+    expect(overview.body).toEqual(
+      expect.objectContaining({ activeTrips: expect.any(Number), liveVehicles: 1 }),
+    );
+
+    const transport = await request(app.getHttpServer())
+      .get('/admin/transport')
+      .set(authorization)
+      .expect(200);
+    expect(transport.body.trips).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: seat.tripId, soldSeats: 1, plateNumber: expect.any(String) }),
+      ]),
+    );
+
+    const tickets = await request(app.getHttpServer())
+      .get('/admin/tickets')
+      .set(authorization)
+      .expect(200);
+    const ticket = tickets.body.find((item: { id: string }) => item.id === ticketId);
+    expect(ticket).toEqual(
+      expect.objectContaining({
+        passengerEmail: passenger.email,
+        seatNo: seat.seatNo,
+        amountMinor: 12345,
+      }),
+    );
+    expect(ticket).not.toHaveProperty('qrTokenHash');
+
+    await request(app.getHttpServer())
+      .get(`/admin/tickets/${ticketId}`)
+      .set(authorization)
+      .expect(200)
+      .expect(({ body }) => expect(body.ticketNo).toBe(ticket.ticketNo));
+
+    const fleet = await request(app.getHttpServer())
+      .get('/admin/fleet')
+      .set(authorization)
+      .expect(200);
+    expect(fleet.body).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tripId: seat.tripId,
+          freshness: 'live',
+          latest: expect.objectContaining({ sequence: 7 }),
+        }),
+      ]),
+    );
+
+    const reports = await request(app.getHttpServer())
+      .get('/admin/reports')
+      .set(authorization)
+      .expect(200);
+    expect(reports.body).toEqual(
+      expect.objectContaining({
+        dailySales: expect.any(Array),
+        tripStatuses: expect.any(Array),
+        ticketStatuses: expect.any(Array),
+        occupancy: expect.objectContaining({ percent: expect.any(Number) }),
+      }),
+    );
   });
 });
