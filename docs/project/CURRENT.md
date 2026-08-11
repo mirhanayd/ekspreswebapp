@@ -14,7 +14,8 @@ Deterministic Playwright and release gate
 - Issue #53: deterministic Playwright critical journeys and release gate.
 - Branch: `chore/53-playwright-release-gate`.
 - PR: #54.
-- Status: complete local release gate pass; exact-head CI pending.
+- Status: complete local and exact-code-head CI release gate pass; documentation-only evidence head
+  pending.
 
 ## Completed Major Capabilities
 

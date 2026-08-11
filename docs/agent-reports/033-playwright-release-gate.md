@@ -21,6 +21,8 @@
 - Fixed an authentication navigation race where `router.refresh()` cancelled the protected return
   navigation after the cookie had already been established.
 - Added Redis and browser installation to CI before the required critical-journey step.
+- Removed tracked TypeScript incremental-build artifacts after clean Linux CI proved that stale emit
+  state could omit newly added API modules from an otherwise-successful build.
 - Documented local install, build, headless, headed, reset, and lifecycle behavior.
 
 ## Runner Reliability
@@ -56,8 +58,9 @@ browser proof while guaranteeing explicit cleanup and truthful exit codes.
 ## CI Result
 
 - PR: #54.
-- Required check: pending.
+- Required check: `Validate and Test` passed on exact code head `29fb6b05`.
+- Run: `31487249547`.
 
 ## Status
 
-CI_PENDING
+READY_TO_MERGE
