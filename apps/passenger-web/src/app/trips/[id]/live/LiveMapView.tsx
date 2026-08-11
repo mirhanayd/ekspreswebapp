@@ -461,8 +461,8 @@ export default function LiveMapView({
 
         {/* Status pills */}
         <ul className="hide-scrollbar pointer-events-auto mx-auto flex max-w-3xl gap-2.5 overflow-x-auto">
-          <li className="min-w-0 flex-1">
-            <span className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink-950/95 px-4 text-sm font-bold text-white shadow-panel backdrop-blur">
+          <li className="min-w-0 max-w-[62%] shrink-0">
+            <span className="flex min-h-12 items-center gap-2 rounded-full bg-ink-950/95 px-4 text-sm font-bold text-white shadow-panel backdrop-blur">
               <MapPin className="h-4 w-4 shrink-0 text-ember-300" aria-hidden />
               <span className="truncate">
                 {nextStop ? nextStop.name : bootstrap.trip.route.destination.name}

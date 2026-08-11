@@ -104,7 +104,7 @@
 
   /* Tall search capsule that sits beside the display heading. */
   .search-capsule {
-    @apply grid w-14 shrink-0 place-items-center rounded-full bg-white text-ink-900 shadow-card ring-1 ring-ink-200/70 transition hover:text-brand-700 sm:w-16;
+    @apply grid w-12 shrink-0 place-items-center rounded-full bg-white text-ink-900 shadow-card ring-1 ring-ink-200/70 transition hover:text-brand-700 sm:w-16;
   }
 
   /* ---------------------------------------------------------------- *

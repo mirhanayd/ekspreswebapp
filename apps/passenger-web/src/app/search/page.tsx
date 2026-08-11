@@ -184,12 +184,12 @@ export default async function SearchPage({
       <section className="card map-texture relative mt-4 overflow-hidden p-5 text-ink-900 sm:p-6">
         <div className="relative flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-3xl">
+            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-3xl">
               {placeShortName(origin)}
             </p>
             <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{origin}</p>
           </div>
-          <div className="flex min-w-16 flex-1 items-center">
+          <div className="flex w-20 shrink-0 items-center sm:w-28">
             <span className="h-2 w-2 shrink-0 rounded-full bg-ink-900" />
             <span className="dotted-path" />
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink-950 text-white">
@@ -199,7 +199,7 @@ export default async function SearchPage({
             <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600" />
           </div>
           <div className="min-w-0 flex-1 text-right">
-            <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-3xl">
+            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-3xl">
               {placeShortName(destination)}
             </p>
             <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{destination}</p>
@@ -401,14 +401,14 @@ export default async function SearchPage({
 
                         <div className="flex items-center gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-2xl">
+                            <p className="truncate font-display text-lg font-extrabold leading-none sm:text-2xl">
                               {placeShortName(originName)}
                             </p>
                             <p className="mt-1 truncate text-2xs font-semibold text-ink-500">
                               {originName}
                             </p>
                           </div>
-                          <div className="flex min-w-12 flex-1 items-center">
+                          <div className="flex w-16 shrink-0 items-center sm:w-24">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink-900" />
                             <span className="dotted-path" />
                             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink-100 text-ink-800">
@@ -418,7 +418,7 @@ export default async function SearchPage({
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
                           </div>
                           <div className="min-w-0 flex-1 text-right">
-                            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-2xl">
+                            <p className="truncate font-display text-lg font-extrabold leading-none sm:text-2xl">
                               {placeShortName(destinationName)}
                             </p>
                             <p className="mt-1 truncate text-2xs font-semibold text-ink-500">

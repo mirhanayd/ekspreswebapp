@@ -3,6 +3,58 @@
 Rebuild of the passenger and admin interface layer for the company presentation.
 Backend, API contracts, routes and business logic are unchanged.
 
+> **Second pass — reference fidelity.** The first pass treated `ui/` as loose
+> inspiration. It was redone to follow the reference screens closely and to lead
+> with the application experience rather than the web page. See
+> "Application shell" and "Screen-by-screen mapping" below.
+
+## Application shell
+
+Mobile now runs headerless, exactly like the reference screens: `--app-header-h`
+is `0` below `md`, every view owns its own top row (circular back button or a
+brand row), and a floating dark tab pill handles navigation. The desktop header
+and footer return from `md` upwards. `/hesap` was added so the tab bar has a
+real fourth destination and mobile keeps a place to sign out.
+
+## Brand assets
+
+Both assets were reworked to fit the interface instead of being dropped in:
+
+- `logo.png` — the supplied wordmark sits on a solid white rectangle, which
+  forced an ugly white plate on dark chrome. It is re-rendered with the white
+  knocked out to alpha (feathered 215–245 so the letter colour survives) and
+  trimmed to its content box (900×244). It now sits directly on any surface, and
+  dark chrome uses a white silhouette treatment.
+- `coach.jpg` — recropped from the original press photo to drop the parked-bus
+  clutter and most of the sky, and exported at 2400×1076. On the home card it is
+  composited as a masked horizontal band over the dark panel rather than being
+  over-zoomed into a portrait frame, so the livery and wordmark stay readable.
+
+Both were produced with a headless-Chromium canvas pass; the originals in
+`brand/` are untouched.
+
+## Screen-by-screen mapping
+
+| Reference               | Element                                                              | Implementation                                                     |
+| ----------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `mobile-home-reference` | greeting row + top-right info widget                                 | brand wordmark + date pill                                         |
+|                         | small caps eyebrow                                                   | `Siirt · Kurtalan hattı`                                           |
+|                         | large display heading with a tall capsule beside it                  | headline + `.search-capsule` linking to the search form            |
+|                         | scrollable category pills, first one dark                            | real popular-route chips                                           |
+|                         | large image card, centred overlay, meta row, outlined pill CTA       | featured service built from the earliest upcoming trip             |
+|                         | floating dark tab bar                                                | `.floating-nav`                                                    |
+| `trip-search-reference` | circular back + segmented toggle                                     | back + `En erken` / `En uygun` sort                                |
+|                         | route card with dotted path and a dark circular badge                | same, over the faint map texture                                   |
+|                         | pills inside the card, then a filter pill row                        | date chip + edit toggle, then date/month/count pills               |
+|                         | circular date strip with a filled active day                         | same, brand red for the active day                                 |
+|                         | "N tickets found" + circular filter button with a dot                | same, the dot appears when a time filter is on                     |
+|                         | rail card: rotated label, badge, times over dates, tinted 3-up strip | same, with `EKSPRES` rail, day labels and `.facts-strip`           |
+| `live-map-reference`    | circular close, centred title pill, circular action                  | back, route + live status pill, ticket shortcut                    |
+|                         | numbered tabs down the left edge, active in amber                    | real route stops; the next stop is amber and tapping flies the map |
+|                         | circular map controls down the right edge                            | zoom in, zoom out, recenter on the vehicle                         |
+|                         | dark panel: times, amber duration pill, dashed progress              | same, plus endpoint names and live progress                        |
+|                         | dark pill row under the panel                                        | next stop + distance, plate, current speed                         |
+
 ## Design direction
 
 Direction is derived from two sources that already lived in the repository:
@@ -154,7 +206,8 @@ is ever rendered.
   outbound network so map surfaces rendered as flat panels. Marker and overlay
   geometry was verified from the DOM.
 - The passenger home page is long on mobile (~4000px); the sections below the
-  search panel could be shortened once presentation content is final.
+  featured card are web-style marketing content and could be shortened once the
+  presentation script is final.
 - `packages/ui` still exports only `StatusBadge` and `cn`; the passenger and
   admin component layers could be promoted into it if a third surface appears.
 - Seat map assumes the seeded 2+1 layout shape; other layouts render but have

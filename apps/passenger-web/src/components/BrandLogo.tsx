@@ -21,9 +21,7 @@ export function BrandMark({
       width={900}
       height={244}
       priority={priority}
-      className={`h-auto ${className} ${
-        tone === 'light' ? 'drop-shadow-[0_1px_2px_rgba(255,255,255,0.45)]' : ''
-      }`}
+      className={`h-auto ${className} ${tone === 'light' ? 'brightness-0 invert' : ''}`}
     />
   );
 }

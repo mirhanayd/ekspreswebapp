@@ -151,12 +151,12 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
 
             <div className="mt-5 flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-4xl">
+                <p className="truncate font-display text-xl font-extrabold leading-none sm:text-4xl">
                   {placeShortName(originName)}
                 </p>
                 <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{originName}</p>
               </div>
-              <div className="flex min-w-16 flex-1 items-center">
+              <div className="flex w-20 shrink-0 items-center sm:w-28">
                 <span className="h-2 w-2 shrink-0 rounded-full bg-ink-900" />
                 <span className="dotted-path" />
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink-950 text-white">
@@ -166,7 +166,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                 <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600" />
               </div>
               <div className="min-w-0 flex-1 text-right">
-                <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-4xl">
+                <p className="truncate font-display text-xl font-extrabold leading-none sm:text-4xl">
                   {placeShortName(destinationName)}
                 </p>
                 <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">

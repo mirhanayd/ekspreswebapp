@@ -118,11 +118,11 @@ export default async function Home() {
 
               <p className="eyebrow mt-4 flex items-center gap-1.5">
                 <BusFront className="h-3.5 w-3.5" aria-hidden />
-                Siirt · Kurtalan · Batman · Diyarbakır
+                Siirt · Kurtalan hattı
               </p>
 
               <div className="mt-2 flex items-stretch justify-between gap-4">
-                <h1 className="title-xl min-w-0">
+                <h1 className="title-xl min-w-0 max-sm:text-[1.8rem]">
                   Yolculuğun kolay,
                   <br />
                   <span className="text-brand-700">yerin hazır.</span>
@@ -154,33 +154,34 @@ export default async function Home() {
               ) : null}
             </div>
 
-            {/* Featured service */}
-            <figure className="relative mt-5 overflow-hidden rounded-[1.75rem] lg:mt-0 lg:rounded-4xl">
-              <div className="relative h-[21rem] w-full sm:h-[24rem] lg:h-[27rem]">
+            {/* Featured service — the coach sits as a masked band so the wide
+                press photo never has to be over-zoomed into a tall card. */}
+            <figure className="panel panel-sheen relative mt-5 h-[22rem] overflow-hidden sm:h-[26rem] lg:mt-0 lg:h-[30rem]">
+              <div className="absolute inset-x-0 top-[8%] h-[40%]">
                 <Image
                   src="/brand/coach.jpg"
                   alt="Siirt Kurtalan Ekspres filosuna ait şehirlerarası otobüs"
                   fill
                   sizes="(max-width: 1024px) 100vw, 640px"
-                  className="object-cover object-center"
+                  className="object-cover object-center [-webkit-mask-image:linear-gradient(to_bottom,transparent,black_20%,black_68%,transparent)] [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_68%,transparent)]"
                   priority
-                />
-                <div
-                  className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/55 to-ink-950/5"
-                  aria-hidden
                 />
               </div>
 
-              <figcaption className="absolute inset-x-0 bottom-0 p-5 text-center text-white sm:p-6">
+              <p className="absolute inset-x-0 top-5 z-10 text-center text-2xs font-bold uppercase tracking-[0.18em] text-brand-300">
+                Öne çıkan sefer
+              </p>
+
+              <figcaption className="absolute inset-x-0 bottom-0 z-10 p-5 text-center text-white sm:p-6">
                 {featured ? (
                   <>
-                    <p className="font-display text-xl font-extrabold sm:text-2xl">
+                    <p className="font-display text-2xl font-extrabold sm:text-3xl">
                       {placeShortName(names.get(featured.route.originId) ?? '')} →{' '}
                       {placeShortName(names.get(featured.route.destinationId) ?? '')}
                     </p>
-                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-white/80">
-                      {formatDayMonth(featured.trip.departureTime)} tarihli öne çıkan seferimiz. 2+1
-                      konforlu koltuk düzeni ve canlı sefer takibi ile.
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-white/75">
+                      {formatDayMonth(featured.trip.departureTime)} tarihli seferimiz. 2+1 konforlu
+                      koltuk düzeni, gerçek koltuk seçimi ve canlı sefer takibi ile.
                     </p>
                     <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold">
                       <li className="flex items-center gap-1.5">
