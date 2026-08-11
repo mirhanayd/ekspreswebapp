@@ -1,21 +1,22 @@
 # Current Project Status
 
-## Current Main
+## Verified Release Baseline
 
-- SHA: `d3d035b0be08ea153dc8deb4f1444f04b41253b9`
-- Baseline: PR #52 merged; the branded responsive passenger/admin UI is presentation-ready.
+- SHA: `63339e21ae419583051219bd9eec68f9ba041d97`
+- Baseline: PR #54 merged; the deterministic Playwright release gate is required and green.
+- Closure artifact: PR #56 final release-readiness audit and roadmap reconciliation.
 
 ## Current Phase
 
-Deterministic Playwright and release gate
+Demo MVP presentation release complete
 
 ## Current Campaign
 
-- Issue #53: deterministic Playwright critical journeys and release gate.
-- Branch: `chore/53-playwright-release-gate`.
-- PR: #54.
-- Status: complete local and exact-code-head CI release gate pass; documentation-only evidence head
-  pending.
+- Issue #55: final release readiness audit and roadmap reconciliation.
+- Branch: `docs/55-final-release-readiness-audit`.
+- PR: #56.
+- Status: final audit complete; all historical roadmap issues reconciled; audit evidence head passed
+  full CI run `31488289474`.
 
 ## Completed Major Capabilities
 
@@ -41,12 +42,14 @@ Deterministic Playwright and release gate
 
 ## Remaining Work
 
-1. Full release verification and final readiness audit.
+No remaining Demo MVP engineering work. Before an external presentation, run the deterministic
+preflight on the presentation machine and prepare an offline recording fallback.
 
 ## Current Blocker
 
-None.
+No Demo MVP code blocker. Public staging and production remain explicitly outside this release.
 
 ## Next Campaign
 
-Final readiness audit and roadmap reconciliation.
+Pilot planning only: hosting/TLS, managed secrets, production observability, security scanning, PWA,
+physical-device QA, backup/restore, and real payment/GPS integrations.
