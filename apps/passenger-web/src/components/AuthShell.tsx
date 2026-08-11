@@ -32,7 +32,10 @@ export function AuthShell({
           aria-hidden
           className="object-cover opacity-25"
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-ink-950 via-ink-950/85 to-brand-900/70" aria-hidden />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-ink-950 via-ink-950/85 to-brand-900/70"
+          aria-hidden
+        />
 
         <Link href="/" className="relative inline-flex w-fit">
           <BrandMark className="w-32" />
@@ -60,10 +63,7 @@ export function AuthShell({
 
       <section className="grid place-items-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-md">
-          <Link
-            href="/"
-            className="link-quiet inline-flex items-center gap-1.5 text-sm lg:hidden"
-          >
+          <Link href="/" className="link-quiet inline-flex items-center gap-1.5 text-sm lg:hidden">
             <ArrowLeft className="h-4 w-4" aria-hidden />
             Ana sayfa
           </Link>

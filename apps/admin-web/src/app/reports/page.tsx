@@ -187,7 +187,9 @@ function DistributionCard({
           return (
             <div key={item.status}>
               <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-ink-700">{labels[item.status] || item.status}</span>
+                <span className="font-medium text-ink-700">
+                  {labels[item.status] || item.status}
+                </span>
                 <span className="font-semibold text-ink-900">
                   {item.value}
                   <span className="ml-1.5 text-xs font-medium text-ink-500">%{percent}</span>

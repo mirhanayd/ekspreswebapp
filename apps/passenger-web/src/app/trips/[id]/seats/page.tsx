@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import SeatSelector from './SeatSelector';
 import { API_BASE_URL } from '@/lib/server-api';
 import { BookingSteps } from '@/components/BookingSteps';
-import { formatLongDate, formatTime } from '@/lib/format';
+import { formatLongDate, formatTime, placeShortName } from '@/lib/format';
 
 export const metadata = { title: 'Koltuk seçimi' };
 
@@ -62,8 +62,8 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
             </p>
             <h1 className="title-lg mt-1.5 truncate text-white">Koltuğunuzu seçin</h1>
             <p className="mt-2 truncate text-sm text-ink-300">
-              {originName} → {destinationName} · {formatLongDate(tripData.departureTime)} ·{' '}
-              {formatTime(tripData.departureTime)}
+              {placeShortName(originName)} → {placeShortName(destinationName)} ·{' '}
+              {formatLongDate(tripData.departureTime)} · {formatTime(tripData.departureTime)}
             </p>
           </div>
           <div className="relative shrink-0 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 text-right">

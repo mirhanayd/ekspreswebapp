@@ -67,7 +67,7 @@
   }
 
   .surface {
-    @apply rounded-2xl border border-ink-200/80 bg-white shadow-card;
+    @apply min-w-0 rounded-2xl border border-ink-200/80 bg-white shadow-card;
   }
 
   .surface-muted {
@@ -143,7 +143,7 @@
   }
 
   .ops-meter {
-    @apply h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
+    @apply block h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
   }
 
   .ops-meter-fill {

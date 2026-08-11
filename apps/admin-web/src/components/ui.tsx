@@ -60,11 +60,7 @@ export const TableHead = ({ children, className = '' }: Base) => (
     {children}
   </th>
 );
-export const TableCell = ({
-  children,
-  className = '',
-  colSpan,
-}: Base & { colSpan?: number }) => (
+export const TableCell = ({ children, className = '', colSpan }: Base & { colSpan?: number }) => (
   <td className={className} colSpan={colSpan}>
     {children}
   </td>

@@ -80,9 +80,11 @@ export default async function TripsPage() {
                 </span>
                 <div className="min-w-0">
                   <p className="truncate font-semibold text-ink-900">{route.name}</p>
-                  <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500">
+                  <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-ink-500">
                     <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-                    {route.originName} → {route.destinationName}
+                    <span className="truncate">
+                      {route.originName} → {route.destinationName}
+                    </span>
                   </p>
                 </div>
               </div>
@@ -205,15 +207,7 @@ export default async function TripsPage() {
   );
 }
 
-function SummaryTile({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-}) {
+function SummaryTile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="surface p-4">
       <p className="metric-label">{label}</p>

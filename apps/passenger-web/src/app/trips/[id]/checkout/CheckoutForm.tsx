@@ -239,7 +239,9 @@ function Field({
     <label className="block">
       <span className="field-label flex items-baseline justify-between gap-2">
         <span>{label}</span>
-        {hint ? <span className="font-medium normal-case tracking-normal text-ink-400">{hint}</span> : null}
+        {hint ? (
+          <span className="font-medium normal-case tracking-normal text-ink-400">{hint}</span>
+        ) : null}
       </span>
       {children}
     </label>

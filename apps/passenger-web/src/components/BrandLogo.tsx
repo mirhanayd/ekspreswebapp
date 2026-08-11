@@ -6,7 +6,13 @@ import Link from 'next/link';
  * so it is always presented on a white "plate". On dark chrome that reads as a
  * deliberate brand badge; on light surfaces the plate disappears into the card.
  */
-export function BrandMark({ className = '', size = 'md' }: { className?: string; size?: 'sm' | 'md' }) {
+export function BrandMark({
+  className = '',
+  size = 'md',
+}: {
+  className?: string;
+  size?: 'sm' | 'md';
+}) {
   const dimensions = size === 'sm' ? { width: 96, height: 38 } : { width: 132, height: 53 };
   return (
     <span

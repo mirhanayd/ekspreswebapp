@@ -174,7 +174,7 @@ export default async function SearchPage({
       <section className="card map-texture relative mt-4 overflow-hidden p-5 text-ink-900 sm:p-6">
         <div className="relative flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="font-display text-2xl font-extrabold leading-none sm:text-3xl">
+            <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-3xl">
               {placeShortName(origin)}
             </p>
             <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{origin}</p>
@@ -189,7 +189,7 @@ export default async function SearchPage({
             <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600" />
           </div>
           <div className="min-w-0 flex-1 text-right">
-            <p className="font-display text-2xl font-extrabold leading-none sm:text-3xl">
+            <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-3xl">
               {placeShortName(destination)}
             </p>
             <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{destination}</p>
@@ -233,7 +233,7 @@ export default async function SearchPage({
         >
           <ChevronLeft className="h-4 w-4" aria-hidden />
         </Link>
-        <ul className="hide-scrollbar flex flex-1 justify-between gap-2 overflow-x-auto">
+        <ul className="hide-scrollbar flex min-w-0 flex-1 justify-between gap-2 overflow-x-auto">
           {dayStrip.map(({ value, date, disabled }) => {
             const active = value === activeDate;
             return (
@@ -328,7 +328,7 @@ export default async function SearchPage({
               const destinationName = names.get(route.destinationId) || destination;
               const isCheapest = sorted.length > 1 && trip.basePrice === cheapest;
               return (
-                <li key={trip.id}>
+                <li key={trip.id} className="min-w-0">
                   <article className="card flex overflow-hidden">
                     {/* Brand rail */}
                     <div className="relative flex w-10 shrink-0 flex-col items-center justify-between bg-brand-700 py-4 text-white sm:w-12">
@@ -346,14 +346,16 @@ export default async function SearchPage({
                               <span className="badge badge-warn">En uygun fiyat</span>
                             ) : null}
                             {seats && seats.available > 0 && seats.available <= 5 ? (
-                              <span className="badge badge-muted">Son {seats.available} koltuk</span>
+                              <span className="badge badge-muted">
+                                Son {seats.available} koltuk
+                              </span>
                             ) : null}
                           </div>
                         ) : null}
 
                         <div className="flex items-center gap-3">
                           <div className="min-w-0 flex-1">
-                            <p className="font-display text-xl font-extrabold leading-none sm:text-2xl">
+                            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-2xl">
                               {placeShortName(originName)}
                             </p>
                             <p className="mt-1 truncate text-2xs font-semibold text-ink-500">
@@ -371,7 +373,7 @@ export default async function SearchPage({
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
                           </div>
                           <div className="min-w-0 flex-1 text-right">
-                            <p className="font-display text-xl font-extrabold leading-none sm:text-2xl">
+                            <p className="truncate font-display text-xl font-extrabold leading-none sm:text-2xl">
                               {placeShortName(destinationName)}
                             </p>
                             <p className="mt-1 truncate text-2xs font-semibold text-ink-500">

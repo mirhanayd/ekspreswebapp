@@ -74,7 +74,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <Link href="/dashboard" className="ops-btn ops-btn-secondary hidden sm:inline-flex">
+                  <Link
+                    href="/dashboard"
+                    className="ops-btn ops-btn-secondary hidden sm:inline-flex"
+                  >
                     Panele dön
                   </Link>
                   <form action="/api/auth/logout" method="post">

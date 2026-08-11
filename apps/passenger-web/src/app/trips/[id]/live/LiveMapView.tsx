@@ -208,7 +208,10 @@ export default function LiveMapView({
         (value, coordinate) => value.extend(coordinate),
         new maplibregl.LngLatBounds(first, first),
       );
-      instance.fitBounds(bounds, { padding: { top: 90, bottom: 260, left: 40, right: 40 }, maxZoom: 10 });
+      instance.fitBounds(bounds, {
+        padding: { top: 90, bottom: 260, left: 40, right: 40 },
+        maxZoom: 10,
+      });
 
       new maplibregl.Marker({ color: '#12100E' }).setLngLat(first).addTo(instance);
       new maplibregl.Marker({ color: '#A32619' }).setLngLat(last).addTo(instance);
@@ -257,8 +260,7 @@ export default function LiveMapView({
     const instance = map.current;
     if (!instance || !projection || !position) return;
     const source = instance.getSource('demo-route-travelled') as
-      | maplibregl.GeoJSONSource
-      | undefined;
+      maplibregl.GeoJSONSource | undefined;
     if (!source) return;
     source.setData({
       type: 'Feature',

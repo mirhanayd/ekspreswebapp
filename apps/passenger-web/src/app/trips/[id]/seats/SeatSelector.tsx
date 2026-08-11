@@ -250,7 +250,10 @@ export default function SeatSelector({
                   <span className="h-2 w-2 rounded-full bg-ink-400" />
                 </span>
               </div>
-              <span className="absolute -right-1 bottom-3 h-8 w-2 rounded-l bg-ink-400" aria-hidden />
+              <span
+                className="absolute -right-1 bottom-3 h-8 w-2 rounded-l bg-ink-400"
+                aria-hidden
+              />
             </div>
 
             {/* Seat grid */}
@@ -269,9 +272,7 @@ export default function SeatSelector({
                           className={column === 3 ? 'flex justify-center' : ''}
                           aria-hidden
                         >
-                          {column === 3 ? (
-                            <span className="h-full w-px bg-ink-200" />
-                          ) : null}
+                          {column === 3 ? <span className="h-full w-px bg-ink-200" /> : null}
                         </span>
                       );
                     }

@@ -335,7 +335,7 @@
   }
 
   .meter {
-    @apply h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
+    @apply block h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
   }
 
   .meter-fill {

@@ -71,11 +71,7 @@ export function LoginForm() {
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="ops-btn ops-btn-primary min-h-11 w-full"
-      >
+      <button type="submit" disabled={pending} className="ops-btn ops-btn-primary min-h-11 w-full">
         {pending ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {pending ? 'Doğrulanıyor…' : 'Yönetim paneline giriş'}
         {!pending ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}

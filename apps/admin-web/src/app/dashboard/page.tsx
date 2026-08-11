@@ -86,7 +86,7 @@ export default async function DashboardPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         {cards.map(({ label, value, detail, icon: Icon }) => (
           <div key={label} className="surface p-4">
             <div className="flex items-start justify-between gap-3">
@@ -123,9 +123,9 @@ export default async function DashboardPage() {
                   return (
                     <li key={day.date} className="flex min-w-0 flex-1 flex-col items-center gap-2">
                       <span className="text-2xs font-bold text-ink-600">{day.tickets}</span>
-                      <span className="flex w-full flex-1 items-end">
+                      <span className="relative w-full flex-1">
                         <span
-                          className="w-full rounded-t bg-brand-600/90"
+                          className="absolute inset-x-0 bottom-0 rounded-t-lg bg-brand-600/90"
                           style={{ height: `${Math.max(4, height)}%` }}
                           title={`${(day.revenueMinor / 100).toLocaleString('tr-TR')} ₺`}
                         />

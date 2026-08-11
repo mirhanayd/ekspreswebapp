@@ -32,7 +32,9 @@ export function SiteHeader({ authenticated }: { authenticated: boolean }) {
                 href={href}
                 aria-current={active ? 'page' : undefined}
                 className={`hidden min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition md:inline-flex ${
-                  active ? 'bg-white/10 text-white' : 'text-ink-200 hover:bg-white/5 hover:text-white'
+                  active
+                    ? 'bg-white/10 text-white'
+                    : 'text-ink-200 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <Icon className="h-4 w-4 text-brand-300" aria-hidden />
@@ -43,10 +45,7 @@ export function SiteHeader({ authenticated }: { authenticated: boolean }) {
           {authenticated ? (
             <LogoutButton />
           ) : (
-            <Link
-              href="/login"
-              className="btn btn-sm btn-primary sm:min-h-11 sm:px-4 sm:text-sm"
-            >
+            <Link href="/login" className="btn btn-sm btn-primary sm:min-h-11 sm:px-4 sm:text-sm">
               <LogIn className="h-4 w-4" aria-hidden />
               Giriş
             </Link>

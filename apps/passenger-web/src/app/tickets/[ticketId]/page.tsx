@@ -282,15 +282,7 @@ export default async function TicketDetailPage({
   );
 }
 
-function Detail({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-2xl bg-ink-50 p-3 ring-1 ring-inset ring-ink-100">
       <span className="text-brand-700 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>

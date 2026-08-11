@@ -143,15 +143,7 @@ export default async function CheckoutSuccessPage({
   );
 }
 
-function Summary({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function Summary({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="min-w-0 rounded-2xl bg-white/10 p-3">
       <span className="text-brand-300 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>

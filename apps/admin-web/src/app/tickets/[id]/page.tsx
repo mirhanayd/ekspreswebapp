@@ -90,7 +90,7 @@ export default async function TicketDetailPage({ params }: { params: Promise<{ i
 
 function FieldGroup({ title, fields }: { title: string; fields: Array<[string, string]> }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="metric-label">{title}</p>
       <dl className="mt-2 divide-y divide-ink-100 rounded-xl border border-ink-200/80">
         {fields.map(([label, value]) => (

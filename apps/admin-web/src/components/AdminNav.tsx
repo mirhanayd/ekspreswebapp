@@ -2,13 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Activity,
-  BusFront,
-  ChartNoAxesCombined,
-  LayoutDashboard,
-  Ticket,
-} from 'lucide-react';
+import { Activity, BusFront, ChartNoAxesCombined, LayoutDashboard, Ticket } from 'lucide-react';
 
 const navigation = [
   {

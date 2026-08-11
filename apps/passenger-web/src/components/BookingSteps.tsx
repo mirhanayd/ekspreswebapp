@@ -5,7 +5,10 @@ const steps = ['Sefer', 'Koltuk', 'Yolcu & Ödeme', 'Bilet'];
 /** Booking progress indicator shared by seat selection, checkout and confirmation. */
 export function BookingSteps({ current }: { current: 1 | 2 | 3 | 4 }) {
   return (
-    <ol className="flex items-center gap-1.5 sm:gap-2" aria-label={`Adım ${current} / ${steps.length}`}>
+    <ol
+      className="flex items-center gap-1.5 sm:gap-2"
+      aria-label={`Adım ${current} / ${steps.length}`}
+    >
       {steps.map((label, index) => {
         const position = index + 1;
         const done = position < current;

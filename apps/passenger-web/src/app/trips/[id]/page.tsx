@@ -56,7 +56,7 @@ type TripDetail = {
 };
 
 const fleetStandard = [
-  { icon: Sofa, label: '2+1 geniş koltuk' },
+  { icon: Sofa, label: '2+1 koltuk' },
   { icon: Wifi, label: 'Seyahat Wi-Fi' },
   { icon: Usb, label: 'USB şarj' },
   { icon: Snowflake, label: 'Klima' },
@@ -151,7 +151,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
 
             <div className="mt-5 flex items-center gap-3">
               <div className="min-w-0 flex-1">
-                <p className="font-display text-2xl font-extrabold leading-none sm:text-4xl">
+                <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-4xl">
                   {placeShortName(originName)}
                 </p>
                 <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">{originName}</p>
@@ -166,7 +166,7 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                 <span className="h-2 w-2 shrink-0 rounded-full bg-brand-600" />
               </div>
               <div className="min-w-0 flex-1 text-right">
-                <p className="font-display text-2xl font-extrabold leading-none sm:text-4xl">
+                <p className="truncate font-display text-2xl font-extrabold leading-none sm:text-4xl">
                   {placeShortName(destinationName)}
                 </p>
                 <p className="mt-1.5 truncate text-xs font-semibold text-ink-500">
@@ -228,7 +228,10 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
                   const isFirst = index === 0;
                   const isLast = index === stops.length - 1;
                   return (
-                    <li key={stop.id} className="grid grid-cols-[3.5rem_1.25rem_1fr] gap-3 pb-6 last:pb-0">
+                    <li
+                      key={stop.id}
+                      className="grid grid-cols-[3.5rem_1.25rem_1fr] gap-3 pb-6 last:pb-0"
+                    >
                       <span className="num pt-px text-sm font-bold text-ink-900">
                         {formatTime(stopTime)}
                       </span>
@@ -415,15 +418,7 @@ function TimeBlock({
   );
 }
 
-function InfoTile({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function InfoTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="data-tile">
       <span className="text-brand-700 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>

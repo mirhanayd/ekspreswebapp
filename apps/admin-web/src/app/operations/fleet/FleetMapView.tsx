@@ -162,7 +162,11 @@ export default function FleetMapView({ initialTrips }: { initialTrips: FleetTrip
               <Activity className="h-3.5 w-3.5" aria-hidden />
               {liveCount} / {trips.length} canlı
             </span>
-            <button type="button" onClick={() => void refresh()} className="ops-btn ops-btn-secondary">
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="ops-btn ops-btn-secondary"
+            >
               <RefreshCw className="h-4 w-4" aria-hidden />
               <span className="hidden sm:inline">Yenile</span>
             </button>
@@ -182,24 +186,24 @@ export default function FleetMapView({ initialTrips }: { initialTrips: FleetTrip
           <div ref={mapContainer} className="h-full w-full" aria-label="Canlı filo haritası" />
         </div>
 
-        <div className="space-y-2.5">
+        <div className="min-w-0 space-y-2.5">
           {trips.map((trip) => {
             const selected = trip.tripId === selectedTripId;
             return (
               <article
                 key={trip.tripId}
-                className={`surface p-4 transition ${
-                  selected ? 'ring-2 ring-brand-600' : ''
-                }`}
+                className={`surface p-4 transition ${selected ? 'ring-2 ring-brand-600' : ''}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-display text-lg font-extrabold text-ink-900">
                       {trip.plateNumber}
                     </p>
-                    <p className="mt-0.5 flex items-center gap-1.5 truncate text-xs text-ink-500">
+                    <p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-ink-500">
                       <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-                      {trip.originName} → {trip.destinationName}
+                      <span className="truncate">
+                        {trip.originName} → {trip.destinationName}
+                      </span>
                     </p>
                   </div>
                   <span className={`chip-status shrink-0 ${freshnessClass[trip.freshness]}`}>

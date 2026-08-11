@@ -44,7 +44,5 @@ function parseEwkbPoint(hex: string): LngLat | null {
 
   const longitude = view.getFloat64(offset, littleEndian);
   const latitude = view.getFloat64(offset + 8, littleEndian);
-  return Number.isFinite(longitude) && Number.isFinite(latitude)
-    ? { longitude, latitude }
-    : null;
+  return Number.isFinite(longitude) && Number.isFinite(latitude) ? { longitude, latitude } : null;
 }

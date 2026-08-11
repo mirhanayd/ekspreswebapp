@@ -2,12 +2,7 @@ import { ArrowRight, CalendarDays, Clock3, MapPin, Radio, Ticket } from 'lucide-
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
-import {
-  formatDayMonth,
-  formatTime,
-  ticketStatusLabel,
-  tripStatusLabel,
-} from '@/lib/format';
+import { formatDayMonth, formatTime, ticketStatusLabel, tripStatusLabel } from '@/lib/format';
 
 export const metadata = { title: 'Biletlerim' };
 
@@ -124,7 +119,7 @@ export default async function MyTicketsPage() {
 
                 <ul className="grid gap-3 md:grid-cols-2">
                   {group.tickets.map((ticket) => (
-                    <li key={ticket.id}>
+                    <li key={ticket.id} className="min-w-0">
                       <TicketCard ticket={ticket} tone={group.tone} />
                     </li>
                   ))}
@@ -137,13 +132,7 @@ export default async function MyTicketsPage() {
   );
 }
 
-function TicketCard({
-  ticket,
-  tone,
-}: {
-  ticket: PassengerTicket;
-  tone: 'active' | 'muted';
-}) {
+function TicketCard({ ticket, tone }: { ticket: PassengerTicket; tone: 'active' | 'muted' }) {
   const live =
     ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
   const isActive = tone === 'active';
@@ -177,11 +166,7 @@ function TicketCard({
                 <span className="truncate">{ticket.trip.route.destination.name}</span>
               </span>
             </span>
-            <span
-              className={`badge shrink-0 ${
-                isActive ? 'badge-brand' : 'badge-muted'
-              }`}
-            >
+            <span className={`badge shrink-0 ${isActive ? 'badge-brand' : 'badge-muted'}`}>
               {ticketStatusLabel[ticket.status] ?? ticket.status}
             </span>
           </span>

@@ -2,7 +2,16 @@
 
 import Link from 'next/link';
 import { FormEvent, useId, useState } from 'react';
-import { ArrowRight, Eye, EyeOff, LoaderCircle, LockKeyhole, Mail, TriangleAlert, UserRound } from 'lucide-react';
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  TriangleAlert,
+  UserRound,
+} from 'lucide-react';
 import { safeReturnTo } from '@/lib/auth';
 
 export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; returnTo?: string }) {
@@ -113,9 +122,7 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
       ) : null}
 
       <button type="submit" disabled={loading} className="btn btn-primary w-full">
-        {loading ? (
-          <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden />
-        ) : null}
+        {loading ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {loading ? 'İşleniyor…' : mode === 'login' ? 'Giriş Yap' : 'Hesap Oluştur'}
         {!loading ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}
       </button>
