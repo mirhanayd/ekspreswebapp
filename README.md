@@ -74,6 +74,22 @@ The authenticated admin operations center is served at `http://localhost:3002`. 
 local demo admin account to inspect dashboard metrics, transport data, tickets, reports, and the
 simulator-backed live fleet.
 
+### Critical E2E Gate
+
+With PostgreSQL/PostGIS and Redis running, build once and run the deterministic Playwright gate:
+
+```bash
+pnpm test:e2e:install
+pnpm build
+pnpm test:e2e
+```
+
+The runner resets and verifies the local demo state, starts the production API/passenger/admin and
+tracking processes, waits for their health endpoints, exercises the passenger purchase/QR/live-map
+and admin authorization/operations journeys, and always stops the exact processes it started.
+`pnpm test:e2e:full` performs the build and gate together; `pnpm test:e2e:headed` uses a visible
+browser for local diagnosis.
+
 ### Local Database
 
 The local Postgres database runs on port `5432` mapped to `127.0.0.1`.

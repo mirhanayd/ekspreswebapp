@@ -1,13 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
 import { ArrowRight, LockKeyhole, Mail, UserRound } from 'lucide-react';
 import { safeReturnTo } from '@/lib/auth';
 
 export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; returnTo?: string }) {
-  const router = useRouter();
   const [fields, setFields] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -26,8 +24,7 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
       });
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message || 'İşlem tamamlanamadı.');
-      router.replace(safeReturnTo(returnTo));
-      router.refresh();
+      window.location.replace(safeReturnTo(returnTo));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'İşlem tamamlanamadı.');
     } finally {

@@ -2,19 +2,19 @@
 
 ## Current Main
 
-- SHA: `77e652571ef23515a06bd706a8bb8a75e6324b66`
-- Baseline: PR #51 merged; authenticated admin operations are presentation-ready.
+- SHA: `d3d035b0be08ea153dc8deb4f1444f04b41253b9`
+- Baseline: PR #52 merged; the branded responsive passenger/admin UI is presentation-ready.
 
 ## Current Phase
 
-Presentation-ready responsive UI
+Deterministic Playwright and release gate
 
 ## Current Campaign
 
-- Issue #22: deliver a presentation-ready responsive UI system.
-- Branch: `feature/22-presentation-ui`.
-- PR: #52 open.
-- Status: implementation, responsive browser QA, local validation, and required CI complete.
+- Issue #53: deterministic Playwright critical journeys and release gate.
+- Branch: `chore/53-playwright-release-gate`.
+- PR: pending.
+- Status: implementation and the complete local release gate pass; PR publication pending.
 
 ## Completed Major Capabilities
 
@@ -34,11 +34,13 @@ Presentation-ready responsive UI
   PostGIS, and Redis.
 - Cohesive red, charcoal, stone, and white passenger/admin visual system with responsive critical flows.
 - Accessible passenger search, trip, coach-seat, checkout, ticket/QR, and live-map presentation surfaces.
+- Deterministic Playwright passenger/admin critical journeys against production builds and real
+  PostgreSQL/PostGIS/Redis infrastructure.
+- Reliable authenticated return-to navigation after passenger login.
 
 ## Remaining Work
 
-1. Playwright critical-journey coverage.
-2. Full release verification and final readiness audit.
+1. Full release verification and final readiness audit.
 
 ## Current Blocker
 
@@ -46,4 +48,4 @@ None.
 
 ## Next Campaign
 
-Playwright critical-journey and release verification campaign.
+Final readiness audit and roadmap reconciliation.

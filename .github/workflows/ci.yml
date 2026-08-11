@@ -25,9 +25,21 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
       DATABASE_URL: postgres://ci_user:ci_password@localhost:5432/ci_test_db
+      REDIS_URL: redis://127.0.0.1:6379
+      JWT_SECRET: ci-only-secret-with-at-least-thirty-two-characters
+      WEB_ORIGIN: http://127.0.0.1:3000
 
     steps:
       - name: Check out repository
@@ -73,3 +85,9 @@ jobs:
 
       - name: Database Integration Tests
         run: pnpm db:test:integration
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Critical Journey E2E
+        run: pnpm test:e2e
