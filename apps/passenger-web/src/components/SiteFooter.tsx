@@ -14,7 +14,7 @@ export function SiteFooter() {
     <footer className="mt-auto border-t border-white/10 bg-ink-950 text-ink-300">
       <div className="shell-wide grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div className="sm:col-span-2 lg:col-span-1">
-          <BrandMark size="sm" className="w-28" />
+          <BrandMark className="w-32" tone="light" />
           <p className="mt-4 max-w-xs text-sm leading-6 text-ink-400">
             Siirt ve Kurtalan hatlarında şehirlerarası yolcu taşımacılığı. Bilet, koltuk ve canlı
             sefer takibi tek uygulamada.

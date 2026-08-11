@@ -2,49 +2,44 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 /**
- * The company wordmark ships as a raster asset with a solid white background,
- * so it is always presented on a white "plate". On dark chrome that reads as a
- * deliberate brand badge; on light surfaces the plate disappears into the card.
+ * Company wordmark. The asset is trimmed and knocked out to alpha, so it sits
+ * directly on any surface; `tone="light"` adds a soft halo for dark chrome.
  */
 export function BrandMark({
-  className = '',
-  size = 'md',
+  className = 'w-32',
+  tone = 'dark',
+  priority = false,
 }: {
   className?: string;
-  size?: 'sm' | 'md';
+  tone?: 'dark' | 'light';
+  priority?: boolean;
 }) {
-  const dimensions = size === 'sm' ? { width: 96, height: 38 } : { width: 132, height: 53 };
   return (
-    <span
-      className={`inline-flex items-center justify-center rounded-lg bg-white p-1.5 shadow-sm ring-1 ring-black/5 ${className}`}
-    >
-      <Image
-        src="/brand/logo.png"
-        alt="Siirt Kurtalan Ekspres"
-        priority
-        {...dimensions}
-        className="h-auto w-full max-w-full"
-      />
-    </span>
+    <Image
+      src="/brand/logo.png"
+      alt="Siirt Kurtalan Ekspres"
+      width={900}
+      height={244}
+      priority={priority}
+      className={`h-auto ${className} ${
+        tone === 'light' ? 'drop-shadow-[0_1px_2px_rgba(255,255,255,0.45)]' : ''
+      }`}
+    />
   );
 }
 
 export function BrandLink({
   href = '/',
-  className = '',
-  size = 'md',
+  className = 'w-32',
+  tone = 'dark',
 }: {
   href?: string;
   className?: string;
-  size?: 'sm' | 'md';
+  tone?: 'dark' | 'light';
 }) {
   return (
-    <Link
-      href={href}
-      aria-label="Siirt Kurtalan Ekspres ana sayfa"
-      className={`inline-flex items-center gap-3 rounded-xl ${className}`}
-    >
-      <BrandMark size={size} className={size === 'sm' ? 'w-24' : 'w-28 sm:w-32'} />
+    <Link href={href} aria-label="Siirt Kurtalan Ekspres ana sayfa" className="inline-flex">
+      <BrandMark className={className} tone={tone} priority />
     </Link>
   );
 }

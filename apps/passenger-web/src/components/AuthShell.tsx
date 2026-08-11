@@ -38,7 +38,7 @@ export function AuthShell({
         />
 
         <Link href="/" className="relative inline-flex w-fit">
-          <BrandMark className="w-32" />
+          <BrandMark className="w-36" tone="light" />
         </Link>
 
         <div className="relative">

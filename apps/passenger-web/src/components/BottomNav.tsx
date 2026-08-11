@@ -26,7 +26,12 @@ export function BottomNav({ authenticated }: { authenticated: boolean }) {
       active: pathname.startsWith('/tickets'),
     },
     authenticated
-      ? { href: '/tickets', label: 'Hesabım', icon: UserRound, active: false }
+      ? {
+          href: '/hesap',
+          label: 'Hesabım',
+          icon: UserRound,
+          active: pathname.startsWith('/hesap'),
+        }
       : { href: '/login', label: 'Giriş yap', icon: LogIn, active: pathname.startsWith('/login') },
   ];
 

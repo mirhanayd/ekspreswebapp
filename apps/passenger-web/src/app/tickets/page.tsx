@@ -1,4 +1,5 @@
-import { ArrowRight, CalendarDays, Clock3, MapPin, Radio, Ticket } from 'lucide-react';
+import { ArrowRight, CalendarDays, Clock3, MapPin, Radio, Ticket, UserRound } from 'lucide-react';
+import { BrandMark } from '@/components/BrandLogo';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
@@ -67,6 +68,13 @@ export default async function MyTicketsPage() {
 
   return (
     <div className="page shell">
+      <div className="app-topbar mb-4">
+        <BrandMark className="w-28" />
+        <Link href="/hesap" aria-label="Hesabım" className="icon-btn icon-btn-light">
+          <UserRound className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+
       <header className="panel panel-sheen p-5 sm:p-7">
         <div className="relative flex flex-wrap items-end justify-between gap-4">
           <div>

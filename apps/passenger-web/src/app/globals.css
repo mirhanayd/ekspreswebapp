@@ -32,8 +32,9 @@
     --ring: 6 73% 37%;
     --radius: 1rem;
 
-    /* App chrome — full-height screens measure against these. */
-    --app-header-h: 4rem;
+    /* App chrome. Mobile runs headerless like the reference app screens, so
+       each view owns its top row and the tab pill floats at the bottom. */
+    --app-header-h: 0rem;
     --app-nav-h: 5.25rem;
   }
 
@@ -88,6 +89,24 @@
 }
 
 @layer components {
+  /* ---------------------------------------------------------------- *
+   * App shell — the reference screens sit on a tinted canvas with the
+   * content inset in a large rounded sheet.
+   * ---------------------------------------------------------------- */
+  .app-sheet {
+    @apply rounded-[2rem] bg-white/70 p-4 ring-1 ring-white sm:p-6 md:rounded-4xl;
+  }
+
+  /* Top row every mobile view owns in place of a global header. */
+  .app-topbar {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  /* Tall search capsule that sits beside the display heading. */
+  .search-capsule {
+    @apply grid w-14 shrink-0 place-items-center rounded-full bg-white text-ink-900 shadow-card ring-1 ring-ink-200/70 transition hover:text-brand-700 sm:w-16;
+  }
+
   /* ---------------------------------------------------------------- *
    * Layout
    * ---------------------------------------------------------------- */
@@ -354,11 +373,30 @@
     @apply rounded-2xl border border-ink-200 bg-ink-50 p-4 text-sm text-ink-700;
   }
 
+  /* Facts strip under a journey card — the reference's tinted 3-up row. */
+  .facts-strip {
+    @apply grid grid-cols-3 divide-x divide-ember-300/60 border-t border-ember-300/60 bg-ember-100;
+  }
+
   /* ---------------------------------------------------------------- *
    * Floating chrome
    * ---------------------------------------------------------------- */
   .floating-nav {
     @apply fixed inset-x-4 bottom-3 z-50 h-16 rounded-full bg-ink-950/95 shadow-panel backdrop-blur md:hidden;
+  }
+
+  /* Circular white map control, stacked at the map edge. */
+  .map-fab {
+    @apply grid h-11 w-11 place-items-center rounded-full bg-white/95 text-ink-800 shadow-lift backdrop-blur transition hover:text-brand-700 disabled:opacity-50;
+  }
+
+  /* Numbered stop tab down the left edge of the live map. */
+  .stop-tab {
+    @apply grid h-14 w-14 place-items-center rounded-3xl bg-white/90 font-display text-lg font-extrabold text-ink-700 shadow-lift backdrop-blur transition;
+  }
+
+  .stop-tab-active {
+    @apply bg-ember-400 text-ink-950;
   }
 
   /* Sticky action bar that clears the floating tab pill. */

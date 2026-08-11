@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import SeatSelector from './SeatSelector';
 import { API_BASE_URL } from '@/lib/server-api';
 import { BookingSteps } from '@/components/BookingSteps';
@@ -42,13 +42,17 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
 
   return (
     <div className="page shell pb-28 lg:pb-10">
-      <nav aria-label="Sayfa yolu" className="flex items-center gap-1 text-sm text-ink-500">
-        <Link href={`/trips/${id}`} className="link-quiet">
-          Sefer detayı
+      <div className="app-topbar">
+        <Link
+          href={`/trips/${id}`}
+          aria-label="Sefer detayına dön"
+          className="icon-btn icon-btn-light"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
         </Link>
-        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-        <span className="font-semibold text-ink-800">Koltuk seçimi</span>
-      </nav>
+        <p className="font-display text-sm font-bold text-ink-800">Koltuk seçimi</p>
+        <span className="h-11 w-11" aria-hidden />
+      </div>
 
       <div className="card mt-3 p-4 sm:p-5">
         <BookingSteps current={2} />

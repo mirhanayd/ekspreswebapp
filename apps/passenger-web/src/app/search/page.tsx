@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BusFront,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -48,6 +49,15 @@ const timeFilters = [
   { key: 'oglen', label: 'Öğleden sonra', hint: '12–18', icon: Clock3, from: 12, to: 18 },
   { key: 'aksam', label: 'Akşam', hint: '18–24', icon: Sunset, from: 18, to: 24 },
 ] as const;
+
+/** "Sal, 12 Ağu" — the short day label the reference prints under each time. */
+function dayLabel(value: string) {
+  return new Date(value).toLocaleDateString('tr-TR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
 
 function buildHref(base: Record<string, string | undefined>, patch: Record<string, string | null>) {
   const params = new URLSearchParams();
@@ -222,8 +232,35 @@ export default async function SearchPage({
         </div>
       </section>
 
+      {/* Trip summary pills */}
+      <ul className="hide-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <li>
+          <span className="chip pointer-events-none">
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </span>
+        </li>
+        <li>
+          <span className="chip pointer-events-none capitalize">
+            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </span>
+        </li>
+        <li>
+          <span className="chip pointer-events-none">
+            <BusFront className="h-3.5 w-3.5" aria-hidden />
+            {sorted.length} sefer
+          </span>
+        </li>
+      </ul>
+
       {/* Date strip */}
-      <nav aria-label="Tarih seçimi" className="mt-4 flex items-center gap-2">
+      <nav aria-label="Tarih seçimi" className="mt-3 flex items-center gap-2">
         <Link
           href={buildHref(baseParams, { date: dayStrip[0].value })}
           aria-label="Önceki gün"
@@ -267,29 +304,38 @@ export default async function SearchPage({
         </Link>
       </nav>
 
-      {/* Result count + time filters */}
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <h1 className="title-lg">
-          {sorted.length} sefer <span className="text-ink-500">bulundu</span>
-        </h1>
-      </div>
-      <div className="hide-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
-        {timeFilters.map(({ key, label, hint, icon: Icon }) => {
-          const active = query.time === key;
-          return (
-            <Link
-              key={key}
-              href={buildHref(baseParams, { time: active ? null : key })}
-              aria-current={active ? 'true' : undefined}
-              className={`chip ${active ? 'chip-active' : ''}`}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              {label}
-              <span className={active ? 'text-white/70' : 'text-ink-400'}>{hint}</span>
-            </Link>
-          );
-        })}
-      </div>
+      {/* Result count + filters */}
+      <details className="group mt-6" open={Boolean(activeTimeFilter)}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+          <h1 className="title-lg">
+            {sorted.length} sefer <span className="text-ink-500">bulundu</span>
+          </h1>
+          <span className="icon-btn icon-btn-light relative" aria-label="Saat filtrelerini aç">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            {activeTimeFilter ? (
+              <span className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-brand-600 ring-2 ring-white" />
+            ) : null}
+          </span>
+        </summary>
+
+        <div className="hide-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+          {timeFilters.map(({ key, label, hint, icon: Icon }) => {
+            const active = query.time === key;
+            return (
+              <Link
+                key={key}
+                href={buildHref(baseParams, { time: active ? null : key })}
+                aria-current={active ? 'true' : undefined}
+                className={`chip ${active ? 'chip-active' : ''}`}
+              >
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+                {label}
+                <span className={active ? 'text-white/70' : 'text-ink-400'}>{hint}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </details>
 
       {/* Results */}
       <div className="mt-4">
@@ -365,10 +411,9 @@ export default async function SearchPage({
                           <div className="flex min-w-12 flex-1 items-center">
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-ink-900" />
                             <span className="dotted-path" />
-                            <BusFront
-                              className="mx-1 h-4 w-4 shrink-0 text-brand-600"
-                              aria-hidden
-                            />
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink-100 text-ink-800">
+                              <BusFront className="h-4 w-4" aria-hidden />
+                            </span>
                             <span className="dotted-path" />
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" />
                           </div>
@@ -387,7 +432,9 @@ export default async function SearchPage({
                             <p className="num font-display text-2xl font-extrabold leading-none">
                               {formatTime(trip.departureTime)}
                             </p>
-                            <p className="mt-1 text-2xs font-semibold text-ink-500">Kalkış</p>
+                            <p className="mt-1 text-2xs font-semibold text-ink-500">
+                              {dayLabel(trip.departureTime)}
+                            </p>
                           </div>
                           <span className="duration-pill mb-1">
                             <Clock3 className="h-3 w-3" aria-hidden />
@@ -397,13 +444,15 @@ export default async function SearchPage({
                             <p className="num font-display text-2xl font-extrabold leading-none">
                               {formatTime(trip.arrivalTime)}
                             </p>
-                            <p className="mt-1 text-2xs font-semibold text-ink-500">Varış</p>
+                            <p className="mt-1 text-2xs font-semibold text-ink-500">
+                              {dayLabel(trip.arrivalTime)}
+                            </p>
                           </div>
                         </div>
                       </div>
 
                       {/* Facts strip */}
-                      <dl className="grid grid-cols-3 divide-x divide-ink-200/70 border-t border-ink-200/70 bg-ink-50">
+                      <dl className="facts-strip">
                         <Fact label="Araç" value={bus.plateNumber} />
                         <Fact label="Düzen" value={`${bus.seatLayout?.layout || '2+1'}`} />
                         <Fact

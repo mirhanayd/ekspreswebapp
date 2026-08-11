@@ -110,7 +110,7 @@ export default async function TicketDetailPage({
         <article className="relative mt-3 rounded-3xl border border-ink-200 bg-white shadow-lift">
           <header className="flex flex-wrap items-center justify-between gap-3 rounded-t-3xl bg-ink-950 px-5 py-4 text-white sm:px-7">
             <div className="flex min-w-0 items-center gap-3">
-              <BrandMark size="sm" className="w-24" />
+              <BrandMark className="w-24" tone="light" />
               <span className="hidden border-l border-white/15 pl-3 sm:block">
                 <span className="block text-2xs font-bold uppercase tracking-[0.16em] text-brand-300">
                   Yolcu bileti

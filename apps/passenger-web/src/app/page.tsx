@@ -12,9 +12,11 @@ import {
   Search,
   ShieldCheck,
   Ticket,
+  Wallet,
 } from 'lucide-react';
 import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
 import { SearchPanel, type SearchLocation } from '@/components/SearchPanel';
+import { BrandMark } from '@/components/BrandLogo';
 import {
   formatDayMonth,
   formatDuration,
@@ -90,153 +92,140 @@ export default async function Home() {
   return (
     <>
       {/* ---------------------------------------------------------------- *
-       * Hero: greeting, headline, quick routes, featured service card
+       * App screen: greeting → headline + search capsule → route chips →
+       * featured service card
        * ---------------------------------------------------------------- */}
-      <section className="shell-wide pb-8 pt-5 sm:pt-8">
-        <div className="flex items-center justify-between gap-3">
-          <p className="font-display text-base font-bold text-ink-900">
-            Merhaba{' '}
-            <span aria-hidden className="inline-block">
-              👋
+      <section className="shell-wide pb-6 pt-3 md:pt-8">
+        <div className="app-sheet">
+          <div className="app-topbar">
+            <BrandMark className="w-28 sm:w-32" priority />
+            <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-bold text-ink-800 shadow-card ring-1 ring-ink-200/70">
+              <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-50 text-brand-700">
+                <Clock3 className="h-3.5 w-3.5" aria-hidden />
+              </span>
+              {formatDayMonth(new Date())}
             </span>
-          </p>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-ink-200 bg-white px-3 py-1.5 text-2xs font-bold text-ink-700">
-            <Clock3 className="h-3.5 w-3.5 text-brand-600" aria-hidden />
-            {formatDayMonth(new Date())}
-          </span>
-        </div>
+          </div>
 
-        <div className="mt-5 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-12">
-          <div className="min-w-0">
-            <div className="flex items-start justify-between gap-4">
-              <div className="min-w-0">
-                <p className="eyebrow flex items-center gap-1.5">
-                  <BusFront className="h-3.5 w-3.5" aria-hidden />
-                  Siirt · Kurtalan · Batman · Diyarbakır
-                </p>
-                <h1 className="title-xl mt-3 lg:text-6xl">
+          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center lg:gap-10">
+            <div className="min-w-0">
+              <p className="font-display text-xl font-bold text-ink-900">
+                Merhaba{' '}
+                <span aria-hidden className="inline-block">
+                  👋
+                </span>
+              </p>
+
+              <p className="eyebrow mt-4 flex items-center gap-1.5">
+                <BusFront className="h-3.5 w-3.5" aria-hidden />
+                Siirt · Kurtalan · Batman · Diyarbakır
+              </p>
+
+              <div className="mt-2 flex items-stretch justify-between gap-4">
+                <h1 className="title-xl min-w-0">
                   Yolculuğun kolay,
                   <br />
                   <span className="text-brand-700">yerin hazır.</span>
                 </h1>
+                <a
+                  href="#sefer-ara"
+                  aria-label="Sefer arama formuna git"
+                  className="search-capsule"
+                >
+                  <Search className="h-5 w-5" aria-hidden />
+                </a>
               </div>
-              <a
-                href="#sefer-ara"
-                aria-label="Sefer arama formuna git"
-                className="icon-btn icon-btn-dark h-14 w-14 sm:h-16 sm:w-16 lg:hidden"
-              >
-                <Search className="h-5 w-5" aria-hidden />
-              </a>
+
+              {popular.length ? (
+                <ul className="hide-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:flex-wrap">
+                  {popular.map((route, index) => (
+                    <li key={route.id}>
+                      <Link
+                        href={`/search?originId=${route.originId}&destinationId=${route.destinationId}&date=${tomorrow}`}
+                        className={`chip ${index === 0 ? 'chip-active' : ''}`}
+                      >
+                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        {placeShortName(names.get(route.originId) ?? '')} –{' '}
+                        {placeShortName(names.get(route.destinationId) ?? '')}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
 
-            <p className="subtle mt-4 hidden max-w-md lg:block">
-              Seferini bul, otobüsün gerçek koltuk planından yerini seç, biletini anında al ve yola
-              çıktığında aracını canlı takip et.
-            </p>
+            {/* Featured service */}
+            <figure className="relative mt-5 overflow-hidden rounded-[1.75rem] lg:mt-0 lg:rounded-4xl">
+              <div className="relative h-[21rem] w-full sm:h-[24rem] lg:h-[27rem]">
+                <Image
+                  src="/brand/coach.jpg"
+                  alt="Siirt Kurtalan Ekspres filosuna ait şehirlerarası otobüs"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 640px"
+                  className="object-cover object-center"
+                  priority
+                />
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/55 to-ink-950/5"
+                  aria-hidden
+                />
+              </div>
 
-            {popular.length ? (
-              <ul className="hide-scrollbar -mx-4 mt-5 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:px-0 lg:flex-wrap">
-                {popular.map((route, index) => (
-                  <li key={route.id}>
-                    <Link
-                      href={`/search?originId=${route.originId}&destinationId=${route.destinationId}&date=${tomorrow}`}
-                      className={`chip ${index === 0 ? 'chip-active' : ''}`}
-                    >
-                      <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                      {placeShortName(names.get(route.originId) ?? '')} –{' '}
-                      {placeShortName(names.get(route.destinationId) ?? '')}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-
-            <a href="#sefer-ara" className="btn btn-dark mt-6 hidden lg:inline-flex">
-              <Search className="h-4 w-4" aria-hidden />
-              Sefer ara
-            </a>
-          </div>
-
-          {/* Featured service */}
-          <figure className="relative overflow-hidden rounded-[1.75rem] sm:rounded-4xl">
-            <div className="relative h-[22rem] w-full sm:h-[24rem] lg:h-[30rem]">
-              <Image
-                src="/brand/coach.jpg"
-                alt="Siirt Kurtalan Ekspres filosuna ait şehirlerarası otobüs"
-                fill
-                sizes="(max-width: 1280px) 100vw, 1200px"
-                className="object-cover"
-                priority
-              />
-              <div
-                className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/55 to-ink-950/10"
-                aria-hidden
-              />
-            </div>
-
-            <figcaption className="absolute inset-x-0 bottom-0 p-5 text-center text-white sm:p-7">
-              {featured ? (
-                <>
-                  <p className="text-2xs font-bold uppercase tracking-[0.18em] text-brand-300">
-                    Öne çıkan sefer · {formatDayMonth(featured.trip.departureTime)}
-                  </p>
-                  <p className="mx-auto mt-2 flex max-w-lg items-center justify-center gap-x-2.5 font-display text-2xl font-extrabold sm:text-3xl">
-                    <span className="truncate">
-                      {placeShortName(names.get(featured.route.originId) ?? '')}
-                    </span>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-brand-400" aria-hidden />
-                    <span className="truncate">
+              <figcaption className="absolute inset-x-0 bottom-0 p-5 text-center text-white sm:p-6">
+                {featured ? (
+                  <>
+                    <p className="font-display text-xl font-extrabold sm:text-2xl">
+                      {placeShortName(names.get(featured.route.originId) ?? '')} →{' '}
                       {placeShortName(names.get(featured.route.destinationId) ?? '')}
-                    </span>
-                  </p>
-                  <p className="mx-auto mt-1.5 max-w-sm truncate text-xs font-semibold text-ink-300">
-                    {names.get(featured.route.originId)} → {names.get(featured.route.destinationId)}
-                  </p>
-                  <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs font-semibold text-ink-200">
-                    <li className="flex items-center gap-1.5">
-                      <Clock3 className="h-3.5 w-3.5" aria-hidden />
-                      {formatTime(featured.trip.departureTime)} kalkış
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <Armchair className="h-3.5 w-3.5" aria-hidden />
-                      {featured.bus.seatLayout?.layout || '2+1'} düzen
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <BusFront className="h-3.5 w-3.5" aria-hidden />
-                      {formatPrice(featured.trip.basePrice)}
-                    </li>
-                  </ul>
-                  <span className="duration-pill mt-4">
-                    <Clock3 className="h-3 w-3" aria-hidden />
-                    {formatDuration(
-                      minutesBetween(featured.trip.departureTime, featured.trip.arrivalTime),
-                    )}
-                  </span>
-                  <div className="mt-4">
-                    <Link href={`/trips/${featured.trip.id}`} className="btn btn-outline-invert">
-                      Seferi incele
-                      <ArrowRight className="h-4 w-4" aria-hidden />
-                    </Link>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="font-display text-xl font-extrabold sm:text-2xl">
-                    Bölgenin güvenilir ekspres hattı
-                  </p>
-                  <p className="mx-auto mt-2 max-w-md text-sm text-ink-200">
-                    Modern filo, 2+1 konforlu koltuk düzeni ve canlı sefer takibi.
-                  </p>
-                  <div className="mt-4">
-                    <a href="#sefer-ara" className="btn btn-outline-invert">
-                      Sefer ara
-                      <ArrowRight className="h-4 w-4" aria-hidden />
-                    </a>
-                  </div>
-                </>
-              )}
-            </figcaption>
-          </figure>
+                    </p>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-white/80">
+                      {formatDayMonth(featured.trip.departureTime)} tarihli öne çıkan seferimiz. 2+1
+                      konforlu koltuk düzeni ve canlı sefer takibi ile.
+                    </p>
+                    <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold">
+                      <li className="flex items-center gap-1.5">
+                        <Clock3 className="h-4 w-4 text-white/70" aria-hidden />
+                        {formatTime(featured.trip.departureTime)}
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Armchair className="h-4 w-4 text-white/70" aria-hidden />
+                        {featured.bus.seatLayout?.layout || '2+1'}
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Wallet className="h-4 w-4 text-white/70" aria-hidden />
+                        {formatPrice(featured.trip.basePrice)}
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <ArrowRight className="h-4 w-4 text-white/70" aria-hidden />
+                        {formatDuration(
+                          minutesBetween(featured.trip.departureTime, featured.trip.arrivalTime),
+                        )}
+                      </li>
+                    </ul>
+                    <div className="mt-5">
+                      <Link href={`/trips/${featured.trip.id}`} className="btn btn-outline-invert">
+                        Seferi incele
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-display text-xl font-extrabold sm:text-2xl">
+                      Bölgenin güvenilir ekspres hattı
+                    </p>
+                    <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-white/80">
+                      Modern filo, 2+1 konforlu koltuk düzeni ve canlı sefer takibi.
+                    </p>
+                    <div className="mt-5">
+                      <a href="#sefer-ara" className="btn btn-outline-invert">
+                        Sefer ara
+                      </a>
+                    </div>
+                  </>
+                )}
+              </figcaption>
+            </figure>
+          </div>
         </div>
       </section>
 
@@ -247,7 +236,7 @@ export default async function Home() {
         <section
           id="sefer-ara"
           aria-labelledby="sefer-ara-baslik"
-          className="card scroll-mt-[calc(var(--app-header-h)+1rem)] p-4 sm:p-6"
+          className="card scroll-mt-4 p-4 sm:p-6"
         >
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
@@ -282,7 +271,8 @@ export default async function Home() {
               <div className="min-w-0">
                 <p className="eyebrow-invert">Yaklaşan yolculuğun</p>
                 <p className="mt-1 truncate font-display text-lg font-bold">
-                  {activeTicket.trip.route.origin.name} → {activeTicket.trip.route.destination.name}
+                  {placeShortName(activeTicket.trip.route.origin.name)} →{' '}
+                  {placeShortName(activeTicket.trip.route.destination.name)}
                 </p>
                 <p className="mt-0.5 truncate text-sm text-ink-300">
                   {formatDayMonth(activeTicket.trip.departureTime)} ·{' '}
@@ -306,10 +296,7 @@ export default async function Home() {
       {/* ---------------------------------------------------------------- *
        * How it works
        * ---------------------------------------------------------------- */}
-      <section
-        id="nasil-calisir"
-        className="mt-10 scroll-mt-[calc(var(--app-header-h)+1rem)] bg-white py-12 sm:py-16"
-      >
+      <section id="nasil-calisir" className="mt-8 scroll-mt-4 bg-white py-12 sm:py-16">
         <div className="shell-wide">
           <SectionHeader
             eyebrow="Nasıl çalışır?"

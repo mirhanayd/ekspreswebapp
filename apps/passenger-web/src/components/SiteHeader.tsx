@@ -14,10 +14,10 @@ const links = [
 export function SiteHeader({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
   return (
-    <header className="sticky top-0 z-50 h-[var(--app-header-h)] border-b border-white/10 bg-ink-950/95 text-white backdrop-blur">
+    <header className="sticky top-0 z-50 hidden h-[var(--app-header-h)] border-b border-white/10 bg-ink-950/95 text-white backdrop-blur md:block">
       <div className="shell-wide flex h-full items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <BrandLink size="sm" />
+          <BrandLink className="w-28" tone="light" />
           <span className="hidden min-w-0 border-l border-white/15 pl-3 text-2xs font-semibold uppercase tracking-[0.16em] text-ink-300 lg:block">
             Şehirlerarası yolcu taşımacılığı
           </span>

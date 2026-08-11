@@ -1,4 +1,4 @@
-import { ArrowRight, Armchair, BusFront, CalendarDays, ChevronRight, Clock3 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Armchair, BusFront, CalendarDays, Clock3 } from 'lucide-react';
 import Link from 'next/link';
 import CheckoutForm from './CheckoutForm';
 import { API_BASE_URL } from '@/lib/server-api';
@@ -85,13 +85,17 @@ export default async function CheckoutPage({
 
   return (
     <div className="page shell">
-      <nav aria-label="Sayfa yolu" className="flex items-center gap-1 text-sm text-ink-500">
-        <Link href={`/trips/${id}/seats`} className="link-quiet">
-          Koltuk seçimi
+      <div className="app-topbar">
+        <Link
+          href={`/trips/${id}/seats`}
+          aria-label="Koltuk seçimine dön"
+          className="icon-btn icon-btn-light"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
         </Link>
-        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-        <span className="font-semibold text-ink-800">Yolcu ve ödeme</span>
-      </nav>
+        <p className="font-display text-sm font-bold text-ink-800">Yolcu ve ödeme</p>
+        <span className="h-11 w-11" aria-hidden />
+      </div>
 
       <div className="card mt-3 p-4 sm:p-5">
         <BookingSteps current={3} />

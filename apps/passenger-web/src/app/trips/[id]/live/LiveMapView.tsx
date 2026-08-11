@@ -4,7 +4,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { io, Socket } from 'socket.io-client';
-import { ArrowLeft, BusFront, Clock3, Gauge, MapPin, Ticket } from 'lucide-react';
+import {
+  ArrowLeft,
+  BusFront,
+  Gauge,
+  LocateFixed,
+  MapPin,
+  Ticket,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import Link from 'next/link';
 import { toLngLat } from '@/lib/geo';
 import { measureRoute, projectOnRoute } from '@/lib/route-progress';
@@ -112,6 +121,8 @@ export default function LiveMapView({
           name: stop.location?.name ?? 'Durak',
           order: stop.stopOrder ?? 0,
           travelledKm: projection?.travelledKm ?? 0,
+          longitude: point.longitude,
+          latitude: point.latitude,
         };
       })
       .filter((stop): stop is NonNullable<typeof stop> => Boolean(stop))
@@ -164,7 +175,6 @@ export default function LiveMapView({
       zoom: 8,
       attributionControl: false,
     });
-    map.current.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
     map.current.on('load', () => {
       const instance = map.current;
@@ -275,6 +285,10 @@ export default function LiveMapView({
     });
   }, [projection, position, coordinates]);
 
+  const focusStop = (stop: { longitude: number; latitude: number }) => {
+    map.current?.flyTo({ center: [stop.longitude, stop.latitude], zoom: 10.5, duration: 700 });
+  };
+
   return (
     <div className="relative h-full w-full">
       <div
@@ -322,39 +336,99 @@ export default function LiveMapView({
         </Link>
       </div>
 
+      {/* Stop tabs down the left edge */}
+      {stops.length ? (
+        <ul className="absolute left-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2.5 sm:left-4">
+          {stops.map((stop, index) => {
+            const isNext = nextStop?.id === stop.id;
+            const passed = stop.travelledKm <= (projection?.travelledKm ?? 0);
+            return (
+              <li key={stop.id}>
+                <button
+                  type="button"
+                  onClick={() => focusStop(stop)}
+                  aria-label={`${index + 1}. durak: ${stop.name}`}
+                  title={stop.name}
+                  className={`stop-tab ${isNext ? 'stop-tab-active' : ''} ${
+                    passed && !isNext ? 'opacity-60' : ''
+                  }`}
+                >
+                  {index + 1}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {/* Map controls down the right edge */}
+      <div className="absolute right-3 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-3 sm:right-4">
+        <button
+          type="button"
+          onClick={() => map.current?.zoomIn({ duration: 300 })}
+          aria-label="Haritayı yakınlaştır"
+          className="map-fab"
+        >
+          <ZoomIn className="h-4 w-4" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => map.current?.zoomOut({ duration: 300 })}
+          aria-label="Haritayı uzaklaştır"
+          className="map-fab"
+        >
+          <ZoomOut className="h-4 w-4" aria-hidden />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!position) return;
+            map.current?.flyTo({
+              center: [position.longitude, position.latitude],
+              zoom: 11,
+              duration: 700,
+            });
+          }}
+          disabled={!position}
+          aria-label="Aracı ortala"
+          className="map-fab"
+        >
+          <LocateFixed className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+
       {/* Floating journey panel */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3 sm:p-4">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 space-y-2.5 p-3 sm:p-4">
         <section
           aria-label="Sefer durumu"
           className="panel pointer-events-auto mx-auto max-w-3xl p-4 sm:p-5"
         >
-          {/* Times + duration pill */}
-          <div className="relative flex items-end justify-between gap-3">
-            <div className="min-w-0">
-              <p className="num font-display text-2xl font-extrabold leading-none">
-                {formatTime(bootstrap.trip.departureTime)}
-              </p>
-              <p className="mt-1 truncate text-2xs font-semibold text-ink-400">
-                {placeShortName(bootstrap.trip.route.origin.name)} · kalkış
-              </p>
-            </div>
-            <span className="duration-pill mb-1 shrink-0">
-              <Clock3 className="h-3 w-3" aria-hidden />
+          {/* Times + ETA pill */}
+          <div className="relative flex items-center justify-between gap-3">
+            <p className="num text-sm font-semibold text-ink-300">
+              {formatTime(bootstrap.trip.departureTime)}
+            </p>
+            <span className="duration-pill shrink-0">
               {etaMinutes > 0 ? `~${etaMinutes} dk` : 'Yaklaşıyor'}
             </span>
-            <div className="min-w-0 text-right">
-              <p className="num font-display text-2xl font-extrabold leading-none">
-                {formatTime(bootstrap.trip.arrivalTime)}
-              </p>
-              <p className="mt-1 truncate text-2xs font-semibold text-ink-400">
-                {placeShortName(bootstrap.trip.route.destination.name)} · varış
-              </p>
-            </div>
+            <p className="num text-sm font-semibold text-ink-300">
+              {formatTime(bootstrap.trip.arrivalTime)}
+            </p>
+          </div>
+
+          {/* Endpoints */}
+          <div className="mt-1.5 flex items-baseline justify-between gap-3">
+            <p className="min-w-0 truncate font-display text-lg font-extrabold">
+              {placeShortName(bootstrap.trip.route.origin.name)}
+            </p>
+            <p className="min-w-0 truncate text-right font-display text-lg font-extrabold">
+              {placeShortName(bootstrap.trip.route.destination.name)}
+            </p>
           </div>
 
           {/* Dotted progress track */}
           <div
-            className="relative mt-4 flex items-center"
+            className="relative mt-3 flex items-center"
             role="progressbar"
             aria-valuenow={progressPercent}
             aria-valuemin={0}
@@ -363,7 +437,7 @@ export default function LiveMapView({
           >
             <span className="h-3 w-3 shrink-0 rounded-full bg-ember-400" />
             <span className="relative mx-1 h-0.5 flex-1">
-              <span className="absolute inset-0 border-t-2 border-dotted border-white/35" />
+              <span className="absolute inset-0 border-t-2 border-dashed border-ember-400/45" />
               <span
                 className="absolute inset-y-0 left-0 border-t-2 border-ember-400 transition-[width] duration-700"
                 style={{ width: `${progressPercent}%` }}
@@ -375,7 +449,7 @@ export default function LiveMapView({
                 <BusFront className="h-3 w-3" aria-hidden />
               </span>
             </span>
-            <span className="h-3 w-3 shrink-0 rounded-full border-2 border-white/60" />
+            <span className="h-3 w-3 shrink-0 rounded-full bg-white" />
           </div>
 
           <p className="mt-2.5 text-center text-2xs font-semibold text-ink-400">
@@ -383,61 +457,35 @@ export default function LiveMapView({
             {metrics.totalKm > 0 ? ` · yaklaşık ${remainingKm.toFixed(0)} km kaldı` : ''}
             {position ? ` · son güncelleme ${formatTime(position.recordedAt)}` : ''}
           </p>
-
-          {/* Next stop + live metrics */}
-          <div className="mt-4 flex items-center gap-3 rounded-2xl bg-white/10 p-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-700 text-white">
-              <MapPin className="h-4 w-4" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-2xs font-bold uppercase tracking-wide text-ink-400">
-                Sonraki durak
-              </p>
-              <p className="truncate font-display text-sm font-bold text-white">
-                {nextStop ? nextStop.name : bootstrap.trip.route.destination.name}
-              </p>
-            </div>
-            {nextStopKm !== null ? (
-              <p className="num shrink-0 text-sm font-bold text-ember-300">
-                {nextStopKm.toFixed(0)} km
-              </p>
-            ) : null}
-          </div>
-
-          <dl className="mt-3 grid grid-cols-2 gap-2">
-            <Metric icon={<BusFront aria-hidden />} label="Araç">
-              <p className="num truncate text-sm font-bold text-white">
-                {bootstrap.trip.bus.plateNumber}
-              </p>
-            </Metric>
-            <Metric icon={<Gauge aria-hidden />} label="Anlık hız">
-              <p className="num text-sm font-bold text-white">
-                {Math.round(position?.speedKph || 0)} km/sa
-              </p>
-            </Metric>
-          </dl>
         </section>
-      </div>
-    </div>
-  );
-}
 
-function Metric({
-  icon,
-  label,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-w-0 rounded-2xl border border-white/15 p-2.5">
-      <dt className="flex items-center gap-1.5 text-2xs font-bold uppercase tracking-wide text-ink-400">
-        <span className="[&>svg]:h-3 [&>svg]:w-3">{icon}</span>
-        <span className="truncate">{label}</span>
-      </dt>
-      <dd className="mt-1">{children}</dd>
+        {/* Status pills */}
+        <ul className="hide-scrollbar pointer-events-auto mx-auto flex max-w-3xl gap-2.5 overflow-x-auto">
+          <li className="min-w-0 flex-1">
+            <span className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink-950/95 px-4 text-sm font-bold text-white shadow-panel backdrop-blur">
+              <MapPin className="h-4 w-4 shrink-0 text-ember-300" aria-hidden />
+              <span className="truncate">
+                {nextStop ? nextStop.name : bootstrap.trip.route.destination.name}
+              </span>
+              {nextStopKm !== null ? (
+                <span className="num shrink-0 text-ember-300">{nextStopKm.toFixed(0)} km</span>
+              ) : null}
+            </span>
+          </li>
+          <li>
+            <span className="flex min-h-12 items-center gap-2 whitespace-nowrap rounded-full bg-ink-950/95 px-4 text-sm font-bold text-white shadow-panel backdrop-blur">
+              <BusFront className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
+              {bootstrap.trip.bus.plateNumber}
+            </span>
+          </li>
+          <li>
+            <span className="flex min-h-12 items-center gap-2 whitespace-nowrap rounded-full bg-ink-950/95 px-4 text-sm font-bold text-white shadow-panel backdrop-blur">
+              <Gauge className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
+              {Math.round(position?.speedKph || 0)} km/sa
+            </span>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }
