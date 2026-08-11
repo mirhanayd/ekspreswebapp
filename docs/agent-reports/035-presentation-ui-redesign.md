@@ -166,14 +166,14 @@ No new backend endpoints, no contract changes, no schema changes.
 
 ## Validation performed
 
-| Check                                   | Result                                                                                                                                                                   |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm --filter passenger-web typecheck` | pass                                                                                                                                                                     |
-| `pnpm --filter admin-web typecheck`     | pass                                                                                                                                                                     |
-| `pnpm --filter passenger-web lint`      | pass, 0 warnings                                                                                                                                                         |
-| `pnpm --filter admin-web lint`          | pass, 0 warnings                                                                                                                                                         |
-| `pnpm build` (turbo, 6 tasks)           | pass                                                                                                                                                                     |
-| Rendered screen sweep                   | both apps built and served in an isolated worktree against a local fixture API; every passenger and admin screen captured and inspected at 375 / 390 / 768 / 1440 / 1920 |
+| Check                                   | Result                                                                                                                                                                                                                                                |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm --filter passenger-web typecheck` | pass                                                                                                                                                                                                                                                  |
+| `pnpm --filter admin-web typecheck`     | pass                                                                                                                                                                                                                                                  |
+| `pnpm --filter passenger-web lint`      | pass, 0 warnings                                                                                                                                                                                                                                      |
+| `pnpm --filter admin-web lint`          | pass, 0 warnings                                                                                                                                                                                                                                      |
+| `pnpm build` (turbo, 6 tasks)           | pass                                                                                                                                                                                                                                                  |
+| Rendered screen sweep                   | both apps built and served in an isolated worktree against a local fixture API; every screen captured and inspected, and the passenger app audited for horizontal overflow at 360 / 375 / 390 / 414 / 768 / 1024 / 1440 / 1920 — clean at every width |
 
 Layout defects found in the sweep and fixed:
 
