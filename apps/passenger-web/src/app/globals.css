@@ -2,22 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ *
+ * Siirt Kurtalan Ekspres — passenger design system
+ *
+ * Visual language is derived from the reference screens in /ui:
+ *  - pill geometry (fully rounded actions, circular icon buttons)
+ *  - large soft radii on cards and image panels
+ *  - near-black "active" fills against a soft tinted canvas
+ *  - one warm ember accent reserved for durations and live highlights
+ *  - floating overlays: bottom tab pill, map controls, map info panel
+ *  - result cards built on a coloured vertical rail
+ * Tokens live in @ekspres/ui/tailwind.config.js.
+ * ------------------------------------------------------------------ */
+
 @layer base {
   :root {
-    --background: 30 17% 97%;
-    --foreground: 222 47% 11%;
+    --background: 30 25% 96%;
+    --foreground: 24 13% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --primary: 0 72% 42%;
+    --card-foreground: 24 13% 11%;
+    --primary: 6 73% 37%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 24 17% 94%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 24 17% 94%;
-    --muted-foreground: 215 16% 42%;
-    --border: 24 12% 87%;
-    --input: 24 12% 87%;
-    --ring: 0 72% 42%;
-    --radius: 0.875rem;
+    --secondary: 30 20% 93%;
+    --secondary-foreground: 24 13% 11%;
+    --muted: 30 20% 93%;
+    --muted-foreground: 26 8% 42%;
+    --border: 28 16% 88%;
+    --input: 28 16% 88%;
+    --ring: 6 73% 37%;
+    --radius: 1rem;
+
+    /* App chrome — full-height screens measure against these. */
+    --app-header-h: 4rem;
+    --app-nav-h: 5.25rem;
+  }
+
+  @media (min-width: 768px) {
+    :root {
+      --app-header-h: 4.5rem;
+      --app-nav-h: 0rem;
+    }
   }
 
   * {
@@ -26,43 +50,366 @@
 
   html {
     scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-red-700 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-brand-700 ring-offset-2 ring-offset-white;
   }
 
   ::selection {
-    @apply bg-red-700 text-white;
+    @apply bg-brand-700 text-white;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
 @layer components {
-  .page-shell {
-    @apply min-h-[calc(100vh-4.5rem)] bg-stone-50 px-4 py-8 sm:py-10;
+  /* ---------------------------------------------------------------- *
+   * Layout
+   * ---------------------------------------------------------------- */
+  .shell {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
   }
 
-  .surface-card {
-    @apply rounded-2xl border border-stone-200 bg-white shadow-[0_14px_40px_-28px_rgba(15,23,42,0.45)];
+  .shell-wide {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
 
+  .page {
+    @apply py-5 sm:py-8 lg:py-10;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Typography
+   * ---------------------------------------------------------------- */
   .eyebrow {
-    @apply text-xs font-black uppercase tracking-[0.2em] text-red-700;
+    @apply text-2xs font-bold uppercase tracking-[0.18em] text-brand-700;
   }
 
-  .primary-action {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-red-700 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50;
+  .eyebrow-invert {
+    @apply text-2xs font-bold uppercase tracking-[0.18em] text-brand-300;
   }
 
-  .secondary-action {
-    @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-stone-300 bg-white px-5 py-3 font-bold text-slate-800 transition hover:bg-stone-50;
+  .title-xl {
+    @apply font-display text-[2.15rem] font-extrabold leading-[1.02] tracking-tightest sm:text-5xl;
   }
 
-  .field-control {
-    @apply min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-slate-950 shadow-sm transition placeholder:text-slate-400 hover:border-stone-400 focus:border-red-700 focus:outline-none focus:ring-2 focus:ring-red-100;
+  .title-lg {
+    @apply font-display text-2xl font-extrabold leading-tight tracking-tight sm:text-3xl;
   }
+
+  .title-md {
+    @apply font-display text-lg font-bold leading-snug tracking-tight sm:text-xl;
+  }
+
+  .subtle {
+    @apply text-sm leading-6 text-ink-600;
+  }
+
+  .num {
+    @apply tabular-nums tracking-tight;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Surfaces — generous radii, quiet borders
+   * ---------------------------------------------------------------- */
+  .card {
+    @apply rounded-3xl border border-ink-200/70 bg-white shadow-card;
+  }
+
+  .card-link {
+    @apply rounded-3xl border border-ink-200/70 bg-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-lift;
+  }
+
+  .card-pad {
+    @apply p-4 sm:p-5;
+  }
+
+  .panel {
+    @apply relative overflow-hidden rounded-3xl bg-ink-gradient text-white shadow-panel;
+  }
+
+  .panel-sheen::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 bg-ember-sweep;
+  }
+
+  /* Faint route-map texture behind journey cards, as in the references. */
+  .map-texture::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 opacity-[0.07];
+    background-image: radial-gradient(currentColor 1px, transparent 1px);
+    background-size: 12px 12px;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Buttons — pill geometry
+   * ---------------------------------------------------------------- */
+  .btn {
+    @apply inline-flex min-h-12 select-none items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-sm font-bold transition duration-150 disabled:cursor-not-allowed disabled:opacity-55;
+  }
+
+  .btn-sm {
+    @apply min-h-10 px-4 text-xs;
+  }
+
+  .btn-primary {
+    @apply bg-brand-700 text-white shadow-brand hover:bg-brand-800 active:translate-y-px;
+  }
+
+  .btn-dark {
+    @apply bg-ink-950 text-white hover:bg-ink-800;
+  }
+
+  .btn-secondary {
+    @apply border border-ink-200 bg-white text-ink-900 shadow-card hover:border-ink-300 hover:bg-ink-50;
+  }
+
+  .btn-outline-invert {
+    @apply border border-white/50 text-white backdrop-blur-sm hover:bg-white hover:text-ink-950;
+  }
+
+  .btn-on-dark {
+    @apply border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20;
+  }
+
+  /* Circular icon button, used for back/swap/map controls. */
+  .icon-btn {
+    @apply inline-grid h-11 w-11 shrink-0 place-items-center rounded-full transition;
+  }
+
+  .icon-btn-light {
+    @apply border border-ink-200 bg-white text-ink-800 shadow-card hover:border-brand-300 hover:text-brand-700;
+  }
+
+  .icon-btn-dark {
+    @apply bg-ink-950 text-white shadow-lift hover:bg-ink-800;
+  }
+
+  .link-quiet {
+    @apply font-semibold text-ink-600 underline-offset-4 transition hover:text-brand-700 hover:underline;
+  }
+
+  .link-brand {
+    @apply font-bold text-brand-700 underline-offset-4 transition hover:text-brand-800 hover:underline;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Forms
+   * ---------------------------------------------------------------- */
+  .field-label {
+    @apply mb-1.5 block text-2xs font-bold uppercase tracking-[0.12em] text-ink-500;
+  }
+
+  .field {
+    @apply min-h-12 w-full rounded-2xl border border-ink-200 bg-white px-4 text-[0.9375rem] font-semibold text-ink-900 transition placeholder:font-normal placeholder:text-ink-400 hover:border-ink-300 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+
+  .field-with-icon {
+    @apply pl-11;
+  }
+
+  .field-icon {
+    @apply pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-brand-700 [&>svg]:h-[1.125rem] [&>svg]:w-[1.125rem];
+  }
+
+  .select {
+    @apply appearance-none bg-[length:1.1rem] bg-[right_1rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236A6058' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Chips and segmented controls — dark fill marks the active choice
+   * ---------------------------------------------------------------- */
+  .chip {
+    @apply inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-full border border-ink-200 bg-white px-4 text-xs font-bold text-ink-700 transition hover:border-ink-400 hover:bg-ink-50;
+  }
+
+  .chip-active {
+    @apply border-ink-950 bg-ink-950 text-white hover:border-ink-950 hover:bg-ink-800;
+  }
+
+  .chip-brand {
+    @apply border-brand-700 bg-brand-700 text-white hover:border-brand-800 hover:bg-brand-800;
+  }
+
+  .segmented {
+    @apply inline-flex items-center gap-1 rounded-full border border-ink-200 bg-white p-1;
+  }
+
+  .segmented-item {
+    @apply inline-flex min-h-9 items-center gap-1.5 rounded-full px-4 text-xs font-bold text-ink-600 transition hover:text-ink-900;
+  }
+
+  .segmented-item-active {
+    @apply bg-ink-950 text-white hover:text-white;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-wide;
+  }
+
+  .badge-brand {
+    @apply bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200;
+  }
+
+  .badge-live {
+    @apply bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200;
+  }
+
+  .badge-warn {
+    @apply bg-ember-50 text-ember-800 ring-1 ring-inset ring-ember-200;
+  }
+
+  .badge-muted {
+    @apply bg-ink-100 text-ink-600 ring-1 ring-inset ring-ink-200;
+  }
+
+  /* The reference's amber duration pill, kept for journey lengths only. */
+  .duration-pill {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-ember-400 px-3 py-1 text-2xs font-extrabold text-ink-950;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Journey rails and dotted paths
+   * ---------------------------------------------------------------- */
+  .dotted-path {
+    @apply h-0 flex-1 border-t-2 border-dotted border-ink-300;
+  }
+
+  .dotted-path-invert {
+    @apply h-0 flex-1 border-t-2 border-dotted border-white/40;
+  }
+
+  .rail-dot-start {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full bg-brand-600 ring-4 ring-brand-100;
+  }
+
+  .rail-dot-end {
+    @apply h-2.5 w-2.5 shrink-0 rounded-full bg-ink-900 ring-4 ring-ink-100;
+  }
+
+  /* Vertical brand rail on ticket and trip cards. */
+  .rail-label {
+    writing-mode: vertical-rl;
+    @apply rotate-180 text-2xs font-extrabold uppercase tracking-[0.22em];
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Data, meters, empty states
+   * ---------------------------------------------------------------- */
+  .data-tile {
+    @apply rounded-2xl bg-ink-50 p-3 ring-1 ring-inset ring-ink-100;
+  }
+
+  .data-label {
+    @apply text-2xs font-bold uppercase tracking-wide text-ink-500;
+  }
+
+  .data-value {
+    @apply mt-0.5 font-display text-base font-bold text-ink-900;
+  }
+
+  .meter {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
+  }
+
+  .meter-fill {
+    @apply block h-full rounded-full bg-brand-600;
+  }
+
+  .empty-state {
+    @apply flex flex-col items-center rounded-3xl border border-dashed border-ink-300 bg-white/70 px-6 py-12 text-center;
+  }
+
+  .alert-error {
+    @apply rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm font-semibold text-brand-800;
+  }
+
+  .alert-info {
+    @apply rounded-2xl border border-ink-200 bg-ink-50 p-4 text-sm text-ink-700;
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Floating chrome
+   * ---------------------------------------------------------------- */
+  .floating-nav {
+    @apply fixed inset-x-4 bottom-3 z-50 h-16 rounded-full bg-ink-950/95 shadow-panel backdrop-blur md:hidden;
+  }
+
+  /* Sticky action bar that clears the floating tab pill. */
+  .action-bar {
+    @apply fixed inset-x-3 bottom-[calc(var(--app-nav-h)+0.25rem)] z-40 rounded-3xl border border-ink-200/70 bg-white/95 p-3 shadow-panel backdrop-blur md:inset-x-6 md:bottom-4;
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-2xl bg-ink-100;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent;
+  }
+}
+
+/* MapLibre controls restyled as the floating circular stack used in the
+ * reference tracking screen. Declared outside @layer so it always wins over
+ * the library stylesheet regardless of chunk order. */
+.maplibregl-ctrl-group {
+  border: 0 !important;
+  border-radius: 9999px !important;
+  overflow: hidden !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow:
+    0 2px 6px rgba(30, 26, 23, 0.06),
+    0 18px 40px -24px rgba(30, 26, 23, 0.55) !important;
+  backdrop-filter: blur(6px);
+}
+
+.maplibregl-ctrl-group button {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+}
+
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid rgb(227 222 216) !important;
+}
+
+.maplibregl-popup-content {
+  border-radius: 1rem !important;
+  padding: 0.75rem 1rem !important;
+  box-shadow: 0 18px 40px -24px rgba(30, 26, 23, 0.55) !important;
 }

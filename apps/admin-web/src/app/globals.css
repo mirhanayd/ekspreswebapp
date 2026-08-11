@@ -2,61 +2,155 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ------------------------------------------------------------------ *
+ * Siirt Kurtalan Ekspres — operations console
+ * Shares the passenger brand tokens but runs denser: compact cards,
+ * data tables and status chips built for an operator at a desk.
+ * ------------------------------------------------------------------ */
+
 @layer base {
   :root {
-    --background: 30 17% 97%;
-    --foreground: 222 47% 11%;
+    --background: 30 20% 97%;
+    --foreground: 24 13% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 24 13% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 0 72% 42%;
+    --popover-foreground: 24 13% 11%;
+    --primary: 6 73% 37%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 24 17% 94%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 24 17% 94%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 24 17% 94%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 24 12% 87%;
-    --input: 24 12% 87%;
-    --ring: 0 72% 42%;
-    --radius: 0.875rem;
+    --secondary: 30 18% 95%;
+    --secondary-foreground: 24 13% 11%;
+    --muted: 30 18% 95%;
+    --muted-foreground: 26 8% 42%;
+    --accent: 30 18% 95%;
+    --accent-foreground: 24 13% 11%;
+    --destructive: 6 73% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 28 14% 89%;
+    --input: 28 14% 89%;
+    --ring: 6 73% 37%;
+    --radius: 0.75rem;
+
+    --admin-header-h: 4rem;
   }
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-}
-
-@layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display;
+  }
+
   :focus-visible {
-    @apply outline-none ring-2 ring-red-700 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-brand-700 ring-offset-2 ring-offset-white;
+  }
+
+  ::selection {
+    @apply bg-brand-700 text-white;
+  }
+}
+
+@layer components {
+  .page-title {
+    @apply font-display text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl;
+  }
+
+  .page-eyebrow {
+    @apply text-2xs font-bold uppercase tracking-[0.18em] text-brand-700;
+  }
+
+  .surface {
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-card;
+  }
+
+  .surface-muted {
+    @apply rounded-2xl border border-ink-200/80 bg-ink-50;
+  }
+
+  .ops-btn {
+    @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-full px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55;
+  }
+
+  .ops-btn-primary {
+    @apply bg-brand-700 text-white hover:bg-brand-800;
+  }
+
+  .ops-btn-secondary {
+    @apply border border-ink-200 bg-white text-ink-800 hover:bg-ink-50;
+  }
+
+  .ops-field {
+    @apply min-h-10 w-full rounded-xl border border-ink-200 bg-white px-3 text-sm font-medium text-ink-900 transition placeholder:text-ink-400 focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100;
+  }
+
+  .ops-label {
+    @apply mb-1.5 block text-2xs font-bold uppercase tracking-wide text-ink-600;
+  }
+
+  .chip-status {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-2xs font-bold uppercase tracking-wide;
+  }
+
+  .chip-live {
+    @apply bg-emerald-50 text-emerald-800 ring-1 ring-inset ring-emerald-200;
+  }
+
+  .chip-warn {
+    @apply bg-ember-50 text-ember-800 ring-1 ring-inset ring-ember-200;
+  }
+
+  .chip-brand {
+    @apply bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200;
+  }
+
+  .chip-neutral {
+    @apply bg-ink-100 text-ink-700 ring-1 ring-inset ring-ink-200;
+  }
+
+  .data-grid {
+    @apply w-full border-collapse text-sm;
+  }
+
+  .data-grid thead th {
+    @apply whitespace-nowrap border-b border-ink-200 bg-ink-50 px-3 py-2.5 text-left text-2xs font-bold uppercase tracking-wide text-ink-600;
+  }
+
+  .data-grid tbody td {
+    @apply border-b border-ink-100 px-3 py-3 align-middle text-ink-800;
+  }
+
+  .data-grid tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  .data-grid tbody tr:hover {
+    @apply bg-ink-50/70;
+  }
+
+  .metric-label {
+    @apply text-2xs font-bold uppercase tracking-wide text-ink-500;
+  }
+
+  .metric-value {
+    @apply font-display text-3xl font-extrabold tracking-tight text-ink-900;
+  }
+
+  .ops-meter {
+    @apply h-1.5 w-full overflow-hidden rounded-full bg-ink-200;
+  }
+
+  .ops-meter-fill {
+    @apply block h-full rounded-full bg-brand-600;
+  }
+
+  .scroll-x {
+    @apply -mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0;
   }
 }

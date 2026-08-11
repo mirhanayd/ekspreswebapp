@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Radio } from 'lucide-react';
 import LiveMapView from './LiveMapView';
 import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
+
+export const metadata = { title: 'Canlı takip' };
 
 export default async function LiveTrackingPage({
   searchParams,
@@ -11,27 +14,36 @@ export default async function LiveTrackingPage({
 }) {
   const { ticketId } = await searchParams;
   if (!ticketId) redirect('/tickets');
+
   const response = await authenticatedApiFetch(`/tracking/tickets/${ticketId}/bootstrap`);
   if (!response || response.status === 401)
     redirect(`/login?returnTo=${encodeURIComponent(`/tickets/${ticketId}`)}`);
+
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     return (
-      <div className="page-shell grid place-items-center">
-        <div className="surface-card max-w-md p-8 text-center">
-          <h1 className="text-xl font-black">Canlı takip kullanılamıyor</h1>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            {payload.message || 'Bu bilet canlı takip için uygun değil.'}
+      <div className="page shell grid place-items-center">
+        <div className="card max-w-md p-8 text-center">
+          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-ink-100 text-ink-400">
+            <Radio className="h-7 w-7" aria-hidden />
+          </span>
+          <h1 className="title-md mt-4">Canlı takip kullanılamıyor</h1>
+          <p className="subtle mt-2">
+            {payload.message || 'Bu bilet şu anda canlı takip için uygun değil.'}
           </p>
-          <Link href={`/tickets/${ticketId}`} className="secondary-action mt-6">
+          <p className="mt-3 text-2xs leading-5 text-ink-500">
+            Canlı takip yalnızca aktif biletlerde ve sefer biniş aşamasına geçtiğinde açılır.
+          </p>
+          <Link href={`/tickets/${ticketId}`} className="btn btn-secondary mt-6">
             Bilete dön
           </Link>
         </div>
       </div>
     );
   }
+
   return (
-    <div className="h-[calc(100dvh-4.5rem)] w-full overflow-hidden bg-stone-100">
+    <div className="h-[calc(100dvh-var(--app-header-h)-var(--app-nav-h))] w-full overflow-hidden bg-ink-100">
       <LiveMapView bootstrap={await response.json()} socketOrigin={new URL(API_BASE_URL).origin} />
     </div>
   );
