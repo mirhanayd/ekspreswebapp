@@ -13,8 +13,8 @@ Final release readiness audit
 
 - Issue #55: final release readiness audit and roadmap reconciliation.
 - Branch: `docs/55-final-release-readiness-audit`.
-- PR: pending.
-- Status: audit drafted; roadmap reconciliation and exact-head CI pending.
+- PR: #56.
+- Status: audit published and all historical roadmap issues reconciled; exact-head CI pending.
 
 ## Completed Major Capabilities
 

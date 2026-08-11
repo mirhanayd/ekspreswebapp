@@ -119,6 +119,10 @@ The broad #14 epic must not remain an ambiguous open blocker: its delivered Demo
 accepted, and its staging/production remainder is explicitly deferred rather than misreported as
 complete.
 
+All historical roadmap issues listed above were reconciled with evidence comments. Completed scope
+was closed as completed; #14 was closed as not planned for the undelivered post-MVP remainder. At PR
+#56 publication, #55 is the repository's only open issue and closes with the audit PR.
+
 ## Final Sign-Off
 
 - Demo-critical P0/P1 blocker found by the automated release gate: **none**.
