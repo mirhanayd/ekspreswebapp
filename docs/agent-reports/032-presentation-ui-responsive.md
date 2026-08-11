@@ -54,9 +54,9 @@ and tracking simulator.
 
 ## CI Result
 
-- PR: pending.
+- PR: #52.
 - Required check: pending.
 
 ## Status
 
-READY_FOR_PR
+WAITING_FOR_CI
