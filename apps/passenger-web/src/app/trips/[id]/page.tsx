@@ -1,163 +1,221 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { MapPin, Calendar, Clock, Bus, Map as MapIcon, ChevronRight } from 'lucide-react';
+import {
+  ArrowRight,
+  Armchair,
+  BusFront,
+  CalendarDays,
+  Check,
+  Clock3,
+  MapPinned,
+  Route,
+} from 'lucide-react';
 import { API_BASE_URL } from '@/lib/server-api';
-
 import MapView from './MapView';
 
-// A helper to format time
-function formatTime(isoString: string) {
-  const date = new Date(isoString);
-  return date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDate(isoString: string) {
-  const date = new Date(isoString);
-  return date.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
+type Stop = {
+  id: string;
+  estimatedMinutesFromStart: number;
+  location?: { name: string; type: string; coordinates?: unknown };
+};
+type TripDetail = {
+  id: string;
+  departureTime: string;
+  arrivalTime: string;
+  status: string;
+  basePrice: number;
+  bus: {
+    plateNumber: string;
+    model?: string;
+    totalSeats: number;
+    seatLayout?: { layout?: string };
+  };
+  route: {
+    name: string;
+    origin?: { name: string };
+    destination?: { name: string };
+    stops?: Stop[];
+  };
+};
+const time = (value: string) =>
+  new Date(value).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
 export default async function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  // Fetch trip details from our NestJS API
-  let tripData;
-
+  let trip: TripDetail;
   try {
-    const res = await fetch(`${API_BASE_URL}/transport/trips/${id}`, {
-      // In a real app we might want to revalidate occasionally
-      cache: 'no-store',
-    });
-    if (!res.ok) {
-      if (res.status === 404) return notFound();
-      throw new Error('Failed to fetch trip data');
-    }
-    tripData = await res.json();
-  } catch (error) {
-    console.error(error);
+    const response = await fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' });
+    if (response.status === 404) notFound();
+    if (!response.ok) throw new Error();
+    trip = await response.json();
+  } catch {
     return (
-      <div className="p-8 text-center text-red-600">
-        <h2>Sefer bilgileri yüklenemedi.</h2>
+      <div className="page-shell grid place-items-center">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-xl font-black">Sefer bilgileri yüklenemedi</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            API bağlantısını kontrol edip tekrar deneyin.
+          </p>
+          <Link href="/" className="primary-action mt-6">
+            Ana sayfa
+          </Link>
+        </div>
       </div>
     );
   }
-
-  const trip = tripData;
-  const { bus, route } = tripData;
-  const stops = route.stops || [];
-
+  const stops = trip.route.stops || [];
+  const departure = new Date(trip.departureTime);
+  const arrival = new Date(trip.arrivalTime);
+  const duration = Math.max(0, Math.round((arrival.getTime() - departure.getTime()) / 60000));
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Trip Info & Stops */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Header Card */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                  {route.origin?.name} <ChevronRight className="h-5 w-5 text-gray-400" />{' '}
-                  {route.destination?.name}
-                </h1>
-                <p className="text-gray-500 mt-1 flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {formatDate(trip.departureTime)}
-                </p>
-              </div>
-              <div className="text-right">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {trip.status === 'scheduled' ? 'Planlandı' : trip.status}
+    <div className="page-shell">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <nav className="text-sm font-semibold text-slate-500">
+          <Link href="/" className="hover:text-red-700">
+            Ana sayfa
+          </Link>
+          <span className="px-2">/</span>
+          <span>Sefer detayı</span>
+        </nav>
+        <section className="overflow-hidden rounded-3xl bg-slate-950 text-white shadow-xl">
+          <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-end">
+            <div>
+              <p className="eyebrow !text-red-400">
+                {departure.toLocaleDateString('tr-TR', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                })}
+              </p>
+              <h1 className="mt-3 flex flex-wrap items-center gap-3 text-3xl font-black tracking-tight sm:text-5xl">
+                <span>{trip.route.origin?.name}</span>
+                <ArrowRight className="h-7 w-7 text-red-500" />
+                <span>{trip.route.destination?.name}</span>
+              </h1>
+              <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-300">
+                <span className="flex items-center gap-2">
+                  <Clock3 className="h-5 w-5 text-red-400" />
+                  {time(trip.departureTime)} – {time(trip.arrivalTime)}
                 </span>
-                <p className="text-2xl font-bold text-gray-900 mt-2">{trip.basePrice} ₺</p>
+                <span className="flex items-center gap-2">
+                  <Route className="h-5 w-5 text-red-400" />
+                  {Math.floor(duration / 60)} sa {duration % 60} dk
+                </span>
+                <span className="flex items-center gap-2">
+                  <BusFront className="h-5 w-5 text-red-400" />
+                  {trip.bus.plateNumber}
+                </span>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-t border-gray-100">
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Kalkış</p>
-                <p className="font-semibold text-gray-900 flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-blue-600" />
-                  {formatTime(trip.departureTime)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Varış</p>
-                <p className="font-semibold text-gray-900 flex items-center gap-1">
-                  <Clock className="h-4 w-4 text-green-600" />
-                  {formatTime(trip.arrivalTime)}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Otobüs</p>
-                <p className="font-semibold text-gray-900 flex items-center gap-1">
-                  <Bus className="h-4 w-4 text-gray-600" />
-                  {bus.plateNumber}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Düzen</p>
-                <p className="font-semibold text-gray-900">
-                  {bus.seatLayout?.layout || 'Bilinmiyor'}
-                </p>
-              </div>
+            <div className="rounded-2xl bg-white/10 p-5 text-left backdrop-blur lg:min-w-56 lg:text-right">
+              <p className="text-sm text-slate-300">Kişi başı</p>
+              <p className="mt-1 text-4xl font-black">{trip.basePrice.toLocaleString('tr-TR')} ₺</p>
+              <p className="mt-2 text-xs text-slate-400">Vergiler dahil demo fiyatı</p>
             </div>
           </div>
-
-          {/* Timeline / Stops Card */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-blue-600" /> Güzergah
-            </h2>
-            <div className="relative pl-4 space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-300 before:to-transparent">
-              {stops.map((stop: any) => {
-                return (
-                  <div
+        </section>
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="space-y-5">
+            <section className="surface-card p-5 sm:p-7">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="eyebrow">Yolculuk planı</p>
+                  <h2 className="mt-1 text-2xl font-black">Güzergâh ve duraklar</h2>
+                </div>
+                <MapPinned className="h-7 w-7 text-red-700" />
+              </div>
+              <ol className="mt-7 space-y-0">
+                {stops.map((stop, index) => (
+                  <li
                     key={stop.id}
-                    className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active"
+                    className="relative grid grid-cols-[44px_1fr] gap-3 pb-7 last:pb-0"
                   >
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-500 text-slate-100 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <MapPin className="h-4 w-4" />
+                    <div className="relative flex justify-center">
+                      <span
+                        className={`z-10 mt-1 h-4 w-4 rounded-full border-4 ${index === 0 ? 'border-red-700 bg-white' : index === stops.length - 1 ? 'border-slate-800 bg-white' : 'border-stone-300 bg-white'}`}
+                      />
+                      {index < stops.length - 1 && (
+                        <span className="absolute bottom-0 top-4 w-px bg-stone-300" />
+                      )}
                     </div>
-                    <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-slate-200 bg-white shadow-sm">
-                      <div className="flex items-center justify-between space-x-2 mb-1">
-                        <div className="font-bold text-slate-900">{stop.location?.name}</div>
-                        <time className="font-caveat font-medium text-indigo-500">
-                          {/* Calculate approximate time based on estimatedMinutesFromStart */}
-                          {/* In a real app we would compute this accurately. For now we just display the offset. */}
+                    <div>
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="font-black">{stop.location?.name}</p>
+                        <p className="text-sm font-bold text-red-700">
                           +{stop.estimatedMinutesFromStart} dk
-                        </time>
+                        </p>
                       </div>
-                      <div className="text-slate-500">
-                        {stop.location?.type === 'terminal' ? 'Otogar' : 'Durak'}
-                      </div>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {stop.location?.type === 'terminal' ? 'Otogar' : 'Yolcu durağı'}
+                      </p>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+            <section className="surface-card overflow-hidden">
+              <div className="flex items-center justify-between p-5 sm:px-7">
+                <div>
+                  <p className="eyebrow">Rota görünümü</p>
+                  <h2 className="mt-1 text-xl font-black">Harita</h2>
+                </div>
+                <Route className="h-6 w-6 text-red-700" />
+              </div>
+              <div className="h-80 border-t bg-stone-100">
+                <MapView stops={stops} />
+              </div>
+            </section>
           </div>
-        </div>
-
-        {/* Right Column: Map & Action */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 sticky top-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <MapIcon className="h-5 w-5 text-blue-600" /> Harita
-            </h2>
-            <div className="h-64 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 mb-6">
-              <MapView stops={stops} />
+          <aside className="lg:sticky lg:top-24 lg:self-start">
+            <div className="surface-card p-6">
+              <p className="eyebrow">Araç bilgisi</p>
+              <h2 className="mt-2 text-xl font-black">
+                {trip.bus.model || 'Konfor sınıfı otobüs'}
+              </h2>
+              <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                <Info
+                  icon={<Armchair />}
+                  label="Düzen"
+                  value={trip.bus.seatLayout?.layout || '2+1'}
+                />
+                <Info
+                  icon={<BusFront />}
+                  label="Kapasite"
+                  value={`${trip.bus.totalSeats} koltuk`}
+                />
+                <Info
+                  icon={<CalendarDays />}
+                  label="Durum"
+                  value={
+                    trip.status === 'scheduled'
+                      ? 'Planlandı'
+                      : trip.status === 'boarding'
+                        ? 'Biniş'
+                        : 'Yolda'
+                  }
+                />
+                <Info icon={<Check />} label="Hizmet" value="Ekspres" />
+              </div>
+              <Link href={`/trips/${id}/seats`} className="primary-action mt-6 w-full">
+                <Armchair className="h-5 w-5" /> Koltuk seç
+              </Link>
+              <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+                Uygun koltuklar anlık envanterden gösterilir ve seçiminiz süreli olarak ayrılır.
+              </p>
             </div>
-
-            <Link
-              href={`/trips/${id}/seats`}
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-4 rounded-xl shadow-md transition-colors text-lg text-center"
-            >
-              Koltuk Seç
-            </Link>
-            <p className="text-sm text-center text-gray-500 mt-4">
-              Otobüs koltuk haritasını görüntüleyin ve koltuğunuzu seçin.
-            </p>
-          </div>
+          </aside>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Info({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-stone-50 p-3">
+      <span className="text-red-700 [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+      <p className="mt-2 text-xs text-slate-500">{label}</p>
+      <p className="font-bold">{value}</p>
     </div>
   );
 }

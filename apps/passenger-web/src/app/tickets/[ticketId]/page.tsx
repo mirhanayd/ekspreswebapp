@@ -1,8 +1,17 @@
-import { ChevronLeft, QrCode, MapPin, Clock, Bus, User, Map } from 'lucide-react';
+import {
+  ArrowRight,
+  BusFront,
+  CalendarDays,
+  Clock3,
+  Map,
+  QrCode,
+  Ticket,
+  UserRound,
+} from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { authenticatedApiFetch } from '@/lib/server-api';
 import QRCode from 'qrcode';
+import { authenticatedApiFetch } from '@/lib/server-api';
 
 export default async function TicketDetailPage({
   params,
@@ -13,202 +22,166 @@ export default async function TicketDetailPage({
   let ticket: any = null;
   let qrImage: string | null = null;
   let qrExpiresAt: string | null = null;
-  let error = null;
-  const res = await authenticatedApiFetch(`/tickets/${ticketId}`);
-  if (!res || res.status === 401) redirect(`/login?returnTo=/tickets/${ticketId}`);
-
+  let error: string | null = null;
+  const response = await authenticatedApiFetch(`/tickets/${ticketId}`);
+  if (!response || response.status === 401) redirect(`/login?returnTo=/tickets/${ticketId}`);
   try {
-    if (!res.ok) throw new Error('Bilet bulunamadı veya erişim yetkiniz yok');
-    ticket = await res.json();
-
-    const qrRes = await authenticatedApiFetch(`/tickets/${ticketId}/qr`);
-    if (qrRes?.ok) {
-      const qrData = await qrRes.json();
-      qrImage = await QRCode.toDataURL(qrData.payload, {
+    if (!response.ok) throw new Error('Bilet bulunamadı veya erişim yetkiniz yok.');
+    ticket = await response.json();
+    const qrResponse = await authenticatedApiFetch(`/tickets/${ticketId}/qr`);
+    if (qrResponse?.ok) {
+      const qr = await qrResponse.json();
+      qrImage = await QRCode.toDataURL(qr.payload, {
         errorCorrectionLevel: 'M',
         margin: 2,
         width: 256,
       });
-      qrExpiresAt = qrData.expiresAt;
+      qrExpiresAt = qr.expiresAt;
     }
-  } catch (err: any) {
-    error = err.message;
+  } catch (caught) {
+    error = caught instanceof Error ? caught.message : 'Bilet yüklenemedi.';
   }
-
-  if (error || !ticket) {
+  if (error || !ticket)
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-        <p className="text-red-600 mb-4">{error || 'Bir hata oluştu'}</p>
-        <Link href="/tickets" className="text-blue-600 hover:underline">
-          Biletlerime Dön
-        </Link>
-      </div>
-    );
-  }
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('tr-TR', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  const isLiveEligible =
-    ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
-
-  return (
-    <div className="min-h-screen bg-gray-50 pb-8">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href="/tickets" className="text-gray-500 hover:text-gray-900 flex items-center">
-            <ChevronLeft className="h-5 w-5" />
-            <span>Geri</span>
+      <div className="page-shell grid place-items-center">
+        <div className="surface-card p-8 text-center">
+          <p className="font-semibold text-red-800">{error}</p>
+          <Link href="/tickets" className="secondary-action mt-5">
+            Biletlerime dön
           </Link>
-          <span className="font-semibold text-gray-900">Bilet Detayı</span>
-          <div className="w-10"></div>
         </div>
       </div>
-
-      <div className="max-w-lg mx-auto px-4 mt-6 space-y-6">
-        {/* Main Ticket Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-blue-600 px-6 py-4 flex justify-between items-center text-white">
-            <span className="font-bold">Siirt Kurtalan Ekspres</span>
-            <span className="text-sm text-blue-100">{ticket.ticketNo}</span>
-          </div>
-
-          <div className="p-6 space-y-6">
-            {/* Route & Times */}
-            <div className="flex justify-between items-center relative">
-              <div className="absolute left-[50%] top-1/2 w-24 border-t-2 border-dashed border-gray-200 -translate-x-1/2 -translate-y-1/2"></div>
-
-              <div className="text-center z-10 bg-white px-2">
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatTime(ticket.trip.departureTime)}
+    );
+  const departure = new Date(ticket.trip.departureTime);
+  const arrival = new Date(ticket.trip.arrivalTime);
+  const liveEligible =
+    ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+  return (
+    <div className="page-shell">
+      <div className="mx-auto max-w-4xl space-y-5">
+        <Link href="/tickets" className="text-sm font-bold text-red-700">
+          ← Biletlerime dön
+        </Link>
+        <article className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-xl">
+          <header className="flex flex-wrap items-center justify-between gap-4 bg-slate-950 px-6 py-5 text-white sm:px-8">
+            <div className="flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-red-700">
+                <Ticket />
+              </span>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">
+                  Yolcu bileti
                 </p>
-                <p className="text-sm font-medium text-gray-700">{ticket.trip.route.origin.name}</p>
-                <p className="text-xs text-gray-500">{formatDate(ticket.trip.departureTime)}</p>
-              </div>
-
-              <div className="text-center z-10 bg-white px-2">
-                <p className="text-2xl font-bold text-gray-900">
-                  {formatTime(ticket.trip.arrivalTime)}
-                </p>
-                <p className="text-sm font-medium text-gray-700">
-                  {ticket.trip.route.destination.name}
-                </p>
-                <p className="text-xs text-gray-500">{formatDate(ticket.trip.arrivalTime)}</p>
+                <p className="font-black">Siirt Kurtalan Ekspres</p>
               </div>
             </div>
-
-            {/* Details Grid */}
-            <div className="bg-gray-50 rounded-xl p-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-500 flex items-center gap-1 mb-1">
-                  <User className="h-4 w-4" /> Yolcu
-                </p>
-                <p className="font-semibold text-gray-900">
-                  {ticket.order.passengerFirstName} {ticket.order.passengerLastName}
-                </p>
+            <p className="font-mono text-sm font-bold text-slate-300">{ticket.ticketNo}</p>
+          </header>
+          <div className="grid lg:grid-cols-[1fr_310px]">
+            <div className="p-6 sm:p-8">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+                <div>
+                  <p className="text-3xl font-black tabular-nums">{formatTime(departure)}</p>
+                  <p className="mt-1 font-black">{ticket.trip.route.origin.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {departure.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                  </p>
+                </div>
+                <div className="flex min-w-20 items-center">
+                  <span className="h-2 w-2 rounded-full bg-red-700" />
+                  <span className="h-px w-12 bg-stone-300 sm:w-20" />
+                  <ArrowRight className="h-5 w-5 text-red-700" />
+                  <span className="h-px w-12 bg-stone-300 sm:w-20" />
+                  <span className="h-2 w-2 rounded-full bg-slate-700" />
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-black tabular-nums">{formatTime(arrival)}</p>
+                  <p className="mt-1 font-black">{ticket.trip.route.destination.name}</p>
+                  <p className="text-xs text-slate-500">
+                    {arrival.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-gray-500 flex items-center gap-1 mb-1">
-                  <MapPin className="h-4 w-4" /> Koltuk
-                </p>
-                <p className="font-semibold text-gray-900">{ticket.tripSeat.seatNo}</p>
+              <div className="mt-8 grid gap-3 border-t border-dashed border-stone-300 pt-6 sm:grid-cols-2">
+                <Detail
+                  icon={<UserRound />}
+                  label="Yolcu"
+                  value={`${ticket.order.passengerFirstName} ${ticket.order.passengerLastName}`}
+                />
+                <Detail icon={<Ticket />} label="Koltuk" value={ticket.tripSeat.seatNo} />
+                <Detail icon={<BusFront />} label="Otobüs" value={ticket.trip.bus.plateNumber} />
+                <Detail
+                  icon={<CalendarDays />}
+                  label="Durum"
+                  value={
+                    ticket.status === 'active'
+                      ? 'Aktif'
+                      : ticket.status === 'used'
+                        ? 'Kullanıldı'
+                        : 'İptal'
+                  }
+                />
               </div>
-              <div>
-                <p className="text-gray-500 flex items-center gap-1 mb-1">
-                  <Bus className="h-4 w-4" /> Otobüs
-                </p>
-                <p className="font-semibold text-gray-900">{ticket.trip.bus.plateNumber}</p>
-              </div>
-              <div>
-                <p className="text-gray-500 flex items-center gap-1 mb-1">
-                  <Clock className="h-4 w-4" /> Durum
-                </p>
-                <p
-                  className={`font-semibold ${ticket.status === 'active' ? 'text-green-600' : 'text-gray-500'}`}
+              {liveEligible && (
+                <Link
+                  href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
+                  className="primary-action mt-7 w-full sm:w-auto"
                 >
-                  {ticket.status === 'active'
-                    ? 'Aktif'
-                    : ticket.status === 'used'
-                      ? 'Kullanıldı'
-                      : 'İptal'}
-                </p>
-              </div>
+                  <Map className="h-5 w-5" /> Otobüsü canlı izle
+                </Link>
+              )}
             </div>
-
-            {/* QR Section */}
-            <div className="border-t border-dashed border-gray-200 pt-6 text-center">
-              <div className="inline-block p-3 border-2 border-gray-100 rounded-2xl bg-white mb-2">
+            <aside className="border-t border-dashed border-stone-300 bg-stone-50 p-6 text-center lg:border-l lg:border-t-0">
+              <p className="eyebrow">Biniş kodu</p>
+              <div className="mx-auto mt-4 grid h-56 w-56 place-items-center rounded-2xl border bg-white p-3 shadow-sm">
                 {qrImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={qrImage}
-                    alt={`${ticket.ticketNo} bilet QR kodu`}
-                    width={192}
-                    height={192}
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={qrImage}
+                      alt={`${ticket.ticketNo} bilet QR kodu`}
+                      width={208}
+                      height={208}
+                    />
+                  </>
                 ) : (
-                  <QrCode className="h-32 w-32 text-gray-300" />
+                  <QrCode className="h-28 w-28 text-stone-300" />
                 )}
               </div>
-              <p className="text-xs text-gray-500 max-w-xs mx-auto">
-                Bu QR kodunu bilet kontrol noktasında okutunuz.
+              <p className="mt-4 text-xs leading-5 text-slate-500">
+                Kontrol sırasında bu ekranı görevliye gösterin.
                 {qrExpiresAt && (
-                  <span className="block mt-1">
-                    Güvenli kod{' '}
+                  <span className="block font-semibold">
+                    Kod{' '}
                     {new Date(qrExpiresAt).toLocaleTimeString('tr-TR', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}{' '}
-                    saatine kadar geçerlidir.
+                    saatine kadar geçerli.
                   </span>
                 )}
               </p>
-            </div>
+            </aside>
           </div>
-        </div>
-
-        {/* Live Tracking CTA */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-full ${isLiveEligible ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}
-              >
-                <Map className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className={`font-medium ${isLiveEligible ? 'text-gray-900' : 'text-gray-500'}`}>
-                  Canlı Takip
-                </h3>
-                <p className="text-xs text-gray-500">Otobüsünüzü haritada izleyin</p>
-              </div>
-            </div>
-            {isLiveEligible ? (
-              <Link
-                href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-              >
-                Canlı İzle
-              </Link>
-            ) : (
-              <span className="text-xs text-gray-400">Uygun Değil</span>
-            )}
-          </div>
-        </div>
+        </article>
+        {!liveEligible && (
+          <p className="flex items-center justify-center gap-2 text-sm text-slate-500">
+            <Clock3 className="h-4 w-4" /> Canlı takip biniş başladığında açılır.
+          </p>
+        )}
       </div>
+    </div>
+  );
+}
+
+function Detail({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-stone-50 p-4">
+      <span className="text-red-700 [&>svg]:h-5 [&>svg]:w-5">{icon}</span>
+      <p className="mt-2 text-xs font-semibold text-slate-500">{label}</p>
+      <p className="font-black">{value}</p>
     </div>
   );
 }

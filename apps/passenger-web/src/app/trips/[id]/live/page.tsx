@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import LiveMapView from './LiveMapView';
 import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
@@ -10,27 +11,27 @@ export default async function LiveTrackingPage({
 }) {
   const { ticketId } = await searchParams;
   if (!ticketId) redirect('/tickets');
-
   const response = await authenticatedApiFetch(`/tracking/tickets/${ticketId}/bootstrap`);
-  if (!response || response.status === 401) {
+  if (!response || response.status === 401)
     redirect(`/login?returnTo=${encodeURIComponent(`/tickets/${ticketId}`)}`);
-  }
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
-        <div className="max-w-md rounded-2xl border bg-white p-8 text-center shadow-sm">
-          <h1 className="text-xl font-bold text-gray-900">Canlı takip kullanılamıyor</h1>
-          <p className="mt-2 text-gray-600">
+      <div className="page-shell grid place-items-center">
+        <div className="surface-card max-w-md p-8 text-center">
+          <h1 className="text-xl font-black">Canlı takip kullanılamıyor</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
             {payload.message || 'Bu bilet canlı takip için uygun değil.'}
           </p>
+          <Link href={`/tickets/${ticketId}`} className="secondary-action mt-6">
+            Bilete dön
+          </Link>
         </div>
       </div>
     );
   }
-
   return (
-    <div className="h-screen w-full overflow-hidden bg-gray-50">
+    <div className="h-[calc(100dvh-4.5rem)] w-full overflow-hidden bg-stone-100">
       <LiveMapView bootstrap={await response.json()} socketOrigin={new URL(API_BASE_URL).origin} />
     </div>
   );

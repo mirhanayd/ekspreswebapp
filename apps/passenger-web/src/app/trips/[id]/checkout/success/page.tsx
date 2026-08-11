@@ -1,4 +1,4 @@
-import { CheckCircle, Ticket } from 'lucide-react';
+import { ArrowRight, Check, Ticket } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
@@ -12,131 +12,82 @@ export default async function CheckoutSuccessPage({
 }) {
   const { id } = await params;
   const { orderId } = await searchParams;
-
-  // Fetch order details
-  let orderData: any = null;
-  const res = orderId ? await authenticatedApiFetch(`/checkout/order/${orderId}`) : null;
-  if (!res || res.status === 401) {
+  let order: any = null;
+  const response = orderId ? await authenticatedApiFetch(`/checkout/order/${orderId}`) : null;
+  if (!response || response.status === 401)
     redirect(
       `/login?returnTo=${encodeURIComponent(`/trips/${id}/checkout/success?orderId=${orderId || ''}`)}`,
     );
+  try {
+    if (response.ok) order = await response.json();
+  } catch {
+    // The confirmation shell remains available while order details are unavailable.
   }
-
-  if (orderId) {
-    try {
-      if (res.ok) {
-        orderData = await res.json();
-      }
-    } catch {
-      // Fallback to basic info
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-lg mx-auto px-4 space-y-6">
-        {/* Success Header */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 border border-gray-100 text-center space-y-4">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle className="h-10 w-10 text-green-600" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Biletiniz hazır!</h1>
-          <p className="text-gray-500">
-            Ödemeniz başarıyla tamamlandı. Bilet detaylarınız aşağıdadır.
+    <div className="page-shell">
+      <div className="mx-auto max-w-2xl space-y-5">
+        <header className="surface-card p-7 text-center sm:p-9">
+          <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 ring-8 ring-emerald-50">
+            <Check className="h-10 w-10 text-emerald-700" />
+          </span>
+          <p className="eyebrow mt-7">İşlem tamamlandı</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">Biletiniz hazır!</h1>
+          <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+            Demo ödemeniz güvenle tamamlandı. Bilet ve QR kodu hesabınıza eklendi.
           </p>
-        </div>
-
-        {/* Ticket Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-blue-600 px-6 py-4">
-            <div className="flex items-center justify-between text-white">
-              <div className="flex items-center gap-2">
-                <Ticket className="h-5 w-5" />
-                <span className="font-bold">Siirt Kurtalan Ekspres</span>
-              </div>
-              <span className="text-blue-100 text-sm">
-                {orderData?.ticket?.ticketNo || 'TKT-XXXXXXXX'}
+        </header>
+        {order && (
+          <article className="overflow-hidden rounded-3xl bg-slate-950 text-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+              <span className="flex items-center gap-2 font-black">
+                <Ticket className="h-5 w-5 text-red-400" />
+                Siirt Kurtalan Ekspres
               </span>
+              <span className="font-mono text-xs text-slate-400">{order.ticket?.ticketNo}</span>
             </div>
-          </div>
-
-          <div className="p-6 space-y-4">
-            {orderData ? (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Güzergah</p>
-                    <p className="font-semibold text-gray-900">
-                      {orderData.trip?.route?.origin?.name} →{' '}
-                      {orderData.trip?.route?.destination?.name}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Koltuk</p>
-                    <p className="font-semibold text-gray-900">{orderData.tripSeat?.seatNo}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Yolcu</p>
-                    <p className="font-semibold text-gray-900">
-                      {orderData.passengerFirstName} {orderData.passengerLastName}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Tutar</p>
-                    <p className="font-semibold text-gray-900">
-                      {(orderData.totalMinor / 100).toFixed(2)} ₺
-                    </p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-500">Otobüs</p>
-                    <p className="font-semibold text-gray-900">
-                      {orderData.trip?.bus?.plateNumber}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Sipariş No</p>
-                    <p className="font-semibold text-gray-900">{orderData.orderNo}</p>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center text-gray-500">
-                <p>Sipariş bilgileriniz yükleniyor.</p>
+            <div className="grid gap-6 p-6 sm:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-slate-500">Güzergâh</p>
+                <p className="mt-2 text-xl font-black">
+                  {order.trip?.route?.origin?.name} → {order.trip?.route?.destination?.name}
+                </p>
+                <p className="mt-2 text-sm text-slate-400">{order.trip?.bus?.plateNumber}</p>
               </div>
-            )}
-
-            {/* QR Placeholder */}
-            <div className="border-t border-dashed border-gray-200 pt-4 mt-4">
-              <div className="w-32 h-32 bg-gray-100 border border-gray-200 rounded-xl flex items-center justify-center mx-auto">
-                <span className="text-gray-400 text-sm">QR Kod</span>
+              <div className="grid grid-cols-2 gap-3">
+                <Summary label="Koltuk" value={order.tripSeat?.seatNo} />
+                <Summary
+                  label="Tutar"
+                  value={`${(order.totalMinor / 100).toLocaleString('tr-TR')} ₺`}
+                />
+                <Summary
+                  label="Yolcu"
+                  value={`${order.passengerFirstName} ${order.passengerLastName}`}
+                />
+                <Summary label="Sipariş" value={order.orderNo} />
               </div>
-              <p className="text-xs text-center text-gray-400 mt-2">
-                QR kodu bilet kontrolünde gösteriniz.
-              </p>
             </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Link
-            href="/"
-            className="flex-1 text-center py-3 px-4 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-          >
-            Ana Sayfa
+          </article>
+        )}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Link href="/" className="secondary-action">
+            Ana sayfa
           </Link>
           <Link
-            href={orderData?.ticket?.id ? `/tickets/${orderData.ticket.id}` : `/trips/${id}`}
-            className="flex-1 text-center py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors font-semibold shadow-md"
+            href={order?.ticket?.id ? `/tickets/${order.ticket.id}` : '/tickets'}
+            className="primary-action"
           >
-            Sefer Detayı
+            Bileti ve QR'ı aç <ArrowRight className="h-5 w-5" />
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+function Summary({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl bg-white/10 p-3">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className="mt-1 truncate text-sm font-black">{value}</p>
     </div>
   );
 }

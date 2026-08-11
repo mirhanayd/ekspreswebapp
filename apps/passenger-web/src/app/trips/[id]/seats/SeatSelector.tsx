@@ -1,30 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { ArrowRight, BusFront, Clock3, Gauge, LoaderCircle } from 'lucide-react';
 
-type Seat = {
-  id: string;
-  seatNo: string;
-  seatType: string;
-  priceMinor: number;
-  status: string;
-};
-
+type Seat = { id: string; seatNo: string; seatType: string; priceMinor: number; status: string };
+type LayoutItem = { type: string; seatNo?: string; row: number; column: number };
 type SeatMapData = {
   tripId: string;
   bus: { plateNumber: string; model: string };
-  seatLayout: {
-    layout: string;
-    rows: number;
-    columns: number;
-    items: Array<{
-      type: string;
-      seatNo?: string;
-      row: number;
-      column: number;
-    }>;
-  };
+  seatLayout: { layout: string; rows: number; columns: number; items: LayoutItem[] };
   seats: Seat[];
 };
 
@@ -36,7 +21,7 @@ export default function SeatSelector({
   initialData: SeatMapData;
 }) {
   const router = useRouter();
-  const [seatMap, setSeatMap] = useState<SeatMapData>(initialData);
+  const [seatMap, setSeatMap] = useState(initialData);
   const [selectedSeat, setSelectedSeat] = useState<string | null>(null);
   const [holdInfo, setHoldInfo] = useState<{
     holdId: string;
@@ -44,248 +29,224 @@ export default function SeatSelector({
     expiresAt: string;
     ttlSeconds: number;
   } | null>(null);
-  const [countdown, setCountdown] = useState<number>(0);
+  const [countdown, setCountdown] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Countdown timer for hold
+  const refresh = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/passenger/seats/trip/${tripId}`);
+      if (response.ok) setSeatMap(await response.json());
+    } catch {
+      // Retain the last authoritative seat snapshot when refresh is unavailable.
+    }
+  }, [tripId]);
   useEffect(() => {
     if (!holdInfo) {
       setCountdown(0);
       return;
     }
     const expiresAt = new Date(holdInfo.expiresAt).getTime();
-    const interval = setInterval(() => {
+    const timer = window.setInterval(() => {
       const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
       setCountdown(remaining);
-      if (remaining <= 0) {
-        // Hold expired, reset
+      if (!remaining) {
         setHoldInfo(null);
         setSelectedSeat(null);
-        refreshSeatMap();
-        clearInterval(interval);
+        void refresh();
+        window.clearInterval(timer);
       }
     }, 1000);
-    return () => clearInterval(interval);
-  }, [holdInfo]);
-
-  const refreshSeatMap = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/passenger/seats/trip/${tripId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setSeatMap(data);
-      }
-    } catch {
-      // Silently fail on refresh
-    }
-  }, [tripId]);
-
-  const handleSeatClick = async (seat: Seat) => {
-    if (seat.status !== 'available' || loading) return;
-
-    // If another seat is already held, release it first
-    if (holdInfo) {
-      await releaseCurrentHold();
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/passenger/seats/hold', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tripId,
-          seatNo: seat.seatNo,
-        }),
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
-          return;
-        }
-        const errData = await res.json();
-        throw new Error(errData.message || 'Failed to hold seat');
-      }
-
-      const holdData = await res.json();
-      setHoldInfo(holdData);
-      setSelectedSeat(seat.seatNo);
-      await refreshSeatMap();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const releaseCurrentHold = async () => {
+    return () => window.clearInterval(timer);
+  }, [holdInfo, refresh]);
+  const release = useCallback(async () => {
     if (!holdInfo) return;
     try {
-      await fetch(`/api/passenger/seats/hold/${holdInfo.holdId}`, {
-        method: 'DELETE',
-      });
+      await fetch(`/api/passenger/seats/hold/${holdInfo.holdId}`, { method: 'DELETE' });
     } catch {
-      // Best-effort release
+      // Releasing is best effort; the server expires abandoned holds safely.
     }
     setHoldInfo(null);
     setSelectedSeat(null);
-    await refreshSeatMap();
-  };
-
-  const getSeatStatus = (seatNo: string): string => {
-    const seat = seatMap.seats.find((s) => s.seatNo === seatNo);
-    if (!seat) return 'unavailable';
-    if (selectedSeat === seatNo) return 'selected';
-    return seat.status;
-  };
-
-  const getSeatColor = (status: string): string => {
-    switch (status) {
-      case 'selected':
-        return 'bg-blue-600 text-white border-blue-700 shadow-lg scale-105';
-      case 'available':
-        return 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400 cursor-pointer';
-      case 'held':
-        return 'bg-amber-100 text-amber-800 border-amber-300 cursor-not-allowed';
-      case 'purchased':
-        return 'bg-red-100 text-red-400 border-red-200 cursor-not-allowed';
-      case 'blocked':
-        return 'bg-gray-200 text-gray-400 border-gray-300 cursor-not-allowed';
-      default:
-        return 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed';
+    await refresh();
+  }, [holdInfo, refresh]);
+  async function choose(seat: Seat) {
+    if (seat.status !== 'available' || loading) return;
+    if (holdInfo) await release();
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/passenger/seats/hold', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId, seatNo: seat.seatNo }),
+      });
+      if (response.status === 401) {
+        router.push(`/login?returnTo=${encodeURIComponent(`/trips/${tripId}/seats`)}`);
+        return;
+      }
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload.message || 'Koltuk ayrılamadı.');
+      setHoldInfo(payload);
+      setSelectedSeat(seat.seatNo);
+      await refresh();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Koltuk ayrılamadı.');
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const layout = seatMap.seatLayout;
-  const maxRow = layout?.rows || 14;
-
-  // Build the grid from layout items
-  const rows = [];
-  for (let r = 1; r <= maxRow; r++) {
-    const rowItems = (layout?.items || []).filter((item: any) => item.row === r);
-    rows.push({ row: r, items: rowItems });
   }
-
-  const selectedSeatData = seatMap.seats.find((s) => s.seatNo === selectedSeat);
-
+  const statusFor = (seatNo: string) =>
+    selectedSeat === seatNo
+      ? 'selected'
+      : seatMap.seats.find((seat) => seat.seatNo === seatNo)?.status || 'blocked';
+  const classFor = (status: string) =>
+    ({
+      selected: 'border-red-800 bg-red-700 text-white shadow-lg ring-4 ring-red-100',
+      available: 'border-stone-300 bg-white text-slate-800 hover:border-red-500 hover:bg-red-50',
+      held: 'border-amber-300 bg-amber-100 text-amber-800',
+      purchased: 'border-slate-300 bg-slate-200 text-slate-400',
+      blocked: 'border-slate-300 bg-slate-200 text-slate-400',
+    })[status] || 'border-slate-300 bg-slate-100 text-slate-400';
+  const rows = Array.from({ length: seatMap.seatLayout?.rows || 14 }, (_, index) => ({
+    row: index + 1,
+    items: (seatMap.seatLayout?.items || []).filter((item) => item.row === index + 1),
+  }));
+  const selected = seatMap.seats.find((seat) => seat.seatNo === selectedSeat);
   return (
-    <div className="space-y-6">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-sm">
-        {[
-          { label: 'Boş', color: 'bg-emerald-50 border-emerald-300' },
-          { label: 'Seçili', color: 'bg-blue-600 border-blue-700' },
-          { label: 'Tutulmuş', color: 'bg-amber-100 border-amber-300' },
-          { label: 'Satılmış', color: 'bg-red-100 border-red-200' },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center gap-2">
-            <div className={`w-5 h-5 rounded border ${item.color}`} />
-            <span className="text-gray-600">{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Bus layout */}
-      <div className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
-        <div className="max-w-xs mx-auto space-y-1.5">
-          {rows.map(({ row, items }) => (
-            <div key={row} className="flex items-center gap-1.5 justify-center">
-              {[1, 2, 3, 4].map((col) => {
-                const item = items.find((i: any) => i.column === col);
-                if (!item) {
-                  return <div key={col} className="w-11 h-11" />;
-                }
-                if (item.type === 'aisle') {
-                  return <div key={col} className="w-6 h-11" />;
-                }
-                if (item.type === 'driver') {
-                  return (
-                    <div
-                      key={col}
-                      className="w-11 h-11 rounded-lg bg-gray-300 border border-gray-400 flex items-center justify-center text-xs text-gray-500"
-                    >
-                      🚌
-                    </div>
-                  );
-                }
-                if (item.type === 'seat' && item.seatNo) {
-                  const status = getSeatStatus(item.seatNo);
-                  const seat = seatMap.seats.find((s) => s.seatNo === item.seatNo);
-                  return (
-                    <button
-                      key={col}
-                      disabled={status !== 'available' && status !== 'selected'}
-                      onClick={() => {
-                        if (status === 'selected') {
-                          releaseCurrentHold();
-                        } else if (seat) {
-                          handleSeatClick(seat);
-                        }
-                      }}
-                      className={`w-11 h-11 rounded-lg border-2 flex items-center justify-center text-xs font-bold transition-all duration-200 ${getSeatColor(status)}`}
-                    >
-                      {item.seatNo}
-                    </button>
-                  );
-                }
-                return <div key={col} className="w-11 h-11" />;
-              })}
-            </div>
+    <div className="grid gap-7 lg:grid-cols-[minmax(320px,1fr)_320px]">
+      <div>
+        <div className="mb-5 flex flex-wrap gap-3 text-xs font-semibold text-slate-600">
+          {[
+            ['Uygun', 'border-stone-300 bg-white'],
+            ['Seçili', 'border-red-800 bg-red-700'],
+            ['Ayrılmış', 'border-amber-300 bg-amber-100'],
+            ['Dolu', 'border-slate-300 bg-slate-200'],
+          ].map(([label, color]) => (
+            <span key={label} className="flex items-center gap-2">
+              <i className={`h-5 w-5 rounded-md border-2 ${color}`} />
+              {label}
+            </span>
           ))}
         </div>
+        <div className="mx-auto max-w-sm rounded-[2.5rem] border-4 border-slate-800 bg-stone-100 p-4 shadow-inner sm:p-6">
+          <div className="mb-5 flex h-14 items-center justify-between rounded-t-[1.5rem] border-b-2 border-slate-300 bg-slate-200 px-4">
+            <span className="text-xs font-black uppercase tracking-widest text-slate-500">Ön</span>
+            <Gauge className="h-8 w-8 text-slate-700" />
+          </div>
+          <div className="space-y-2">
+            {rows.map(({ row, items }) => (
+              <div key={row} className="grid grid-cols-[48px_48px_24px_48px] justify-center gap-2">
+                {[1, 2, 3, 4].map((column) => {
+                  const item = items.find((entry) => entry.column === column);
+                  if (!item || item.type === 'aisle')
+                    return <span key={column} className={column === 3 ? 'w-6' : 'w-12'} />;
+                  if (item.type === 'driver')
+                    return (
+                      <span
+                        key={column}
+                        className="grid h-12 w-12 place-items-center rounded-xl bg-slate-300"
+                      >
+                        <BusFront className="h-5 w-5" />
+                      </span>
+                    );
+                  if (item.type === 'seat' && item.seatNo) {
+                    const status = statusFor(item.seatNo);
+                    const data = seatMap.seats.find((seat) => seat.seatNo === item.seatNo);
+                    return (
+                      <button
+                        key={column}
+                        type="button"
+                        aria-label={`Koltuk ${item.seatNo}, ${status}`}
+                        disabled={!['available', 'selected'].includes(status)}
+                        onClick={() =>
+                          status === 'selected' ? void release() : data && void choose(data)
+                        }
+                        className={`grid h-12 w-12 place-items-center rounded-xl border-2 text-sm font-black transition ${classFor(status)}`}
+                      >
+                        {item.seatNo}
+                      </button>
+                    );
+                  }
+                  return <span key={column} />;
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="mt-5 rounded-b-[1.5rem] border-t-2 border-slate-300 pt-3 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Arka
+          </div>
+        </div>
       </div>
-
-      {/* Error */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Hold info */}
-      {holdInfo && selectedSeatData && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="font-semibold text-blue-900">Koltuk {selectedSeat} seçildi</p>
-              <p className="text-sm text-blue-700">
-                Fiyat: {(selectedSeatData.priceMinor / 100).toFixed(2)} ₺
+      <aside className="lg:sticky lg:top-24 lg:self-start">
+        <div className="rounded-2xl bg-slate-950 p-5 text-white">
+          <p className="eyebrow !text-red-400">Seçim özeti</p>
+          {holdInfo && selected ? (
+            <>
+              <div className="mt-5 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-400">Koltuk</p>
+                  <p className="text-4xl font-black">{selectedSeat}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-slate-400">Tutar</p>
+                  <p className="text-2xl font-black">
+                    {(selected.priceMinor / 100).toLocaleString('tr-TR')} ₺
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 flex items-center justify-between rounded-xl bg-white/10 p-3">
+                <span className="flex items-center gap-2 text-sm">
+                  <Clock3 className="h-4 w-4 text-red-400" />
+                  Ayırma süresi
+                </span>
+                <strong className="tabular-nums">
+                  {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
+                </strong>
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  router.push(
+                    `/trips/${tripId}/checkout?seatNo=${encodeURIComponent(holdInfo.seatNo)}&holdId=${encodeURIComponent(holdInfo.holdId)}`,
+                  )
+                }
+                className="primary-action mt-5 w-full"
+              >
+                Devam et <ArrowRight className="h-5 w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => void release()}
+                className="mt-3 w-full py-2 text-sm font-bold text-slate-300 hover:text-white"
+              >
+                Seçimi bırak
+              </button>
+            </>
+          ) : (
+            <div className="py-10 text-center">
+              <BusFront className="mx-auto h-12 w-12 text-slate-600" />
+              <p className="mt-4 font-bold">Bir koltuk seçin</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Beyaz koltuklardan birine dokunarak 10 dakikalık ayırma süresini başlatın.
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-blue-800 tabular-nums">
-                {Math.floor(countdown / 60)}:{String(countdown % 60).padStart(2, '0')}
-              </p>
-              <p className="text-xs text-blue-600">kalan süre</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={releaseCurrentHold}
-              className="flex-1 py-2 px-4 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              Vazgeç
-            </button>
-            <button
-              onClick={() =>
-                router.push(
-                  `/trips/${tripId}/checkout?seatNo=${encodeURIComponent(holdInfo.seatNo)}&holdId=${encodeURIComponent(holdInfo.holdId)}`,
-                )
-              }
-              className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-semibold shadow-md"
-            >
-              Devam Et
-            </button>
-          </div>
+          )}
         </div>
-      )}
-
-      {loading && (
-        <div className="text-center text-gray-500 text-sm animate-pulse">İşleniyor...</div>
-      )}
+        {error && (
+          <p
+            role="alert"
+            className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-800"
+          >
+            {error}
+          </p>
+        )}
+        {loading && (
+          <p className="mt-3 flex items-center justify-center gap-2 text-sm text-slate-500">
+            <LoaderCircle className="h-4 w-4 animate-spin" />
+            Koltuk ayrılıyor…
+          </p>
+        )}
+      </aside>
     </div>
   );
 }

@@ -8,14 +8,19 @@ export default async function RegisterPage({
 }) {
   const { returnTo } = await searchParams;
   return (
-    <div className="min-h-[calc(100vh-3.5rem)] bg-gray-50 px-4 py-12">
-      <div className="mx-auto max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <Link href="/" className="text-sm font-semibold text-red-700">
-          Siirt Kurtalan Ekspres
+    <div className="page-shell">
+      <div className="mx-auto max-w-lg">
+        <Link href="/" className="text-sm font-bold text-red-700">
+          ← Ana sayfa
         </Link>
-        <h1 className="mt-4 text-2xl font-bold text-gray-950">Yolcu hesabı oluşturun</h1>
-        <p className="mb-6 mt-2 text-sm text-gray-500">Biletlerinizi tek hesaptan yönetin.</p>
-        <AuthForm mode="register" returnTo={returnTo} />
+        <div className="surface-card mt-5 p-6 sm:p-8">
+          <p className="eyebrow">Yeni yolcu</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight">Hesabınızı oluşturun</h1>
+          <p className="mb-7 mt-2 text-sm leading-6 text-slate-600">
+            Seferlerinizi ve biletlerinizi tek hesapta yönetin.
+          </p>
+          <AuthForm mode="register" returnTo={returnTo} />
+        </div>
       </div>
     </div>
   );
