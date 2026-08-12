@@ -396,8 +396,10 @@
     @apply mb-2 block text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-500;
   }
 
+  /* Recessed control fill, sampled from the reference segmented-control track.
+     White would vanish against the white cards these fields sit in. */
   .field {
-    @apply min-h-[3.25rem] w-full rounded-full bg-white px-5 text-[0.9375rem] font-medium text-ink-900 shadow-card transition placeholder:font-normal placeholder:text-ink-300 focus:outline-none focus:ring-2 focus:ring-ink-900 focus:ring-offset-2 focus:ring-offset-cream-200;
+    @apply min-h-[3.25rem] w-full rounded-full bg-cream-100 px-5 text-[0.9375rem] font-medium text-ink-900 transition placeholder:font-normal placeholder:text-ink-400 hover:bg-cream-200 focus:bg-cream-100 focus:outline-none focus:ring-2 focus:ring-ink-900;
   }
 
   .field-with-icon {
