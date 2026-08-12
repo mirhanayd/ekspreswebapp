@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Radio } from 'lucide-react';
 import LiveMapView from './LiveMapView';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
 
 export const metadata = { title: 'Canlı takip' };
@@ -22,28 +23,31 @@ export default async function LiveTrackingPage({
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     return (
-      <div className="page shell grid place-items-center">
-        <div className="card max-w-md p-8 text-center">
-          <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-ink-100 text-ink-400">
-            <Radio className="h-7 w-7" aria-hidden />
-          </span>
-          <h1 className="title-md mt-4">Canlı takip kullanılamıyor</h1>
-          <p className="subtle mt-2">
-            {payload.message || 'Bu bilet şu anda canlı takip için uygun değil.'}
-          </p>
-          <p className="mt-3 text-2xs leading-5 text-ink-500">
-            Canlı takip yalnızca aktif biletlerde ve sefer biniş aşamasına geçtiğinde açılır.
-          </p>
-          <Link href={`/tickets/${ticketId}`} className="btn btn-secondary mt-6">
-            Bilete dön
-          </Link>
+      <div className="canvas-sage min-h-[100dvh]">
+        <div className="screen screen-pad">
+          <ScreenHeader backHref={`/tickets/${ticketId}`} backLabel="Bilete dön" />
+          <div className="empty-state mt-6">
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-sage-200 text-ink-400">
+              <Radio className="h-7 w-7" aria-hidden />
+            </span>
+            <h1 className="title-md mt-4">Canlı takip kullanılamıyor</h1>
+            <p className="subtle mt-2 max-w-xs">
+              {payload.message || 'Bu bilet şu anda canlı takip için uygun değil.'}
+            </p>
+            <p className="caption mt-3 max-w-xs leading-5">
+              Canlı takip yalnızca aktif biletlerde ve sefer biniş aşamasına geçtiğinde açılır.
+            </p>
+            <Link href={`/tickets/${ticketId}`} className="btn btn-primary mt-6">
+              Bilete dön
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100dvh-var(--app-header-h)-var(--app-nav-h))] w-full overflow-hidden bg-ink-100">
+    <div className="h-[100dvh] w-full overflow-hidden bg-sage-200">
       <LiveMapView bootstrap={await response.json()} socketOrigin={new URL(API_BASE_URL).origin} />
     </div>
   );

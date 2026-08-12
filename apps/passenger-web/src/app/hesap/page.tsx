@@ -1,17 +1,16 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { ChevronRight, Radio, Search, ShieldCheck, Ticket, UserRound } from 'lucide-react';
+import { ChevronRight, Radio, Route, ShieldCheck, Ticket, UserRound } from 'lucide-react';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import { LogoutButton } from '@/components/LogoutButton';
-import { BrandMark } from '@/components/BrandLogo';
 
 export const metadata = { title: 'Hesabım' };
 
 const shortcuts = [
   { href: '/tickets', label: 'Biletlerim', hint: 'QR kodun ve aktif yolculukların', icon: Ticket },
-  { href: '/#sefer-ara', label: 'Sefer ara', hint: 'Yeni bir yolculuk planla', icon: Search },
-  { href: '/#nasil-calisir', label: 'Nasıl çalışır?', hint: 'Üç adımda biletleme', icon: Radio },
+  { href: '/search', label: 'Sefer ara', hint: 'Yeni bir yolculuk planla', icon: Route },
+  { href: '/canli', label: 'Canlı takip', hint: 'Yoldaki otobüsü haritada izle', icon: Radio },
 ];
 
 export default async function AccountPage() {
@@ -19,53 +18,53 @@ export default async function AccountPage() {
   if (!authenticated) redirect('/login?returnTo=/hesap');
 
   return (
-    <div className="page shell">
-      <div className="mx-auto max-w-xl">
-        <div className="app-topbar">
-          <BrandMark className="w-28" />
-          <span className="badge badge-live">
+    <div className="canvas-sage min-h-[100dvh]">
+      <div className="screen screen-pad">
+        <div className="top-row">
+          <p className="font-display text-[1.375rem] font-bold text-ink-900">Hesabım</p>
+          <span className="badge badge-lime">
             <ShieldCheck className="h-3 w-3" aria-hidden />
             Oturum açık
           </span>
         </div>
 
-        <header className="mt-6">
-          <p className="eyebrow">Yolcu hesabı</p>
-          <h1 className="title-lg mt-1.5">Hesabım</h1>
-          <p className="subtle mt-2">
-            Biletlerin ve yolculuk geçmişin bu hesaba bağlıdır. Cihazını paylaşıyorsan işin
-            bittiğinde çıkış yapmayı unutma.
-          </p>
-        </header>
+        <h1 className="sr-only">Hesabım</h1>
 
-        <div className="card mt-5 flex items-center gap-3 p-4">
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100">
-            <UserRound className="h-5 w-5" aria-hidden />
+        <div className="mt-7 flex items-center gap-4 rounded-card bg-white p-5 shadow-card">
+          <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-lime-400 text-ink-900">
+            <UserRound className="h-6 w-6" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="font-display font-bold text-ink-900">Siirt Kurtalan Ekspres yolcusu</p>
-            <p className="truncate text-sm text-ink-500">Güvenli oturum ile giriş yapıldı</p>
+            <p className="font-display text-[1.0625rem] font-bold text-ink-900">Ekspres yolcusu</p>
+            <p className="caption truncate">Güvenli oturum ile giriş yapıldı</p>
           </div>
         </div>
 
         <ul className="mt-3 grid gap-2.5">
           {shortcuts.map(({ href, label, hint, icon: Icon }) => (
             <li key={href}>
-              <Link href={href} className="card-link flex items-center gap-3 p-4">
-                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-ink-50 text-ink-700 ring-1 ring-inset ring-ink-100">
-                  <Icon className="h-4 w-4" aria-hidden />
+              <Link href={href} className="card-link flex items-center gap-3.5 p-4">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[1.125rem] bg-cream-200 text-ink-700">
+                  <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block font-display font-bold text-ink-900">{label}</span>
-                  <span className="block truncate text-xs text-ink-500">{hint}</span>
+                  <span className="block font-display text-[0.9375rem] font-bold text-ink-900">
+                    {label}
+                  </span>
+                  <span className="caption block truncate">{hint}</span>
                 </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
+                <ChevronRight className="h-5 w-5 shrink-0 text-ink-300" aria-hidden />
               </Link>
             </li>
           ))}
         </ul>
 
-        <div className="mt-5 flex justify-center">
+        <p className="subtle mt-6">
+          Biletlerin ve yolculuk geçmişin bu hesaba bağlıdır. Cihazını paylaşıyorsan işin bittiğinde
+          çıkış yapmayı unutma.
+        </p>
+
+        <div className="mt-5">
           <LogoutButton variant="light" />
         </div>
       </div>

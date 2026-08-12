@@ -104,7 +104,7 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
           type="button"
           onClick={() => setShowPassword((current) => !current)}
           aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
-          className="absolute right-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-lg text-ink-500 transition hover:bg-ink-100 hover:text-ink-800"
+          className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-ink-500 transition hover:bg-cream-200 hover:text-ink-800"
         >
           {showPassword ? (
             <EyeOff className="h-4 w-4" aria-hidden />
@@ -127,9 +127,9 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
         {!loading ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}
       </button>
 
-      <p className="text-center text-sm text-ink-600">
+      <p className="text-center text-sm text-ink-500">
         {mode === 'login' ? 'Henüz hesabınız yok mu?' : 'Zaten hesabınız var mı?'}{' '}
-        <Link href={mode === 'login' ? '/register' : '/login'} className="link-brand">
+        <Link href={mode === 'login' ? '/register' : '/login'} className="link-strong">
           {mode === 'login' ? 'Kayıt olun' : 'Giriş yapın'}
         </Link>
       </p>
@@ -156,7 +156,9 @@ function Field({
         <label htmlFor={id} className="field-label">
           {label}
         </label>
-        {hint ? <span className="mb-1.5 text-2xs font-medium text-ink-400">{hint}</span> : null}
+        {hint ? (
+          <span className="mb-2 text-[0.6875rem] font-medium text-ink-400">{hint}</span>
+        ) : null}
       </div>
       <div className="relative">
         <span className="field-icon">{icon}</span>
