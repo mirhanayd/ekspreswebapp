@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { House, Radio, Route, Ticket, UserRound } from 'lucide-react';
+import { BadgePercent, House, Route, Ticket, UserRound } from 'lucide-react';
 
 /**
  * Floating tab pill from `ui/mobile-home-reference.png`: a near-black capsule
@@ -32,7 +32,12 @@ export function BottomNav({ authenticated }: { authenticated: boolean }) {
       icon: Ticket,
       active: pathname.startsWith('/tickets'),
     },
-    { href: '/canli', label: 'Canlı takip', icon: Radio, active: pathname.startsWith('/canli') },
+    {
+      href: '/kampanyalar',
+      label: 'Kampanyalar',
+      icon: BadgePercent,
+      active: pathname.startsWith('/kampanyalar'),
+    },
     authenticated
       ? { href: '/hesap', label: 'Hesabım', icon: UserRound, active: pathname.startsWith('/hesap') }
       : {
