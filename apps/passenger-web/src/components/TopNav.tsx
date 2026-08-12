@@ -35,8 +35,12 @@ const items = [
 export function TopNav({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
 
+  // Live tracking is a full-screen immersive map with its own chrome, so the
+  // rail stands down there exactly as the tab pill does.
+  if (pathname.includes('/live')) return null;
+
   return (
-    <header className="sticky top-0 z-50 hidden h-[var(--app-header-h)] items-center lg:flex">
+    <header className="fixed inset-x-0 top-0 z-50 hidden h-[var(--app-header-h)] items-center lg:flex">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6">
         <Link href="/" aria-label="Siirt Kurtalan Ekspres ana sayfa" className="inline-flex">
           <BrandMark className="w-32" />

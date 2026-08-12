@@ -141,7 +141,7 @@ export default async function CheckoutPage({
 
           <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
             <section aria-label="Sipariş özeti">
-              <RoutePanel originName={originName} destinationName={destinationName} />
+              <RoutePanel originName={originName} destinationName={destinationName} compact />
 
               <dl className="facts-strip mt-3 overflow-hidden rounded-[1.25rem]">
                 <div className="fact">

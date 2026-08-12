@@ -11,10 +11,14 @@ import { placeCodeClass, placeShortName } from '@/lib/format';
 export function RoutePanel({
   originName,
   destinationName,
+  compact = false,
   children,
 }: {
   originName: string;
   destinationName: string;
+  /** Narrow contexts (the checkout aside) drop the terminal captions and the
+   *  wide dashed path so the settlement names keep their size. */
+  compact?: boolean;
   children?: React.ReactNode;
 }) {
   return (
@@ -24,10 +28,13 @@ export function RoutePanel({
           <p className={`${placeCodeClass(originName, 'panel')} truncate`}>
             {placeShortName(originName)}
           </p>
-          <p className="caption mt-1 truncate">{originName}</p>
+          {compact ? null : <p className="caption mt-1 truncate">{originName}</p>}
         </div>
 
-        <div className="flex w-14 shrink-0 items-center pt-2.5 sm:w-24" aria-hidden>
+        <div
+          className={`flex shrink-0 items-center pt-2.5 ${compact ? 'w-14' : 'w-14 sm:w-24'}`}
+          aria-hidden
+        >
           <span className="h-2 w-2 shrink-0 rounded-full bg-ink-900" />
           <span className="dotted-path" />
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-ink-900 text-white">
@@ -41,7 +48,7 @@ export function RoutePanel({
           <p className={`${placeCodeClass(destinationName, 'panel')} truncate`}>
             {placeShortName(destinationName)}
           </p>
-          <p className="caption mt-1 truncate">{destinationName}</p>
+          {compact ? null : <p className="caption mt-1 truncate">{destinationName}</p>}
         </div>
       </div>
 

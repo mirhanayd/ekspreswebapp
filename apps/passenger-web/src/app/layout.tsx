@@ -49,10 +49,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <TopNav authenticated={authenticated} />
 
         {/* The rail floats over the page canvas rather than banding across it,
-            so each route keeps its own sage or cream ground edge to edge. */}
-        <main id="icerik" className="lg:-mt-[var(--app-header-h)]">
-          {children}
-        </main>
+            so each route keeps its own sage or cream ground edge to edge and
+            full-screen views are not pushed down by header space. */}
+        <main id="icerik">{children}</main>
 
         <BottomNav authenticated={authenticated} />
       </body>
