@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 /**
@@ -20,6 +21,10 @@ export function Sheet({
   children: React.ReactNode;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // Rendered into the body so the page canvas — which is its own stacking
+  // context — cannot trap the overlay under the floating tab bar.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
@@ -36,10 +41,10 @@ export function Sheet({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[90] flex items-end justify-center sm:items-center">
       <button
         type="button"
         aria-label="Kapat"
@@ -67,6 +72,7 @@ export function Sheet({
         </div>
         <div className="mt-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
