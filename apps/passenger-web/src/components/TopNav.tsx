@@ -1,0 +1,79 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { House, Radio, Route, Ticket, UserRound } from 'lucide-react';
+import { BrandMark } from './BrandLogo';
+
+const items = [
+  { href: '/', label: 'Ana sayfa', icon: House, match: (p: string) => p === '/' },
+  {
+    href: '/search',
+    label: 'Sefer ara',
+    icon: Route,
+    match: (p: string) => p.startsWith('/search') || p.startsWith('/trips'),
+  },
+  {
+    href: '/tickets',
+    label: 'Biletlerim',
+    icon: Ticket,
+    match: (p: string) => p.startsWith('/tickets'),
+  },
+  {
+    href: '/canli',
+    label: 'Canlı takip',
+    icon: Radio,
+    match: (p: string) => p.startsWith('/canli') || p.includes('/live'),
+  },
+];
+
+/**
+ * Desktop counterpart of the floating tab pill. `/ui` only specifies phone
+ * screens, so the wide layout reuses the same vocabulary — a near-black
+ * capsule floating over the tinted canvas, lime marking the active tab.
+ */
+export function TopNav({ authenticated }: { authenticated: boolean }) {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-50 hidden h-[var(--app-header-h)] items-center lg:flex">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6">
+        <Link href="/" aria-label="Siirt Kurtalan Ekspres ana sayfa" className="inline-flex">
+          <BrandMark className="w-32" />
+        </Link>
+
+        <nav aria-label="Ana menü" className="rounded-full bg-ink-900 p-1.5 shadow-panel">
+          <ul className="flex items-center gap-1">
+            {items.map(({ href, label, icon: Icon, match }) => {
+              const active = match(pathname);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? 'page' : undefined}
+                    className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[0.8125rem] font-semibold transition ${
+                      active
+                        ? 'bg-lime-400 text-ink-900'
+                        : 'text-sage-300 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" aria-hidden />
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <Link
+          href={authenticated ? '/hesap' : '/login'}
+          className="icon-btn icon-btn-white icon-btn-sm"
+          aria-label={authenticated ? 'Hesabım' : 'Giriş yap'}
+        >
+          <UserRound className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+        </Link>
+      </div>
+    </header>
+  );
+}

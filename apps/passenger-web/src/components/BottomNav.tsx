@@ -2,21 +2,28 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { House, LogIn, Search, Ticket, UserRound } from 'lucide-react';
+import { House, Radio, Route, Ticket, UserRound } from 'lucide-react';
 
 /**
- * Floating tab pill, mirroring the reference mobile shells: dark rounded bar
- * lifted off the bottom edge with a filled highlight on the active tab.
- * Hidden from `md` up, where the header navigation takes over.
+ * Floating tab pill from `ui/mobile-home-reference.png`: a near-black capsule
+ * lifted off the bottom edge (inset-x 20, bottom 18, height 72) carrying five
+ * icon-only tabs, the active one filled with a lime rounded tile.
+ *
+ * Hidden from `lg` up, where the top rail takes over.
  */
 export function BottomNav({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
+
+  // Live tracking is a full-screen immersive map in the reference, dismissed by
+  // its own control rather than by a tab bar.
+  if (pathname.includes('/live')) return null;
+
   const items = [
     { href: '/', label: 'Ana sayfa', icon: House, active: pathname === '/' },
     {
-      href: '/#sefer-ara',
+      href: '/search',
       label: 'Sefer ara',
-      icon: Search,
+      icon: Route,
       active: pathname.startsWith('/search') || pathname.startsWith('/trips'),
     },
     {
@@ -25,30 +32,29 @@ export function BottomNav({ authenticated }: { authenticated: boolean }) {
       icon: Ticket,
       active: pathname.startsWith('/tickets'),
     },
+    { href: '/canli', label: 'Canlı takip', icon: Radio, active: pathname.startsWith('/canli') },
     authenticated
-      ? {
-          href: '/hesap',
-          label: 'Hesabım',
+      ? { href: '/hesap', label: 'Hesabım', icon: UserRound, active: pathname.startsWith('/hesap') }
+      : {
+          href: '/login',
+          label: 'Giriş yap',
           icon: UserRound,
-          active: pathname.startsWith('/hesap'),
-        }
-      : { href: '/login', label: 'Giriş yap', icon: LogIn, active: pathname.startsWith('/login') },
+          active: pathname.startsWith('/login'),
+        },
   ];
 
   return (
-    <nav aria-label="Alt menü" className="floating-nav">
-      <ul className="grid h-full grid-cols-4 items-center px-2">
+    <nav aria-label="Alt menü" className="tab-bar">
+      <ul className="flex h-full items-center justify-between px-3">
         {items.map(({ href, label, icon: Icon, active }) => (
-          <li key={label} className="grid place-items-center">
+          <li key={label}>
             <Link
               href={href}
               aria-label={label}
               aria-current={active ? 'page' : undefined}
-              className={`grid h-12 w-12 place-items-center rounded-full transition ${
-                active ? 'bg-brand-700 text-white shadow-brand' : 'text-ink-300 hover:text-white'
-              }`}
+              className={`tab-item ${active ? 'tab-item-active' : 'hover:text-white'}`}
             >
-              <Icon className="h-[1.375rem] w-[1.375rem]" aria-hidden />
+              <Icon className="h-[1.375rem] w-[1.375rem]" strokeWidth={2} aria-hidden />
             </Link>
           </li>
         ))}

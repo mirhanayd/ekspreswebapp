@@ -4,8 +4,7 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import { BottomNav } from '@/components/BottomNav';
-import { SiteFooter } from '@/components/SiteFooter';
-import { SiteHeader } from '@/components/SiteHeader';
+import { TopNav } from '@/components/TopNav';
 
 const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter', display: 'swap' });
 const display = Archivo({
@@ -21,32 +20,40 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#12100E',
+  themeColor: '#E8F3E9',
   width: 'device-width',
   initialScale: 1,
+  viewportFit: 'cover',
 };
 
+/**
+ * App shell. The reference screens are headerless phone views on a tinted
+ * canvas with a floating tab pill, so there is no site header or footer here —
+ * each route owns its own top row.
+ */
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const authenticated = (await cookies()).has(ACCESS_TOKEN_COOKIE);
+
   return (
     <html lang="tr" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${display.variable} flex min-h-screen flex-col pb-[var(--app-nav-h)] font-sans antialiased md:pb-0`}
+        className={`${inter.variable} ${display.variable} min-h-[100dvh] font-sans antialiased`}
       >
         <a
           href="#icerik"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-3 focus:z-[60] focus:rounded-full focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-ink-900"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-5 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink-900 focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
         >
           İçeriğe geç
         </a>
 
-        <SiteHeader authenticated={authenticated} />
+        <TopNav authenticated={authenticated} />
 
-        <main id="icerik" className="flex-1">
+        {/* The rail floats over the page canvas rather than banding across it,
+            so each route keeps its own sage or cream ground edge to edge. */}
+        <main id="icerik" className="lg:-mt-[var(--app-header-h)]">
           {children}
         </main>
 
-        <SiteFooter />
         <BottomNav authenticated={authenticated} />
       </body>
     </html>

@@ -1,10 +1,15 @@
 /**
- * Siirt Kurtalan Ekspres design tokens.
+ * Design tokens for the Siirt Kurtalan Ekspres apps.
  *
- * The palette is derived from the company assets in `brand/`: the wordmark is a
- * heavy condensed red (~#B0342A) with a near-black outline, and the coach livery
- * adds a warm ember gradient over white. Neutrals are intentionally warm
- * (charcoal, not blue-slate) so the product reads as an intercity coach brand.
+ * Every value here is sampled from the canonical reference screens in `/ui`
+ * rather than from any earlier implementation:
+ *
+ *   ui/mobile-home-reference.png  → sage canvas #E8F3E9, near-black forest
+ *                                    #051A09 chrome, lime #CEDE44 active tab
+ *   ui/trip-search-reference.png  → cream canvas #F3F2E7, lime #BCCB30 rail and
+ *                                    selected date, butter #FFFA93 facts strip
+ *   ui/live-map-reference.png     → #1F1F1F journey panel, amber #F7AA12 active
+ *                                    stop and duration pill, orange route pin
  *
  * @type {import('tailwindcss').Config}
  */
@@ -25,7 +30,7 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Semantic tokens (kept so existing shadcn-style utilities keep working).
+        // Semantic tokens, so shadcn-style utilities keep resolving.
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -60,46 +65,106 @@ module.exports = {
           foreground: 'hsl(var(--card-foreground))',
         },
 
-        // Brand red — primary actions, active states, route lines.
-        brand: {
-          50: '#FFF5F2',
-          100: '#FFE6DF',
-          200: '#FFC9BB',
-          300: '#FBA28C',
-          400: '#F2705A',
-          500: '#E14A33',
-          600: '#C4331F',
-          700: '#A32619',
-          800: '#842016',
-          900: '#6B1D16',
-          950: '#3A0B07',
-        },
-        // Ember — the warm accent from the coach livery. Highlights only.
-        ember: {
-          50: '#FFF8ED',
-          100: '#FFEDD2',
-          200: '#FFD8A4',
-          300: '#FFBC6B',
-          400: '#FF9A33',
-          500: '#F97D11',
-          600: '#DC5F07',
-          700: '#B6440A',
-          800: '#93370F',
-          900: '#792F10',
-        },
-        // Ink — warm charcoal neutrals used for headers, panels and text.
+        /* Near-black forest green. All chrome, headings and body copy in the
+           references sit on this scale — it is never blue-grey. */
         ink: {
-          50: '#F8F7F5',
-          100: '#F1EEEA',
-          200: '#E3DED8',
-          300: '#CDC5BC',
-          400: '#A79C91',
-          500: '#857A6F',
-          600: '#6A6058',
-          700: '#4E4640',
-          800: '#332D29',
-          900: '#1E1A17',
-          950: '#12100E',
+          50: '#F1F5F1',
+          100: '#E1E8E2',
+          200: '#C4D0C6',
+          300: '#9CAE9F',
+          400: '#6E8372',
+          500: '#4C6050',
+          600: '#334634',
+          700: '#20321F',
+          800: '#12220F',
+          900: '#051A09',
+          950: '#021005',
+        },
+        /* Home canvas: soft sage. */
+        sage: {
+          50: '#F3F9F3',
+          100: '#E8F3E9',
+          200: '#DAEBDD',
+          300: '#C6DBCB',
+          400: '#A9C6B0',
+          500: '#8AAD93',
+          600: '#6B8F75',
+        },
+        /* Booking canvas: warm cream. */
+        cream: {
+          50: '#FBFBF4',
+          100: '#F7F6E2',
+          200: '#F3F2E7',
+          300: '#E9E7D5',
+          400: '#DBD7C6',
+          500: '#C7C1A9',
+          600: '#A8A189',
+        },
+        /* Primary action / selection accent. */
+        lime: {
+          100: '#F1F6C8',
+          200: '#E4EE96',
+          300: '#DCE96A',
+          400: '#CEDE44',
+          500: '#BCCB30',
+          600: '#A3B221',
+          700: '#7F8C1A',
+          800: '#5F6915',
+          900: '#3F4610',
+        },
+        /* Live journey highlight: durations, active stop, vehicle marker. */
+        amber: {
+          100: '#FFF0CE',
+          200: '#FFDE93',
+          300: '#FFC759',
+          400: '#F7AA12',
+          500: '#E09206',
+          600: '#B57206',
+          700: '#8A5606',
+        },
+        /* The pale yellow facts strip under a journey card. */
+        butter: {
+          100: '#FFFDD9',
+          200: '#FFFA93',
+          300: '#F4EC6A',
+          400: '#DDD245',
+        },
+        /* Map pin / route marker orange from the tracking reference. */
+        signal: {
+          400: '#FF8A4C',
+          500: '#F0632A',
+          600: '#D24C17',
+        },
+
+        /* Compatibility aliases. The admin console is out of scope for this
+           reference rebuild, so its existing `brand-*` / `ember-*` utilities are
+           remapped onto the new system instead of being rewritten: in `/ui` the
+           primary action fill is the near-black forest and the warm accent is
+           amber. */
+        brand: {
+          50: '#F1F5F1',
+          100: '#E1E8E2',
+          200: '#C4D0C6',
+          300: '#9CAE9F',
+          400: '#6E8372',
+          500: '#4C6050',
+          600: '#334634',
+          700: '#20321F',
+          800: '#12220F',
+          900: '#051A09',
+          950: '#021005',
+        },
+        ember: {
+          50: '#FFF9EB',
+          100: '#FFF0CE',
+          200: '#FFDE93',
+          300: '#FFC759',
+          400: '#F7AA12',
+          500: '#E09206',
+          600: '#B57206',
+          700: '#8A5606',
+          800: '#6B4306',
+          900: '#4D3105',
         },
       },
       fontFamily: {
@@ -121,6 +186,7 @@ module.exports = {
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
+        display: ['3.25rem', { lineHeight: '0.95', letterSpacing: '-0.04em' }],
       },
       letterSpacing: {
         tightest: '-0.045em',
@@ -129,21 +195,24 @@ module.exports = {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        tile: '1.125rem',
+        card: '1.5rem',
         '4xl': '2rem',
         '5xl': '2.5rem',
+        '6xl': '3rem',
       },
       boxShadow: {
-        card: '0 1px 2px rgba(30, 26, 23, 0.05), 0 10px 26px -20px rgba(30, 26, 23, 0.45)',
-        lift: '0 2px 6px rgba(30, 26, 23, 0.06), 0 22px 46px -28px rgba(30, 26, 23, 0.55)',
-        panel: '0 30px 70px -40px rgba(18, 16, 14, 0.75)',
-        brand: '0 10px 26px -14px rgba(163, 38, 25, 0.75)',
-        seat: 'inset 0 -2px 0 rgba(30, 26, 23, 0.12)',
+        card: '0 1px 2px rgba(5, 26, 9, 0.04), 0 12px 28px -22px rgba(5, 26, 9, 0.4)',
+        lift: '0 2px 8px rgba(5, 26, 9, 0.06), 0 22px 44px -28px rgba(5, 26, 9, 0.5)',
+        float: '0 10px 30px -12px rgba(5, 26, 9, 0.35)',
+        panel: '0 26px 60px -34px rgba(2, 16, 5, 0.8)',
+        glass: '0 6px 20px -8px rgba(5, 26, 9, 0.3)',
       },
       backgroundImage: {
-        'brand-gradient': 'linear-gradient(135deg, #C4331F 0%, #A32619 55%, #F97D11 160%)',
-        'ink-gradient': 'linear-gradient(160deg, #1E1A17 0%, #12100E 55%, #2A211C 100%)',
-        'ember-sweep':
-          'radial-gradient(120% 90% at 85% 5%, rgba(249, 125, 17, 0.35) 0%, transparent 55%)',
+        'sage-bloom': 'radial-gradient(90% 60% at 50% 42%, #C6DBCB 0%, #E8F3E9 68%)',
+        'ink-gradient': 'linear-gradient(165deg, #12220F 0%, #051A09 60%, #0C2312 100%)',
+        'hero-scrim':
+          'linear-gradient(to top, rgba(2,16,5,0.86) 0%, rgba(2,16,5,0.62) 34%, rgba(2,16,5,0.18) 62%, rgba(2,16,5,0) 86%)',
       },
       keyframes: {
         'accordion-down': {
@@ -159,9 +228,9 @@ module.exports = {
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'pulse-ring': {
-          '0%': { boxShadow: '0 0 0 0 rgba(16, 185, 129, 0.55)' },
-          '70%': { boxShadow: '0 0 0 8px rgba(16, 185, 129, 0)' },
-          '100%': { boxShadow: '0 0 0 0 rgba(16, 185, 129, 0)' },
+          '0%': { boxShadow: '0 0 0 0 rgba(247, 170, 18, 0.6)' },
+          '70%': { boxShadow: '0 0 0 8px rgba(247, 170, 18, 0)' },
+          '100%': { boxShadow: '0 0 0 0 rgba(247, 170, 18, 0)' },
         },
         shimmer: {
           '100%': { transform: 'translateX(100%)' },

@@ -11,7 +11,7 @@ export function LogoutButton({ variant = 'dark' }: { variant?: 'dark' | 'light' 
     <button
       type="button"
       disabled={pending}
-      className={variant === 'light' ? 'btn btn-secondary' : 'btn btn-sm btn-on-dark'}
+      className={variant === 'light' ? 'btn btn-quiet w-full' : 'btn btn-sm btn-ghost'}
       onClick={async () => {
         setPending(true);
         await fetch('/api/auth/logout', { method: 'POST' });
