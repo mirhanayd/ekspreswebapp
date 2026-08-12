@@ -3,6 +3,69 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------ *
+ * Keyframes for the opening animation and the drifting road.
+ *
+ * Declared here rather than in the Tailwind theme because Tailwind only
+ * emits a `@keyframes` block when one of its generated `animate-*`
+ * utilities references it, and these are driven from the component
+ * classes below.
+ * ------------------------------------------------------------------ */
+@keyframes splash-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* `left`, not `translateX`: a percentage translate is relative to the coach's
+   own width rather than the road it drives along. */
+@keyframes splash-drive {
+  from {
+    left: -16%;
+  }
+  to {
+    left: 104%;
+  }
+}
+
+@keyframes road-drift {
+  from {
+    background-position:
+      0 34%,
+      0 71%;
+  }
+  to {
+    background-position:
+      -1200px 34%,
+      -600px 71%;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Passenger design system — reproduced from the canonical reference
  * screens in /ui. Measurements below are the CSS values sampled from
  * those PNGs at a 375px (home, search) / 390px (tracking) viewport:
@@ -471,6 +534,11 @@
     animation: splash-out 0.45s ease-in forwards;
   }
 
+  /* Already seen this session — hide before paint, no flash. */
+  .splash-done .splash {
+    display: none;
+  }
+
   .splash-stage {
     @apply flex w-full max-w-sm flex-col items-center px-7;
   }
@@ -494,7 +562,7 @@
   }
 
   .splash-coach {
-    @apply absolute bottom-1 left-0;
+    @apply absolute bottom-1;
     animation: splash-drive 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
   }
 

@@ -4,49 +4,50 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 const DURATION_MS = 3000;
-const SESSION_KEY = 'ske-splash-shown';
+export const SPLASH_SESSION_KEY = 'ske-splash-shown';
 
 /**
- * Opening animation. Holds the screen for three seconds on the first visit of a
- * session while the app loads: the wordmark fades up, a coach drives the dashed
- * route across, and the whole overlay dissolves.
+ * Opening animation. Holds the screen for three seconds while the app loads:
+ * the wordmark and tagline rise, a coach drives the dashed route across, and
+ * the overlay dissolves.
  *
- * It only ever covers the first paint of a session — a reload inside the same
- * tab goes straight to the app — and it collapses to a still frame when the
- * visitor has asked for reduced motion.
+ * The markup is server-rendered so it covers the very first paint rather than
+ * appearing once React hydrates. The inline script in the document head has
+ * already marked the document when this session has seen it, and the matching
+ * CSS hides the overlay before it can flash; this component then removes it
+ * from the tree. Reduced-motion visitors get the still frame.
  */
 export function SplashScreen() {
-  const [state, setState] = useState<'hidden' | 'playing' | 'leaving'>('hidden');
+  const [done, setDone] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) return;
-    sessionStorage.setItem(SESSION_KEY, '1');
-    setState('playing');
+    const alreadyShown = document.documentElement.classList.contains('splash-done');
+    if (alreadyShown) {
+      setDone(true);
+      return;
+    }
 
-    const leave = window.setTimeout(() => setState('leaving'), DURATION_MS - 450);
-    const done = window.setTimeout(() => setState('hidden'), DURATION_MS);
+    const { overflow } = document.body.style;
+    document.body.style.overflow = 'hidden';
+
+    const leave = window.setTimeout(() => setLeaving(true), DURATION_MS - 450);
+    const finish = window.setTimeout(() => setDone(true), DURATION_MS);
+
     return () => {
       window.clearTimeout(leave);
-      window.clearTimeout(done);
+      window.clearTimeout(finish);
+      document.body.style.overflow = overflow;
     };
   }, []);
 
-  useEffect(() => {
-    if (state === 'hidden') return;
-    const { overflow } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = overflow;
-    };
-  }, [state]);
-
-  if (state === 'hidden') return null;
+  if (done) return null;
 
   return (
     <div
       role="status"
       aria-label="Siirt Kurtalan Ekspres yükleniyor"
-      className={`splash ${state === 'leaving' ? 'splash-leaving' : ''}`}
+      className={`splash ${leaving ? 'splash-leaving' : ''}`}
     >
       <div className="splash-stage">
         <Image

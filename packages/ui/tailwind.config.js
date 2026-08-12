@@ -232,25 +232,10 @@ module.exports = {
           '70%': { boxShadow: '0 0 0 8px rgba(247, 170, 18, 0)' },
           '100%': { boxShadow: '0 0 0 0 rgba(247, 170, 18, 0)' },
         },
-        /* Opening animation */
-        'splash-in': { from: { opacity: '0' }, to: { opacity: '1' } },
-        'splash-out': {
-          from: { opacity: '1', transform: 'scale(1)' },
-          to: { opacity: '0', transform: 'scale(1.04)' },
-        },
-        'splash-rise': {
-          from: { opacity: '0', transform: 'translateY(14px)' },
-          to: { opacity: '1', transform: 'translateY(0)' },
-        },
-        'splash-drive': {
-          from: { transform: 'translateX(-22%)' },
-          to: { transform: 'translateX(calc(100% + 22%))' },
-        },
-        /* Slow drifting road texture behind the app canvas */
-        'road-drift': {
-          from: { backgroundPosition: '0 0, 0 0' },
-          to: { backgroundPosition: '-1200px 0, -600px 0' },
-        },
+        /* The opening animation and the drifting road declare their keyframes
+           beside the classes that use them, in the passenger stylesheet:
+           Tailwind only emits a `@keyframes` block when an `animate-*` utility
+           references it, and those are driven from raw CSS. */
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },

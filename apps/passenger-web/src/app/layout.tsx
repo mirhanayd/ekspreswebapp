@@ -37,6 +37,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   return (
     <html lang="tr" suppressHydrationWarning>
+      <head>
+        {/* Marks the document before first paint when this session has already
+            seen the opening animation, so a second load does not flash it. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var k='ske-splash-shown';if(sessionStorage.getItem(k)){document.documentElement.classList.add('splash-done')}else{sessionStorage.setItem(k,'1')}}catch(e){}`,
+          }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${display.variable} min-h-[100dvh] font-sans antialiased`}
       >
