@@ -22,7 +22,8 @@ export function CampaignArt({
       className={`relative isolate overflow-hidden rounded-[1.5rem] bg-ink-900 ${className}`}
       aria-hidden
     >
-      <svg viewBox="0 0 320 180" className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+      {/* The box is locked to the artboard's 16:9, so nothing is ever cropped. */}
+      <svg viewBox="0 0 320 180" className="h-full w-full">
         <defs>
           <pattern id={`dots-${artwork}`} width="10" height="10" patternUnits="userSpaceOnUse">
             <circle cx="1.5" cy="1.5" r="1.2" fill="rgba(255,255,255,0.09)" />

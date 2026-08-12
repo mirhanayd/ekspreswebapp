@@ -31,7 +31,7 @@ export default function CampaignsPage() {
                     artwork={campaign.artwork}
                     reward={campaign.reward}
                     rewardNote={campaign.rewardNote}
-                    className="m-3 mb-0 h-40 shrink-0"
+                    className="m-3 mb-0 aspect-[16/9] shrink-0"
                   />
 
                   <div className="flex flex-1 flex-col p-5">

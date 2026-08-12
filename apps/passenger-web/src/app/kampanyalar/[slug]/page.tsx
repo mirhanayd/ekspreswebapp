@@ -32,7 +32,7 @@ export default async function CampaignDetailPage({
           artwork={campaign.artwork}
           reward={campaign.reward}
           rewardNote={campaign.rewardNote}
-          className="mt-6 h-48 sm:h-56"
+          className="mt-6 aspect-[16/9]"
         />
 
         <span className="badge badge-lime mt-5 inline-flex">{campaign.kicker}</span>
