@@ -72,6 +72,15 @@ export function placeShortName(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
 
+/**
+ * The reference journey block leads with a three-letter airport code, so it can
+ * afford a very large type size. Turkish settlement names are far longer, so
+ * the long ones step down one size rather than being cut off by an ellipsis.
+ */
+export function placeCodeClass(name: string): string {
+  return placeShortName(name).length > 8 ? 'code-lg' : 'code-xl';
+}
+
 export const tripStatusLabel: Record<string, string> = {
   scheduled: 'Planlandı',
   boarding: 'Biniş başladı',

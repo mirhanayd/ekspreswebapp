@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, BusFront } from 'lucide-react';
-import { formatPrice, formatTime, placeShortName } from '@/lib/format';
+import { formatPrice, formatTime, placeCodeClass, placeShortName } from '@/lib/format';
 
 export type JourneyFact = { label: string; value: string };
 
@@ -53,14 +53,18 @@ export function JourneyCard({
 
           <div className="journey-row">
             <div className="journey-from">
-              <p className="code-xl truncate">{placeShortName(originName)}</p>
+              <p className={`${placeCodeClass(originName)} truncate`}>
+                {placeShortName(originName)}
+              </p>
               <p className="caption mt-1 truncate">{originName}</p>
             </div>
             <span className="journey-badge" aria-hidden>
               <BusFront className="h-4 w-4" />
             </span>
             <div className="journey-to">
-              <p className="code-xl truncate">{placeShortName(destinationName)}</p>
+              <p className={`${placeCodeClass(destinationName)} truncate`}>
+                {placeShortName(destinationName)}
+              </p>
               <p className="caption mt-1 truncate">{destinationName}</p>
             </div>
           </div>

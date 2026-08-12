@@ -12,6 +12,7 @@ import {
   formatMinorPrice,
   formatTime,
   minutesBetween,
+  placeCodeClass,
   placeShortName,
   ticketStatusLabel,
   tripStatusLabel,
@@ -137,7 +138,7 @@ export default async function TicketDetailPage({
 
               <div className="journey-row mt-3">
                 <div className="journey-from">
-                  <p className="code-xl truncate">
+                  <p className={`${placeCodeClass(ticket.trip.route.origin.name)} truncate`}>
                     {placeShortName(ticket.trip.route.origin.name)}
                   </p>
                   <p className="caption mt-1 truncate">{ticket.trip.route.origin.name}</p>
@@ -146,7 +147,7 @@ export default async function TicketDetailPage({
                   <BusFront className="h-4 w-4" />
                 </span>
                 <div className="journey-to">
-                  <p className="code-xl truncate">
+                  <p className={`${placeCodeClass(ticket.trip.route.destination.name)} truncate`}>
                     {placeShortName(ticket.trip.route.destination.name)}
                   </p>
                   <p className="caption mt-1 truncate">{ticket.trip.route.destination.name}</p>

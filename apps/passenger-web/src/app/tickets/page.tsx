@@ -5,6 +5,7 @@ import { authenticatedApiFetch } from '@/lib/server-api';
 import {
   formatDayMonth,
   formatTime,
+  placeCodeClass,
   placeShortName,
   ticketStatusLabel,
   tripStatusLabel,
@@ -145,7 +146,7 @@ function TicketCard({ ticket, tone }: { ticket: PassengerTicket; tone: 'active' 
 
           <span className="journey-row mt-2.5 items-center">
             <span className="journey-from">
-              <span className="code-xl block truncate">
+              <span className={`${placeCodeClass(ticket.trip.route.origin.name)} block truncate`}>
                 {placeShortName(ticket.trip.route.origin.name)}
               </span>
             </span>
@@ -153,7 +154,9 @@ function TicketCard({ ticket, tone }: { ticket: PassengerTicket; tone: 'active' 
               <BusFront className="h-4 w-4" />
             </span>
             <span className="journey-to">
-              <span className="code-xl block truncate">
+              <span
+                className={`${placeCodeClass(ticket.trip.route.destination.name)} block truncate`}
+              >
                 {placeShortName(ticket.trip.route.destination.name)}
               </span>
             </span>

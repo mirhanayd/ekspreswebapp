@@ -465,7 +465,7 @@ export default function LiveMapView({
         </section>
 
         <ul className="hide-scrollbar pointer-events-auto mx-auto mt-3 flex max-w-2xl gap-2.5 overflow-x-auto">
-          <li className="min-w-0 max-w-[60%] shrink-0">
+          <li className="min-w-0 max-w-[44%] shrink-0">
             <span className="status-pill">
               <MapPin className="h-4 w-4 shrink-0 text-amber-400" aria-hidden />
               <span className="truncate">
