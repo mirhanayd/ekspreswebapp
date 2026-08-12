@@ -6,8 +6,10 @@
 - Issue: [#58](https://github.com/mirhanayd/ekspreswebapp/issues/58)
 - PR: [#59](https://github.com/mirhanayd/ekspreswebapp/pull/59)
 - Starting main SHA: `bba3caf7e2dfcf08a2e88201baf2fd57d133abcb`
-- Final main SHA: recorded in the follow-up docs commit
-- Merge SHA: recorded in the follow-up docs commit
+- Merge SHA: `51dd1f9b3ef03c35dfcdb4538ded88d86cbef1ad` (squash merge, the repository's
+  established method)
+- Final main SHA: `51dd1f9b3ef03c35dfcdb4538ded88d86cbef1ad`
+- Superseded: PR #57, closed after this merge
 
 The branch was cut from `feature/57-presentation-ui-redesign` rather than directly from `main`.
 That branch was an open, unmerged attempt at this same campaign (PR #57) whose stated direction was
@@ -203,7 +205,18 @@ the Linux CI runner. Changed files were verified with `prettier --end-of-line au
 
 ## CI
 
-Recorded on the pull request.
+The `Validate and Test` workflow — format check, lint, typecheck, unit tests, production builds and
+the deterministic Playwright critical-journey gate against real PostgreSQL/PostGIS and Redis service
+containers — passed on the merged head `8696199`, and on the two heads before it. Run
+[31604110828](https://github.com/mirhanayd/ekspreswebapp/actions/runs/31604110828): success.
+
+Two E2E failures were found and fixed on the way there, both selector ambiguities rather than
+behaviour regressions:
+
+1. `getByLabel('Nereye')` matched the destination select and a section labelled
+   `Nereye gidiyorsun?`. That section belonged to the old home page and is gone.
+2. `getByLabel('Şifre')` matched the password input and the reveal toggle, whose accessible name is
+   `Şifreyi göster`. The passenger login step now matches exactly.
 
 ## Remaining Visual Deviations
 

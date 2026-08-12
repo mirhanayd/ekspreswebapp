@@ -2,8 +2,8 @@
 
 ## Verified Release Baseline
 
-- SHA: `63339e21ae419583051219bd9eec68f9ba041d97`
-- Baseline: PR #54 merged; the deterministic Playwright release gate is required and green.
+- SHA: `51dd1f9b3ef03c35dfcdb4538ded88d86cbef1ad`
+- Baseline: PR #59 merged; the deterministic Playwright release gate is required and green.
 - Closure artifact: PR #56 final release-readiness audit and roadmap reconciliation.
 
 ## Current Phase
@@ -12,11 +12,12 @@ Demo MVP presentation release complete
 
 ## Current Campaign
 
-- Issue #55: final release readiness audit and roadmap reconciliation.
-- Branch: `docs/55-final-release-readiness-audit`.
-- PR: #56.
-- Status: final audit complete; all historical roadmap issues reconciled; audit evidence head passed
-  full CI run `31488289474`.
+- Issue #58: rebuild the passenger frontend from the canonical `/ui` reference screens.
+- Branch: `feat/ui-reference-rebuild`.
+- PR: #59 (supersedes #57, now closed).
+- Status: complete; the passenger visual layer is reproduced from `ui/mobile-home-reference.png`,
+  `ui/trip-search-reference.png` and `ui/live-map-reference.png`, with no backend change. Merged
+  head passed full CI run `31604110828`.
 
 ## Completed Major Capabilities
 
@@ -34,8 +35,10 @@ Demo MVP presentation release complete
 - Ticket-entitled tracking bootstrap/socket access with Redis snapshot and PostGIS-route simulator movement.
 - Authenticated admin overview, transport, ticket, fleet, and report operations backed by PostgreSQL,
   PostGIS, and Redis.
-- Cohesive red, charcoal, stone, and white passenger/admin visual system with responsive critical flows.
-- Accessible passenger search, trip, coach-seat, checkout, ticket/QR, and live-map presentation surfaces.
+- Passenger visual system reproduced from the canonical `/ui` reference screens: sage and cream
+  canvases, near-black forest chrome, lime selection, amber live highlights, floating tab pill.
+- Accessible passenger search, trip, coach-seat, checkout, ticket/QR, and live-map presentation
+  surfaces, verified for horizontal overflow at 375 / 390 / 430 / 768 / 1024 / 1440.
 - Deterministic Playwright passenger/admin critical journeys against production builds and real
   PostgreSQL/PostGIS/Redis infrastructure.
 - Reliable authenticated return-to navigation after passenger login.
