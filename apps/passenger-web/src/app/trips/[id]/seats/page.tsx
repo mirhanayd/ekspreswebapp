@@ -1,9 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import SeatSelector from './SeatSelector';
 import { API_BASE_URL } from '@/lib/server-api';
 import { BookingSteps } from '@/components/BookingSteps';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { formatLongDate, formatTime, placeShortName } from '@/lib/format';
 
 export const metadata = { title: 'Koltuk seçimi' };
@@ -23,15 +23,18 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
     tripData = await trip.json();
   } catch {
     return (
-      <div className="page shell grid place-items-center">
-        <div className="card max-w-md p-8 text-center">
-          <h1 className="title-md">Koltuk bilgileri yüklenemedi</h1>
-          <p className="subtle mt-2">
-            Sefer envanterine şu anda ulaşılamıyor. Kısa süre sonra tekrar deneyin.
-          </p>
-          <Link href={`/trips/${id}`} className="btn btn-secondary mt-6">
-            Sefer detayına dön
-          </Link>
+      <div className="canvas-cream min-h-[100dvh]">
+        <div className="screen screen-pad">
+          <ScreenHeader backHref={`/trips/${id}`} backLabel="Sefer detayına dön" />
+          <div className="empty-state mt-6">
+            <h1 className="title-md">Koltuk bilgileri yüklenemedi</h1>
+            <p className="subtle mt-2 max-w-xs">
+              Sefer envanterine şu anda ulaşılamıyor. Kısa süre sonra tekrar deneyin.
+            </p>
+            <Link href={`/trips/${id}`} className="btn btn-primary mt-6">
+              Sefer detayına dön
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -41,44 +44,31 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
   const destinationName = tripData.route?.destination?.name ?? 'Varış';
 
   return (
-    <div className="page shell pb-28 lg:pb-10">
-      <div className="app-topbar">
-        <Link
-          href={`/trips/${id}`}
-          aria-label="Sefer detayına dön"
-          className="icon-btn icon-btn-light"
-        >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
-        </Link>
-        <p className="font-display text-sm font-bold text-ink-800">Koltuk seçimi</p>
-        <span className="h-11 w-11" aria-hidden />
-      </div>
+    <div className="canvas-cream min-h-[100dvh]">
+      <div className="screen-wide screen-pad pb-44 lg:pb-14">
+        <ScreenHeader
+          backHref={`/trips/${id}`}
+          backLabel="Sefer detayına dön"
+          title="Koltuk seçimi"
+        />
 
-      <div className="card mt-3 p-4 sm:p-5">
-        <BookingSteps current={2} />
-      </div>
-
-      <header className="panel panel-sheen mt-4 p-5 sm:p-6">
-        <div className="relative flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <p className="eyebrow-invert">
-              {seatMapData.seatLayout?.layout || '2+1'} konfor düzeni
-            </p>
-            <h1 className="title-lg mt-1.5 truncate text-white">Koltuğunuzu seçin</h1>
-            <p className="mt-2 truncate text-sm text-ink-300">
-              {placeShortName(originName)} → {placeShortName(destinationName)} ·{' '}
-              {formatLongDate(tripData.departureTime)} · {formatTime(tripData.departureTime)}
-            </p>
-          </div>
-          <div className="relative shrink-0 rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2 text-right">
-            <p className="text-sm font-bold">{seatMapData.bus.model}</p>
-            <p className="text-xs text-ink-300">{seatMapData.bus.plateNumber}</p>
-          </div>
+        <div className="mt-5">
+          <BookingSteps current={2} />
         </div>
-      </header>
 
-      <div className="mt-4">
-        <SeatSelector tripId={id} initialData={seatMapData} />
+        <header className="mt-6">
+          <p className="eyebrow">{seatMapData.seatLayout?.layout || '2+1'} konfor düzeni</p>
+          <h1 className="title-lg mt-1.5">Koltuğunu seç</h1>
+          <p className="caption mt-1.5">
+            {placeShortName(originName)} – {placeShortName(destinationName)} ·{' '}
+            {formatLongDate(tripData.departureTime)} · {formatTime(tripData.departureTime)} ·{' '}
+            {seatMapData.bus.plateNumber}
+          </p>
+        </header>
+
+        <div className="mt-5">
+          <SeatSelector tripId={id} initialData={seatMapData} />
+        </div>
       </div>
     </div>
   );

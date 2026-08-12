@@ -1,8 +1,9 @@
-import { ArrowRight, Armchair, BusFront, Check, Download, Ticket, UserRound } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
 import { BookingSteps } from '@/components/BookingSteps';
+import { RoutePanel } from '@/components/RoutePanel';
 import { formatLongDate, formatMinorPrice, formatTime } from '@/lib/format';
 
 export const metadata = { title: 'Ödeme tamamlandı' };
@@ -22,6 +23,10 @@ type OrderSummary = {
   };
 };
 
+/**
+ * Confirmation. Same booking language as the rest of the flow: cream canvas, a
+ * lime confirmation mark, the tinted route panel and a #FFFA93 facts strip.
+ */
 export default async function CheckoutSuccessPage({
   params,
   searchParams,
@@ -47,108 +52,91 @@ export default async function CheckoutSuccessPage({
   const trip = order?.trip;
 
   return (
-    <div className="page shell">
-      <div className="mx-auto max-w-2xl">
-        <div className="card p-4 sm:p-5">
-          <BookingSteps current={4} />
-        </div>
+    <div className="canvas-cream min-h-[100dvh]">
+      <div className="screen screen-pad">
+        <BookingSteps current={4} />
 
-        <header className="mt-4 text-center">
-          <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 ring-8 ring-emerald-50">
-            <Check className="h-10 w-10 text-emerald-700" aria-hidden />
+        <header className="mt-8 text-center">
+          <span className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-lime-400">
+            <Check className="h-10 w-10 text-ink-900" aria-hidden />
           </span>
-          <p className="eyebrow mt-6">İşlem tamamlandı</p>
+          <p className="eyebrow mt-6 justify-center">İşlem tamamlandı</p>
           <h1 className="title-lg mt-1.5">Biletiniz hazır!</h1>
-          <p className="subtle mx-auto mt-2 max-w-md">
-            Demo ödemeniz onaylandı. Bilet ve biniş QR kodu hesabınıza eklendi; yolculuktan önce
-            Biletlerim ekranından erişebilirsiniz.
+          <p className="subtle mx-auto mt-2 max-w-sm">
+            Demo ödemeniz onaylandı. Bilet ve biniş QR kodu hesabınıza eklendi.
           </p>
         </header>
 
         {order ? (
-          <article className="panel mt-6">
-            <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-              <span className="flex min-w-0 items-center gap-2 font-display font-bold">
-                <Ticket className="h-4 w-4 shrink-0 text-brand-400" aria-hidden />
-                <span className="truncate">Siirt Kurtalan Ekspres</span>
-              </span>
-              <span className="num shrink-0 text-xs font-semibold text-ink-300">
-                {order.ticket?.ticketNo}
-              </span>
-            </div>
-
-            <div className="p-5">
+          <section className="mt-7" aria-label="Sipariş özeti">
+            <RoutePanel
+              originName={trip?.route?.origin?.name ?? 'Kalkış'}
+              destinationName={trip?.route?.destination?.name ?? 'Varış'}
+            >
               {trip ? (
-                <>
-                  <p className="eyebrow-invert">Güzergâh</p>
-                  <p className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2.5 font-display text-xl font-extrabold">
-                    <span className="truncate">{trip.route?.origin?.name}</span>
-                    <ArrowRight className="h-5 w-5 shrink-0 text-brand-400" aria-hidden />
-                    <span className="truncate">{trip.route?.destination?.name}</span>
-                  </p>
-                  <p className="mt-1.5 text-sm text-ink-300">
-                    {formatLongDate(trip.departureTime)} · {formatTime(trip.departureTime)} –{' '}
-                    {formatTime(trip.arrivalTime)}
-                  </p>
-                </>
+                <p className="text-center text-[0.8125rem] font-semibold text-ink-600">
+                  {formatLongDate(trip.departureTime)} · {formatTime(trip.departureTime)} –{' '}
+                  {formatTime(trip.arrivalTime)}
+                </p>
               ) : null}
+            </RoutePanel>
 
-              <dl className="mt-5 grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                <Summary
-                  icon={<Armchair aria-hidden />}
-                  label="Koltuk"
-                  value={order.tripSeat?.seatNo ?? '—'}
-                />
-                <Summary
-                  icon={<UserRound aria-hidden />}
-                  label="Yolcu"
-                  value={`${order.passengerFirstName} ${order.passengerLastName}`}
-                />
-                <Summary
-                  icon={<BusFront aria-hidden />}
-                  label="Araç"
-                  value={trip?.bus?.plateNumber ?? '—'}
-                />
-                <Summary
-                  icon={<Download aria-hidden />}
-                  label="Tutar"
-                  value={formatMinorPrice(order.totalMinor)}
-                />
-              </dl>
+            <dl className="facts-strip mt-3 overflow-hidden rounded-[1.25rem]">
+              <div className="fact">
+                <dt className="fact-label">Koltuk</dt>
+                <dd className="fact-value">{order.tripSeat?.seatNo ?? '—'}</dd>
+              </div>
+              <div className="fact">
+                <dt className="fact-label">Araç</dt>
+                <dd className="fact-value">{trip?.bus?.plateNumber ?? '—'}</dd>
+              </div>
+              <div className="fact">
+                <dt className="fact-label">Tutar</dt>
+                <dd className="fact-value">{formatMinorPrice(order.totalMinor)}</dd>
+              </div>
+            </dl>
 
-              <p className="mt-4 text-2xs text-ink-400">Sipariş no: {order.orderNo}</p>
+            <div className="mt-3 rounded-[1.25rem] bg-white p-4 shadow-card">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[0.8125rem] text-ink-500">Yolcu</span>
+                <span className="truncate text-[0.8125rem] font-semibold text-ink-900">
+                  {order.passengerFirstName} {order.passengerLastName}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[0.8125rem] text-ink-500">Bilet no</span>
+                <span className="num truncate text-[0.8125rem] font-semibold text-ink-900">
+                  {order.ticket?.ticketNo ?? '—'}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-3">
+                <span className="text-[0.8125rem] text-ink-500">Sipariş no</span>
+                <span className="num truncate text-[0.8125rem] font-semibold text-ink-900">
+                  {order.orderNo}
+                </span>
+              </div>
             </div>
-          </article>
+          </section>
         ) : (
-          <p className="alert-info mt-6">
+          <p className="alert-info mt-7">
             Sipariş özeti şu anda görüntülenemiyor. Biletinize Biletlerim ekranından
             ulaşabilirsiniz.
           </p>
         )}
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Link href="/" className="btn btn-secondary">
-            Ana sayfa
-          </Link>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
           <Link
             href={order?.ticket?.id ? `/tickets/${order.ticket.id}` : '/tickets'}
-            className="btn btn-primary"
+            className="btn btn-primary sm:order-last"
           >
             Bileti ve QR&apos;ı aç
             <ArrowRight className="h-4 w-4" aria-hidden />
           </Link>
+          <Link href="/" className="btn btn-quiet">
+            Ana sayfa
+          </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Summary({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-2xl bg-white/10 p-3">
-      <span className="text-brand-300 [&>svg]:h-3.5 [&>svg]:w-3.5">{icon}</span>
-      <dt className="mt-1.5 text-2xs font-bold uppercase tracking-wide text-ink-400">{label}</dt>
-      <dd className="mt-0.5 truncate text-sm font-bold">{value}</dd>
     </div>
   );
 }

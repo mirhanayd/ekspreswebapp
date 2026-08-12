@@ -87,12 +87,12 @@ export default function CheckoutForm({
     return (
       <div className="py-14 text-center" role="status" aria-live="polite">
         {step === 'paying' ? (
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-brand-50">
-            <LoaderCircle className="h-9 w-9 animate-spin text-brand-700" aria-hidden />
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-cream-200">
+            <LoaderCircle className="h-9 w-9 animate-spin text-ink-700" aria-hidden />
           </span>
         ) : (
-          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-100 ring-8 ring-emerald-50">
-            <Check className="h-9 w-9 text-emerald-700" aria-hidden />
+          <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-lime-400">
+            <Check className="h-9 w-9 text-ink-900" aria-hidden />
           </span>
         )}
         <h2 className="title-md mt-5">
@@ -112,13 +112,13 @@ export default function CheckoutForm({
   return (
     <form onSubmit={submit} className="space-y-7">
       <section>
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-[0.875rem] bg-lime-400 text-ink-900">
             <UserRound className="h-4 w-4" aria-hidden />
           </span>
-          <div>
+          <div className="min-w-0">
             <h2 className="title-md">Yolcu bilgileri</h2>
-            <p className="text-xs text-ink-500">Bilet bu bilgilerle düzenlenir.</p>
+            <p className="caption">Bilet bu bilgilerle düzenlenir.</p>
           </div>
         </div>
 
@@ -165,19 +165,19 @@ export default function CheckoutForm({
       </section>
 
       <section>
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-2xl bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-[0.875rem] bg-lime-400 text-ink-900">
             <LockKeyhole className="h-4 w-4" aria-hidden />
           </span>
-          <div>
+          <div className="min-w-0">
             <h2 className="title-md">Ödeme yöntemi</h2>
-            <p className="text-xs text-ink-500">Sunum ortamı için simüle edilmiş akış.</p>
+            <p className="caption">Sunum ortamı için simüle edilmiş akış.</p>
           </div>
         </div>
 
-        <div className="mt-4 rounded-2xl border-2 border-brand-700 bg-brand-50/60 p-4">
+        <div className="mt-4 rounded-[1.25rem] bg-cream-200 p-4">
           <div className="flex items-start gap-3">
-            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-700 text-white">
+            <span className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-ink-900 text-white">
               <Check className="h-3 w-3" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -195,9 +195,9 @@ export default function CheckoutForm({
             ].map(({ icon: Icon, text }) => (
               <li
                 key={text}
-                className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-ink-700 ring-1 ring-inset ring-brand-100"
+                className="flex items-center gap-2 rounded-full bg-white px-3.5 py-2.5 text-xs font-semibold text-ink-700"
               >
-                <Icon className="h-3.5 w-3.5 shrink-0 text-brand-700" aria-hidden />
+                <Icon className="h-3.5 w-3.5 shrink-0 text-lime-600" aria-hidden />
                 {text}
               </li>
             ))}

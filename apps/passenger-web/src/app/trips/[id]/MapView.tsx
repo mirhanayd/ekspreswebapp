@@ -59,13 +59,13 @@ export default function MapView({ points }: { points: RouteStopPoint[] }) {
             id="trip-route-casing"
             type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': '#ffffff', 'line-width': 8, 'line-opacity': 0.9 }}
+            paint={{ 'line-color': '#ffffff', 'line-width': 9, 'line-opacity': 0.95 }}
           />
           <Layer
             id="trip-route-line"
             type="line"
             layout={{ 'line-cap': 'round', 'line-join': 'round' }}
-            paint={{ 'line-color': '#A32619', 'line-width': 4 }}
+            paint={{ 'line-color': '#F7AA12', 'line-width': 4 }}
           />
         </Source>
       ) : null}
@@ -76,8 +76,8 @@ export default function MapView({ points }: { points: RouteStopPoint[] }) {
           <Marker key={point.id} longitude={point.longitude} latitude={point.latitude}>
             <span
               title={point.name}
-              className={`grid place-items-center rounded-full border-2 border-white text-[0.625rem] font-bold text-white shadow-lg ${
-                isEdge ? 'h-7 w-7 bg-brand-700' : 'h-5 w-5 bg-ink-700'
+              className={`grid place-items-center rounded-full border-2 border-white text-[0.625rem] font-bold shadow-lg ${
+                isEdge ? 'h-7 w-7 bg-ink-900 text-white' : 'h-5 w-5 bg-amber-400 text-ink-900'
               }`}
             >
               {index + 1}

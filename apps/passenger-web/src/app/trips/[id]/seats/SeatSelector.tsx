@@ -25,13 +25,18 @@ type SeatMapData = {
 
 type SeatState = 'available' | 'selected' | 'held' | 'purchased' | 'blocked';
 
+/**
+ * Seat states use the reference vocabulary: white surfaces on the cream canvas,
+ * lime for the passenger's own selection, amber for a temporary hold, and a
+ * muted flat tone for sold seats.
+ */
 const seatStateClass: Record<SeatState, string> = {
   available:
-    'border-ink-300 bg-white text-ink-800 hover:-translate-y-0.5 hover:border-brand-500 hover:bg-brand-50 hover:text-brand-800',
-  selected: 'border-brand-800 bg-brand-700 text-white shadow-brand ring-4 ring-brand-100',
-  held: 'border-dashed border-ember-500 bg-ember-100 text-ember-800',
-  purchased: 'border-ink-200 bg-ink-100 text-ink-400',
-  blocked: 'border-ink-200 bg-ink-100 text-ink-400',
+    'bg-white text-ink-800 shadow-card ring-1 ring-inset ring-ink-900/10 hover:-translate-y-0.5 hover:bg-lime-100',
+  selected: 'bg-lime-400 text-ink-900 shadow-float',
+  held: 'bg-amber-200 text-ink-700',
+  purchased: 'bg-ink-900/[0.08] text-ink-400',
+  blocked: 'bg-ink-900/[0.08] text-ink-400',
 };
 
 const legend: Array<{ state: SeatState; label: string }> = [
@@ -41,47 +46,32 @@ const legend: Array<{ state: SeatState; label: string }> = [
   { state: 'purchased', label: 'Dolu' },
 ];
 
-/** Occupied seats also carry a hatch pattern so status is not colour-only. */
+/** Occupied seats also carry a hatch, so status is never colour-only. */
 const occupiedPattern = {
   backgroundImage:
-    'repeating-linear-gradient(135deg, rgba(30,26,23,0.10) 0 3px, transparent 3px 7px)',
+    'repeating-linear-gradient(135deg, rgba(5,26,9,0.12) 0 3px, transparent 3px 7px)',
 };
 
 function StateGlyph({ state }: { state: SeatState }) {
   if (state === 'selected')
     return (
-      <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-brand-700 shadow ring-1 ring-brand-200">
+      <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-ink-900 text-white">
         <Check className="h-3 w-3" aria-hidden />
       </span>
     );
   if (state === 'held')
     return (
-      <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-ember-700 shadow ring-1 ring-ember-200">
+      <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-amber-400 text-ink-900">
         <Clock3 className="h-3 w-3" aria-hidden />
       </span>
     );
   if (state === 'purchased' || state === 'blocked')
     return (
-      <span className="absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-white text-ink-400 shadow ring-1 ring-ink-200">
+      <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-white text-ink-400 shadow-card">
         <X className="h-3 w-3" aria-hidden />
       </span>
     );
   return null;
-}
-
-function SeatGlyph({ seatNo, state }: { seatNo: string; state: SeatState }) {
-  return (
-    <>
-      <span
-        className={`absolute inset-x-2 top-1.5 h-1 rounded-full ${
-          state === 'selected' ? 'bg-white/50' : 'bg-current opacity-25'
-        }`}
-        aria-hidden
-      />
-      <span className="num mt-1 text-sm font-bold">{seatNo}</span>
-      <StateGlyph state={state} />
-    </>
-  );
 }
 
 export default function SeatSelector({
@@ -196,26 +186,22 @@ export default function SeatSelector({
     : '';
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start lg:gap-5">
-      {/* ------------------------------------------------------------ *
-       * Deck plan
-       * ------------------------------------------------------------ */}
-      <section className="card p-4 sm:p-6" aria-label="Otobüs yerleşim planı">
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-6">
+      {/* Deck plan ---------------------------------------------------- */}
+      <section className="card min-w-0 p-4 sm:p-5" aria-label="Otobüs yerleşim planı">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="eyebrow">Yerleşim planı</p>
-            <h2 className="title-md mt-1">
-              {availableCount} koltuk uygun
-              <span className="ml-2 text-sm font-semibold text-ink-500">
-                / {seatMap.seats.length}
-              </span>
-            </h2>
-          </div>
-          <ul className="flex flex-wrap gap-x-4 gap-y-2">
+          <h2 className="title-md">
+            {availableCount} koltuk uygun
+            <span className="ml-2 text-sm font-medium text-ink-400">/ {seatMap.seats.length}</span>
+          </h2>
+          <ul className="flex flex-wrap gap-x-3.5 gap-y-2">
             {legend.map(({ state, label }) => (
-              <li key={state} className="flex items-center gap-1.5 text-2xs font-bold text-ink-600">
+              <li
+                key={state}
+                className="flex items-center gap-1.5 text-[0.6875rem] font-semibold text-ink-600"
+              >
                 <span
-                  className={`grid h-5 w-5 place-items-center rounded-md border-2 ${seatStateClass[state]}`}
+                  className={`grid h-5 w-5 place-items-center rounded-[0.5rem] ${seatStateClass[state]}`}
                   style={state === 'purchased' ? occupiedPattern : undefined}
                   aria-hidden
                 >
@@ -230,30 +216,26 @@ export default function SeatSelector({
         </div>
 
         {/* Bus shell */}
-        <div className="mx-auto mt-6 w-full max-w-[21rem]">
-          <div className="rounded-[2.25rem] border-[5px] border-ink-800 bg-ink-50 p-2.5 shadow-lift sm:p-3.5">
+        <div className="mx-auto mt-5 w-full max-w-[20rem]">
+          <div className="rounded-[2rem] bg-cream-200 p-3">
             {/* Cockpit */}
-            <div className="relative mb-3 overflow-hidden rounded-t-[1.6rem] rounded-b-lg bg-ink-200/70 px-3 pb-3 pt-4">
+            <div className="relative mb-3 overflow-hidden rounded-t-[1.5rem] rounded-b-[0.75rem] bg-cream-300 px-3 pb-3 pt-4">
               <span
-                className="absolute inset-x-6 top-1.5 h-2 rounded-full bg-ink-300"
+                className="absolute inset-x-8 top-2 h-1.5 rounded-full bg-ink-900/10"
                 aria-hidden
               />
               <div className="flex items-end justify-between">
-                <span className="flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.16em] text-ink-500">
+                <span className="text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-ink-500">
                   Ön
                 </span>
                 <span
-                  className="grid h-9 w-9 place-items-center rounded-full border-4 border-ink-400 bg-white"
+                  className="grid h-9 w-9 place-items-center rounded-full border-[3px] border-ink-300 bg-white"
                   title="Şoför"
                   aria-hidden
                 >
-                  <span className="h-2 w-2 rounded-full bg-ink-400" />
+                  <span className="h-2 w-2 rounded-full bg-ink-300" />
                 </span>
               </div>
-              <span
-                className="absolute -right-1 bottom-3 h-8 w-2 rounded-l bg-ink-400"
-                aria-hidden
-              />
             </div>
 
             {/* Seat grid */}
@@ -261,7 +243,7 @@ export default function SeatSelector({
               {seatRows.map(({ row, items }) => (
                 <div
                   key={row}
-                  className="grid grid-cols-[repeat(2,minmax(0,3rem))_1.25rem_minmax(0,3rem)] justify-center gap-2"
+                  className="grid grid-cols-[repeat(2,minmax(0,2.875rem))_1.125rem_minmax(0,2.875rem)] justify-center gap-2"
                 >
                   {[1, 2, 3, 4].map((column) => {
                     const item = items.find((entry) => entry.column === column);
@@ -272,7 +254,7 @@ export default function SeatSelector({
                           className={column === 3 ? 'flex justify-center' : ''}
                           aria-hidden
                         >
-                          {column === 3 ? <span className="h-full w-px bg-ink-200" /> : null}
+                          {column === 3 ? <span className="h-full w-px bg-ink-900/10" /> : null}
                         </span>
                       );
                     }
@@ -292,9 +274,10 @@ export default function SeatSelector({
                         style={
                           state === 'purchased' || state === 'blocked' ? occupiedPattern : undefined
                         }
-                        className={`relative grid h-12 w-full place-items-center rounded-xl border-2 shadow-seat transition duration-150 disabled:cursor-not-allowed ${seatStateClass[state]}`}
+                        className={`relative grid h-11 w-full place-items-center rounded-[0.875rem] font-display text-[0.8125rem] font-bold transition duration-150 disabled:cursor-not-allowed ${seatStateClass[state]}`}
                       >
-                        <SeatGlyph seatNo={item.seatNo} state={state} />
+                        <span className="num">{item.seatNo}</span>
+                        <StateGlyph state={state} />
                       </button>
                     );
                   })}
@@ -302,25 +285,25 @@ export default function SeatSelector({
               ))}
             </div>
 
-            <div className="mt-3 rounded-b-[1.6rem] rounded-t-lg bg-ink-200/70 py-2 text-center text-2xs font-bold uppercase tracking-[0.16em] text-ink-500">
+            <div className="mt-3 rounded-b-[1.5rem] rounded-t-[0.75rem] bg-cream-300 py-2.5 text-center text-[0.6875rem] font-bold uppercase tracking-[0.16em] text-ink-500">
               Arka
             </div>
           </div>
-          <p className="mt-3 text-center text-2xs font-medium text-ink-500">
+          <p className="caption mt-3 text-center">
             Plan, aracın gerçek {seatMap.seatLayout?.layout || '2+1'} yerleşimini yansıtır.
           </p>
         </div>
       </section>
 
-      {/* ------------------------------------------------------------ *
-       * Selection summary
-       * ------------------------------------------------------------ */}
-      <aside className="lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
-        <div className="panel p-5">
+      {/* Selection summary -------------------------------------------- */}
+      <aside className="min-w-0 lg:sticky lg:top-[calc(var(--app-header-h)+1rem)]">
+        <div className="panel-dark p-5">
           <div className="flex items-center justify-between gap-3">
-            <p className="eyebrow-invert">Seçim özeti</p>
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-white/50">
+              Seçim özeti
+            </p>
             {holdActive ? (
-              <span className="badge bg-ember-400/20 text-ember-200 ring-1 ring-inset ring-ember-400/40">
+              <span className="badge badge-amber">
                 <Clock3 className="h-3 w-3" aria-hidden />
                 Ayrıldı
               </span>
@@ -331,38 +314,42 @@ export default function SeatSelector({
             <>
               <div className="mt-5 flex items-end justify-between gap-3">
                 <div>
-                  <p className="text-2xs font-bold uppercase tracking-wide text-ink-400">Koltuk</p>
-                  <p className="num font-display text-5xl font-extrabold leading-none">
+                  <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-white/50">
+                    Koltuk
+                  </p>
+                  <p className="num font-display text-[3rem] font-bold leading-none text-white">
                     {selectedSeat}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xs font-bold uppercase tracking-wide text-ink-400">Tutar</p>
-                  <p className="num font-display text-2xl font-extrabold">
+                  <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-white/50">
+                    Tutar
+                  </p>
+                  <p className="num font-display text-xl font-bold text-white">
                     {formatMinorPrice(selected.priceMinor)}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-5 rounded-2xl bg-white/10 p-3">
-                <div className="flex items-center justify-between text-sm">
+              <div className="mt-5 rounded-[1.25rem] bg-white/10 p-4">
+                <div className="flex items-center justify-between text-sm text-white">
                   <span className="flex items-center gap-2">
-                    <Clock3 className="h-4 w-4 text-ember-300" aria-hidden />
+                    <Clock3 className="h-4 w-4 text-amber-400" aria-hidden />
                     Ayırma süresi
                   </span>
                   <strong className="num" aria-live="polite">
                     {countdownLabel}
                   </strong>
                 </div>
-                <span className="meter mt-2 bg-white/15">
+                <span className="meter mt-2.5 bg-white/15">
                   <span
-                    className="meter-fill bg-ember-400 transition-[width] duration-1000 ease-linear"
+                    className="meter-fill bg-amber-400 transition-[width] duration-1000 ease-linear"
                     style={{
                       width: `${Math.min(100, Math.round((countdown / Math.max(1, holdInfo?.ttlSeconds || 300)) * 100))}%`,
                     }}
                   />
                 </span>
-                <p className="mt-2 text-2xs leading-4 text-ink-400">
+                <p className="mt-2.5 text-[0.6875rem] leading-4 text-white/50">
                   Süre dolduğunda koltuk otomatik olarak serbest bırakılır.
                 </p>
               </div>
@@ -370,7 +357,7 @@ export default function SeatSelector({
               <button
                 type="button"
                 onClick={() => router.push(continueHref)}
-                className="btn btn-primary mt-5 hidden w-full lg:inline-flex"
+                className="btn btn-lime mt-5 hidden w-full lg:inline-flex"
               >
                 Devam et
                 <ArrowRight className="h-4 w-4" aria-hidden />
@@ -378,26 +365,26 @@ export default function SeatSelector({
               <button
                 type="button"
                 onClick={() => void release()}
-                className="mt-3 w-full py-2 text-sm font-bold text-ink-300 underline-offset-4 transition hover:text-white hover:underline"
+                className="mt-3 w-full py-2 text-sm font-semibold text-white/60 underline-offset-4 transition hover:text-white hover:underline"
               >
                 Seçimi bırak
               </button>
             </>
           ) : (
             <div className="py-8 text-center">
-              <span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
-                <Armchair className="h-7 w-7 text-brand-300" aria-hidden />
+              <span className="mx-auto grid h-14 w-14 place-items-center rounded-[1.125rem] bg-white/10">
+                <Armchair className="h-7 w-7 text-lime-400" aria-hidden />
               </span>
-              <p className="mt-4 font-display font-bold">Bir koltuk seçin</p>
-              <p className="mt-2 text-sm leading-6 text-ink-400">
+              <p className="mt-4 font-display font-bold text-white">Bir koltuk seçin</p>
+              <p className="mt-2 text-sm leading-6 text-white/55">
                 Plandaki uygun koltuklardan birine dokunun; yeriniz ödeme adımına kadar size
                 ayrılır.
               </p>
             </div>
           )}
 
-          <p className="mt-5 flex items-start gap-2 border-t border-white/10 pt-4 text-2xs leading-5 text-ink-400">
-            <LockKeyhole className="mt-px h-3.5 w-3.5 shrink-0 text-ink-300" aria-hidden />
+          <p className="mt-5 flex items-start gap-2 border-t border-white/10 pt-4 text-[0.6875rem] leading-5 text-white/50">
+            <LockKeyhole className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
             Koltuk ayırma işlemi sunucuda doğrulanır; aynı koltuk başka bir yolcuya satılamaz.
           </p>
         </div>
@@ -416,17 +403,17 @@ export default function SeatSelector({
         ) : null}
       </aside>
 
-      {/* Mobile continue bar */}
+      {/* Mobile continue bar ------------------------------------------ */}
       {holdActive && selected ? (
         <div className="action-bar flex items-center gap-3 lg:hidden">
-          <div className="min-w-0">
-            <p className="text-2xs font-bold uppercase tracking-wide text-ink-500">
+          <p className="min-w-0 pl-2">
+            <span className="block text-[0.6875rem] font-semibold text-ink-500">
               Koltuk {selectedSeat} · {countdownLabel}
-            </p>
-            <p className="num font-display text-xl font-extrabold leading-tight">
+            </span>
+            <span className="num block font-display text-xl font-bold leading-tight text-ink-900">
               {formatMinorPrice(selected.priceMinor)}
-            </p>
-          </div>
+            </span>
+          </p>
           <button
             type="button"
             onClick={() => router.push(continueHref)}
