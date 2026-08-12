@@ -46,17 +46,16 @@ async function passengerJourney(browser) {
     await page.goto('http://127.0.0.1:3000');
     const hero = page.getByRole('heading', { level: 1 });
     await visible(hero, 'passenger hero');
-    assert.match((await hero.textContent()) || '', /Yolun/);
+    assert.match((await hero.textContent()) || '', /Yolculuk/);
     await noPageOverflow(page);
 
-    // The home screen opens the dedicated search view, which owns the journey
-    // editor behind its "Aramayı düzenle" control.
-    await page.getByRole('link', { name: 'Sefer arama ekranı' }).click();
-    await urlMatches(page, /\/search$/);
-    await page.getByRole('group').filter({ hasText: 'Aramayı düzenle' }).locator('summary').click();
-    await page.getByLabel('Nereden').selectOption({ label: 'Siirt Terminali' });
-    await page.getByLabel('Nereye').selectOption({ label: 'Diyarbakır Şehirlerarası Terminali' });
-    await page.getByRole('button', { name: 'Sefer Ara' }).click();
+    // The journey editor sits on the home screen: each field opens a picker
+    // sheet, and the round magnifier runs the search.
+    await page.getByRole('button', { name: /Nereden/ }).click();
+    await page.getByRole('button', { name: /Siirt Terminali/ }).click();
+    await page.getByRole('button', { name: /Nereye/ }).click();
+    await page.getByRole('button', { name: /Diyarbakır Şehirlerarası Terminali/ }).click();
+    await page.getByRole('button', { name: 'Sefer ara' }).click();
 
     await urlMatches(page, /\/search\?/);
     const trip = page.getByRole('link', { name: /Seferi seç/ }).first();

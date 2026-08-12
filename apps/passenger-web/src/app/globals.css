@@ -3,6 +3,69 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------ *
+ * Keyframes for the opening animation and the drifting road.
+ *
+ * Declared here rather than in the Tailwind theme because Tailwind only
+ * emits a `@keyframes` block when one of its generated `animate-*`
+ * utilities references it, and these are driven from the component
+ * classes below.
+ * ------------------------------------------------------------------ */
+@keyframes splash-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* `left`, not `translateX`: a percentage translate is relative to the coach's
+   own width rather than the road it drives along. */
+@keyframes splash-drive {
+  from {
+    left: -16%;
+  }
+  to {
+    left: 104%;
+  }
+}
+
+@keyframes road-drift {
+  from {
+    background-position:
+      0 34%,
+      0 71%;
+  }
+  to {
+    background-position:
+      -1200px 34%,
+      -600px 71%;
+  }
+}
+
+/* ------------------------------------------------------------------ *
  * Passenger design system — reproduced from the canonical reference
  * screens in /ui. Measurements below are the CSS values sampled from
  * those PNGs at a 375px (home, search) / 390px (tracking) viewport:
@@ -97,11 +160,41 @@
    * every booking surface is cream.
    * ---------------------------------------------------------------- */
   .canvas-sage {
-    @apply bg-sage-100;
+    @apply road-canvas bg-sage-100;
   }
 
   .canvas-cream {
-    @apply bg-cream-200;
+    @apply road-canvas bg-cream-200;
+  }
+
+  /* Slow-drifting lane markings behind the page. Two layers at different
+     speeds give the parallax of watching the road go by, at an opacity low
+     enough that it reads as texture rather than decoration. */
+  .road-canvas {
+    @apply relative isolate overflow-hidden;
+  }
+
+  .road-canvas::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.45];
+    background-image:
+      repeating-linear-gradient(100deg, currentColor 0 90px, transparent 90px 210px),
+      repeating-linear-gradient(100deg, currentColor 0 50px, transparent 50px 190px);
+    background-size:
+      1200px 3px,
+      600px 2px;
+    background-position:
+      0 34%,
+      0 71%;
+    background-repeat: repeat-x;
+    color: theme('colors.ink.900 / 8%');
+    animation: road-drift 42s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .road-canvas::before {
+      animation: none;
+    }
   }
 
   /* Phone-width column. The references are 375px screens with a 20-26px
@@ -367,14 +460,28 @@
     @apply relative flex w-[3.9375rem] shrink-0 flex-col items-center justify-between bg-lime-500 py-4;
   }
 
+  /* Search results carry the darker ticket theme: near-black rail, lime
+     wordmark, soft sage facts strip. */
+  .rail-dark {
+    @apply bg-ink-900;
+  }
+
   .rail-label {
     writing-mode: vertical-rl;
     @apply rotate-180 text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-ink-900;
   }
 
+  .rail-label-invert {
+    @apply text-lime-400;
+  }
+
   /* Three-up tinted strip under the journey block (#FFFA93 in /ui). */
   .facts-strip {
     @apply grid grid-cols-3 divide-x divide-ink-900/10 bg-butter-200;
+  }
+
+  .facts-strip-soft {
+    @apply bg-sage-200;
   }
 
   .fact {
@@ -413,6 +520,50 @@
   .select {
     @apply appearance-none bg-[length:1.1rem] bg-[right_1.25rem_center] bg-no-repeat pr-11;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236E8372' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Opening animation
+   * ---------------------------------------------------------------- */
+  .splash {
+    @apply fixed inset-0 z-[100] grid place-items-center bg-sage-100;
+    animation: splash-in 0.35s ease-out both;
+  }
+
+  .splash-leaving {
+    animation: splash-out 0.45s ease-in forwards;
+  }
+
+  /* Already seen this session — hide before paint, no flash. */
+  .splash-done .splash {
+    display: none;
+  }
+
+  .splash-stage {
+    @apply flex w-full max-w-sm flex-col items-center px-7;
+  }
+
+  .splash-mark {
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .splash-tagline {
+    @apply mt-3 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-500;
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  }
+
+  .splash-road {
+    @apply relative mt-10 h-8 w-full;
+  }
+
+  .splash-road-line {
+    @apply absolute inset-x-0 bottom-0 border-t-2 border-dashed border-ink-900/20;
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+  }
+
+  .splash-coach {
+    @apply absolute bottom-1;
+    animation: splash-drive 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
   }
 
   /* ---------------------------------------------------------------- *

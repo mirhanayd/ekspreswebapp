@@ -37,9 +37,9 @@ export function JourneyCard({
   return (
     <article className="overflow-hidden rounded-card bg-white shadow-card">
       <div className="flex">
-        <div className="rail" aria-hidden>
-          <span className="rail-label">Ekspres</span>
-          <span className="grid h-9 w-9 place-items-center rounded-full bg-ink-900 text-white">
+        <div className="rail rail-dark" aria-hidden>
+          <span className="rail-label rail-label-invert">Ekspres</span>
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-lime-400 text-ink-900">
             <BusFront className="h-[1.125rem] w-[1.125rem]" />
           </span>
         </div>
@@ -86,7 +86,7 @@ export function JourneyCard({
         </div>
       </div>
 
-      <dl className="facts-strip">
+      <dl className="facts-strip facts-strip-soft">
         {facts.map((fact) => (
           <div key={fact.label} className="fact">
             <dt className="fact-label">{fact.label}</dt>

@@ -232,6 +232,10 @@ module.exports = {
           '70%': { boxShadow: '0 0 0 8px rgba(247, 170, 18, 0)' },
           '100%': { boxShadow: '0 0 0 0 rgba(247, 170, 18, 0)' },
         },
+        /* The opening animation and the drifting road declare their keyframes
+           beside the classes that use them, in the passenger stylesheet:
+           Tailwind only emits a `@keyframes` block when an `animate-*` utility
+           references it, and those are driven from raw CSS. */
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },

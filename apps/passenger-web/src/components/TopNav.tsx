@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { House, Radio, Route, Ticket, UserRound } from 'lucide-react';
+import { BadgePercent, House, Route, Ticket, UserRound } from 'lucide-react';
 import { BrandMark } from './BrandLogo';
 
 const items = [
@@ -20,10 +20,10 @@ const items = [
     match: (p: string) => p.startsWith('/tickets'),
   },
   {
-    href: '/canli',
-    label: 'Canlı takip',
-    icon: Radio,
-    match: (p: string) => p.startsWith('/canli') || p.includes('/live'),
+    href: '/kampanyalar',
+    label: 'Kampanyalar',
+    icon: BadgePercent,
+    match: (p: string) => p.startsWith('/kampanyalar'),
   },
 ];
 

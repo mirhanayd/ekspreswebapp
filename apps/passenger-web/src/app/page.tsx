@@ -1,8 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BusFront, Clock3, MapPin, Search, Ticket, Wallet } from 'lucide-react';
+import { ArrowRight, BusFront, Clock3, MapPin, Ticket, Wallet } from 'lucide-react';
 import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
 import type { SearchLocation } from '@/components/SearchPanel';
+import { HomeJourney } from '@/components/HomeJourney';
+import { RewardLadder } from '@/components/RewardLadder';
+import { tiersReached } from '@/lib/campaigns';
 import {
   formatDayMonth,
   formatDuration,
@@ -43,14 +46,20 @@ async function loadJson<T>(path: string, fallback: T): Promise<T> {
   }
 }
 
-async function loadActiveTicket(): Promise<ActiveTicket | null> {
+/**
+ * The passenger's own wallet: the next journey to surface, plus how many
+ * journeys they have taken so the reward ladder reflects real history.
+ */
+async function loadWallet(): Promise<{ active: ActiveTicket | null; tripCount: number }> {
   try {
     const response = await authenticatedApiFetch('/tickets');
-    if (!response?.ok) return null;
+    if (!response?.ok) return { active: null, tripCount: 0 };
     const data = await response.json();
-    return (data.active as ActiveTicket[])?.[0] ?? null;
+    const active = (data.active as ActiveTicket[]) ?? [];
+    const past = (data.past as ActiveTicket[]) ?? [];
+    return { active: active[0] ?? null, tripCount: past.length };
   } catch {
-    return null;
+    return { active: null, tripCount: 0 };
   }
 }
 
@@ -64,12 +73,13 @@ async function loadActiveTicket(): Promise<ActiveTicket | null> {
  * description, three icon stats and a white outline pill.
  */
 export default async function Home() {
-  const [locations, routes, trips, activeTicket] = await Promise.all([
+  const [locations, routes, trips, wallet] = await Promise.all([
     loadJson<Location[]>('/transport/locations', []),
     loadJson<Route[]>('/transport/routes', []),
     loadJson<TripResult[]>('/transport/trips', []),
-    loadActiveTicket(),
+    loadWallet(),
   ]);
+  const activeTicket = wallet.active;
 
   const names = new Map(locations.map((location) => [location.id, location.name]));
   const popular = routes
@@ -111,30 +121,12 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Eyebrow + display heading + search capsule ------------------- */}
-        <p className="eyebrow mt-9">
-          <MapPin className="h-3.5 w-3.5" aria-hidden />
-          Siirt · Kurtalan
-        </p>
-
-        <div className="mt-2 flex items-start justify-between gap-4">
-          <h1 className="display-1 min-w-0">
-            Yolun
-            <br />
-            Hazır
-          </h1>
-          <Link
-            href="/search"
-            aria-label="Sefer arama ekranı"
-            className="search-capsule mt-1 lg:h-14 lg:w-14"
-          >
-            <Search className="h-[1.375rem] w-[1.375rem]" aria-hidden />
-          </Link>
-        </div>
+        {/* Area + display heading + inline journey editor ---------------- */}
+        <HomeJourney locations={locations} defaultDate={tomorrow} />
 
         {/* Popular route chips ----------------------------------------- */}
         {popular.length ? (
-          <nav aria-label="Popüler hatlar" className="rail-scroll mt-6">
+          <nav aria-label="Popüler hatlar" className="rail-scroll mt-5">
             {popular.map((route, index) => (
               <Link
                 key={route.id}
@@ -147,11 +139,12 @@ export default async function Home() {
               </Link>
             ))}
           </nav>
-        ) : (
-          <p role="alert" className="alert-error mt-6">
-            Hat bilgileri şu anda yüklenemedi. Lütfen bir süre sonra tekrar deneyin.
-          </p>
-        )}
+        ) : null}
+
+        {/* Reward ladder ------------------------------------------------ */}
+        <div className="mt-6">
+          <RewardLadder reached={tiersReached(wallet.tripCount)} tripCount={wallet.tripCount} />
+        </div>
 
         {/* Hero service card ------------------------------------------- */}
         <figure className="relative mt-7 overflow-hidden rounded-[2rem] bg-ink-900 shadow-lift">
