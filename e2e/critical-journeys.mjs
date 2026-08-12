@@ -46,7 +46,14 @@ async function passengerJourney(browser) {
     await page.goto('http://127.0.0.1:3000');
     const hero = page.getByRole('heading', { level: 1 });
     await visible(hero, 'passenger hero');
-    assert.match((await hero.textContent()) || '', /Yolculuğun kolay/);
+    assert.match((await hero.textContent()) || '', /Yolun/);
+    await noPageOverflow(page);
+
+    // The home screen opens the dedicated search view, which owns the journey
+    // editor behind its "Aramayı düzenle" control.
+    await page.getByRole('link', { name: 'Sefer arama ekranı' }).click();
+    await urlMatches(page, /\/search$/);
+    await page.getByRole('group').filter({ hasText: 'Aramayı düzenle' }).locator('summary').click();
     await page.getByLabel('Nereden').selectOption({ label: 'Siirt Terminali' });
     await page.getByLabel('Nereye').selectOption({ label: 'Diyarbakır Şehirlerarası Terminali' });
     await page.getByRole('button', { name: 'Sefer Ara' }).click();
