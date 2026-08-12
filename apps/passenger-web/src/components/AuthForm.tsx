@@ -1,14 +1,25 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useState } from 'react';
-import { ArrowRight, LockKeyhole, Mail, UserRound } from 'lucide-react';
+import { FormEvent, useId, useState } from 'react';
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  Mail,
+  TriangleAlert,
+  UserRound,
+} from 'lucide-react';
 import { safeReturnTo } from '@/lib/auth';
 
 export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; returnTo?: string }) {
+  const uid = useId();
   const [fields, setFields] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const update = (name: keyof typeof fields, value: string) =>
     setFields((current) => ({ ...current, [name]: value }));
 
@@ -27,77 +38,98 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
       window.location.replace(safeReturnTo(returnTo));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'İşlem tamamlanamadı.');
-    } finally {
       setLoading(false);
     }
   }
 
-  const inputClass = 'field-control pl-11';
   return (
-    <form onSubmit={submit} className="space-y-4">
-      {mode === 'register' && (
+    <form onSubmit={submit} className="space-y-4" noValidate={false}>
+      {mode === 'register' ? (
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Ad" icon={<UserRound />}>
+          <Field id={`${uid}-first`} label="Ad" icon={<UserRound aria-hidden />}>
             <input
+              id={`${uid}-first`}
               value={fields.firstName}
-              onChange={(e) => update('firstName', e.target.value)}
+              onChange={(event) => update('firstName', event.target.value)}
               required
               minLength={2}
               autoComplete="given-name"
-              className={inputClass}
+              className="field field-with-icon"
             />
           </Field>
-          <Field label="Soyad" icon={<UserRound />}>
+          <Field id={`${uid}-last`} label="Soyad" icon={<UserRound aria-hidden />}>
             <input
+              id={`${uid}-last`}
               value={fields.lastName}
-              onChange={(e) => update('lastName', e.target.value)}
+              onChange={(event) => update('lastName', event.target.value)}
               required
               minLength={2}
               autoComplete="family-name"
-              className={inputClass}
+              className="field field-with-icon"
             />
           </Field>
         </div>
-      )}
-      <Field label="E-posta" icon={<Mail />}>
+      ) : null}
+
+      <Field id={`${uid}-email`} label="E-posta" icon={<Mail aria-hidden />}>
         <input
+          id={`${uid}-email`}
           type="email"
           value={fields.email}
-          onChange={(e) => update('email', e.target.value)}
+          onChange={(event) => update('email', event.target.value)}
           required
           autoComplete="email"
-          className={inputClass}
+          placeholder="ornek@email.com"
+          className="field field-with-icon"
         />
       </Field>
-      <Field label="Şifre" icon={<LockKeyhole />}>
+
+      <Field
+        id={`${uid}-password`}
+        label="Şifre"
+        icon={<LockKeyhole aria-hidden />}
+        hint={mode === 'register' ? 'En az 8 karakter' : undefined}
+      >
         <input
-          type="password"
+          id={`${uid}-password`}
+          type={showPassword ? 'text' : 'password'}
           value={fields.password}
-          onChange={(e) => update('password', e.target.value)}
+          onChange={(event) => update('password', event.target.value)}
           required
           minLength={mode === 'register' ? 8 : 1}
           autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-          className={inputClass}
+          className="field field-with-icon pr-12"
         />
-      </Field>
-      {error && (
-        <p
-          role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-800"
+        <button
+          type="button"
+          onClick={() => setShowPassword((current) => !current)}
+          aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+          className="absolute right-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full text-ink-500 transition hover:bg-cream-200 hover:text-ink-800"
         >
+          {showPassword ? (
+            <EyeOff className="h-4 w-4" aria-hidden />
+          ) : (
+            <Eye className="h-4 w-4" aria-hidden />
+          )}
+        </button>
+      </Field>
+
+      {error ? (
+        <p role="alert" className="alert-error">
+          <TriangleAlert className="mr-1.5 inline h-4 w-4 align-text-bottom" aria-hidden />
           {error}
         </p>
-      )}
-      <button type="submit" disabled={loading} className="primary-action w-full">
+      ) : null}
+
+      <button type="submit" disabled={loading} className="btn btn-primary w-full">
+        {loading ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {loading ? 'İşleniyor…' : mode === 'login' ? 'Giriş Yap' : 'Hesap Oluştur'}
-        <ArrowRight className="h-5 w-5" />
+        {!loading ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}
       </button>
-      <p className="text-center text-sm text-slate-500">
+
+      <p className="text-center text-sm text-ink-500">
         {mode === 'login' ? 'Henüz hesabınız yok mu?' : 'Zaten hesabınız var mı?'}{' '}
-        <Link
-          href={mode === 'login' ? '/register' : '/login'}
-          className="font-bold text-red-700 hover:underline"
-        >
+        <Link href={mode === 'login' ? '/register' : '/login'} className="link-strong">
           {mode === 'login' ? 'Kayıt olun' : 'Giriş yapın'}
         </Link>
       </p>
@@ -106,23 +138,32 @@ export function AuthForm({ mode, returnTo }: { mode: 'login' | 'register'; retur
 }
 
 function Field({
+  id,
   label,
   icon,
+  hint,
   children,
 }: {
+  id: string;
   label: string;
   icon: React.ReactNode;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="block text-sm font-bold text-slate-700">
-      <span className="mb-2 block">{label}</span>
-      <span className="relative block">
-        <span className="pointer-events-none absolute left-3.5 top-3.5 text-red-700 [&>svg]:h-5 [&>svg]:w-5">
-          {icon}
-        </span>
+    <div>
+      <div className="flex items-baseline justify-between gap-2">
+        <label htmlFor={id} className="field-label">
+          {label}
+        </label>
+        {hint ? (
+          <span className="mb-2 text-[0.6875rem] font-medium text-ink-400">{hint}</span>
+        ) : null}
+      </div>
+      <div className="relative">
+        <span className="field-icon">{icon}</span>
         {children}
-      </span>
-    </label>
+      </div>
+    </div>
   );
 }

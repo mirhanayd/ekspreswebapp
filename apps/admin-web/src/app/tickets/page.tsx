@@ -1,10 +1,14 @@
 import Link from 'next/link';
+import { ArrowRight, Ticket as TicketIcon } from 'lucide-react';
 import {
   Badge,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
+  EmptyRow,
+  PageHeader,
   Table,
   TableBody,
   TableCell,
@@ -15,22 +19,53 @@ import {
 import { AdminTicket } from '@/lib/admin-types';
 import { adminApiJson } from '@/lib/server-api';
 
+const ticketStatusLabel: Record<string, string> = {
+  active: 'Aktif',
+  used: 'Kullanıldı',
+  cancelled: 'İptal',
+  expired: 'Süresi doldu',
+};
+
 export default async function TicketsPage() {
   const tickets = await adminApiJson<AdminTicket[]>('/admin/tickets');
+  const activeCount = tickets.filter((ticket) => ticket.status === 'active').length;
+  const revenue = tickets.reduce((sum, ticket) => sum + ticket.amountMinor, 0);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[0.16em] text-red-700">Biletler</p>
-        <h1 className="mt-1 text-3xl font-black tracking-tight">Operasyonel bilet listesi</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Son 100 bilet • {tickets.length} kayıt gösteriliyor.
-        </p>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Biletler"
+        title="Operasyonel bilet listesi"
+        description={`Son 100 bilet · ${tickets.length} kayıt gösteriliyor.`}
+        actions={
+          <span className="chip-status chip-brand">
+            <TicketIcon className="h-3.5 w-3.5" aria-hidden />
+            {activeCount} aktif
+          </span>
+        }
+      />
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="surface p-4">
+          <p className="metric-label">Listelenen bilet</p>
+          <p className="metric-value mt-1.5">{tickets.length}</p>
+        </div>
+        <div className="surface p-4">
+          <p className="metric-label">Aktif bilet</p>
+          <p className="metric-value mt-1.5">{activeCount}</p>
+        </div>
+        <div className="surface p-4">
+          <p className="metric-label">Listelenen tutar</p>
+          <p className="metric-value mt-1.5">{(revenue / 100).toLocaleString('tr-TR')} ₺</p>
+        </div>
       </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Kesilen biletler</CardTitle>
+          <CardDescription>Bilet, yolcu, sefer ve tahsilat kayıtları.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-0 py-0 sm:px-0">
           <Table>
             <TableHeader>
               <TableRow>
@@ -46,44 +81,46 @@ export default async function TicketsPage() {
               {tickets.map((ticket) => (
                 <TableRow key={ticket.id}>
                   <TableCell>
-                    <p className="font-mono font-semibold">{ticket.ticketNo}</p>
-                    <p className="text-xs text-slate-500">
-                      {new Date(ticket.issuedAt).toLocaleString('tr-TR')}
+                    <p className="font-semibold tabular-nums text-ink-900">{ticket.ticketNo}</p>
+                    <p className="text-xs text-ink-500">
+                      {new Date(ticket.issuedAt).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
                     </p>
                   </TableCell>
                   <TableCell>
-                    <p className="font-semibold">{ticket.passenger}</p>
-                    <p className="text-xs text-slate-500">{ticket.passengerEmail}</p>
+                    <p className="font-semibold text-ink-900">{ticket.passenger}</p>
+                    <p className="text-xs text-ink-500">{ticket.passengerEmail}</p>
                   </TableCell>
                   <TableCell>
-                    <p>
+                    <p className="text-ink-800">
                       {ticket.originName} → {ticket.destinationName}
                     </p>
-                    <p className="text-xs text-slate-500">Koltuk {ticket.seatNo}</p>
+                    <p className="text-xs text-ink-500">Koltuk {ticket.seatNo}</p>
                   </TableCell>
-                  <TableCell>{(ticket.amountMinor / 100).toLocaleString('tr-TR')} ₺</TableCell>
+                  <TableCell className="whitespace-nowrap font-semibold">
+                    {(ticket.amountMinor / 100).toLocaleString('tr-TR')} ₺
+                  </TableCell>
                   <TableCell>
-                    <Badge variant={ticket.status === 'active' ? 'default' : 'secondary'}>
-                      {ticket.status === 'active' ? 'Aktif' : ticket.status}
+                    <Badge tone={ticket.status === 'active' ? 'live' : 'neutral'}>
+                      {ticketStatusLabel[ticket.status] ?? ticket.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <Link
                       href={`/tickets/${ticket.id}`}
-                      className="font-semibold text-red-700 hover:underline"
+                      className="inline-flex items-center gap-1 font-semibold text-brand-700 hover:underline"
                     >
                       Aç
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden />
                     </Link>
                   </TableCell>
                 </TableRow>
               ))}
-              {!tickets.length && (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-slate-500">
-                    Henüz bilet bulunmuyor.
-                  </TableCell>
-                </TableRow>
-              )}
+              {!tickets.length ? <EmptyRow colSpan={6}>Henüz bilet bulunmuyor.</EmptyRow> : null}
             </TableBody>
           </Table>
         </CardContent>

@@ -1,6 +1,12 @@
-import { ArrowRight, BusFront, CalendarDays, Clock3, Route, UsersRound } from 'lucide-react';
 import Link from 'next/link';
+import { ArrowLeft, BusFront, Repeat, SlidersHorizontal, Sunrise, Sunset, Sun } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/server-api';
+import { SearchPanel, type SearchLocation } from '@/components/SearchPanel';
+import { RoutePanel } from '@/components/RoutePanel';
+import { JourneyCard } from '@/components/JourneyCard';
+import { dateFromIso, formatDuration, isoDate, minutesBetween } from '@/lib/format';
+
+export const metadata = { title: 'Sefer sonuçları' };
 
 type SearchResult = {
   trip: {
@@ -14,18 +20,67 @@ type SearchResult = {
   bus: { model: string; plateNumber: string; seatLayout: { layout?: string }; totalSeats?: number };
 };
 
+type Availability = { available: number; total: number } | null;
+
+const timeFilters = [
+  { key: 'sabah', label: 'Sabah', icon: Sunrise, from: 0, to: 12 },
+  { key: 'oglen', label: 'Öğleden sonra', icon: Sun, from: 12, to: 18 },
+  { key: 'aksam', label: 'Akşam', icon: Sunset, from: 18, to: 24 },
+] as const;
+
+function buildHref(base: Record<string, string | undefined>, patch: Record<string, string | null>) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({ ...base, ...patch })) {
+    if (value) params.set(key, value);
+  }
+  const query = params.toString();
+  return query ? `/search?${query}` : '/search';
+}
+
+/** Live seat inventory per trip, from the public seat-map endpoint. */
+async function loadAvailability(tripId: string): Promise<Availability> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/seats/trip/${tripId}`, { cache: 'no-store' });
+    if (!response.ok) return null;
+    const data = (await response.json()) as { seats?: Array<{ status: string }> };
+    const seats = data.seats ?? [];
+    if (!seats.length) return null;
+    return {
+      available: seats.filter((seat) => seat.status === 'available').length,
+      total: seats.length,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Search results — `ui/trip-search-reference.png`.
+ *
+ * Circular back control beside a segmented trip-type pill, a tinted route panel
+ * with a dashed path and its own action row, a chip rail, a five-day date strip
+ * with the selected day filled lime, then the result count paired with a
+ * circular filter control and the rail-and-facts journey cards.
+ */
 export default async function SearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ originId?: string; destinationId?: string; date?: string }>;
+  searchParams: Promise<{
+    originId?: string;
+    destinationId?: string;
+    date?: string;
+    sort?: string;
+    time?: string;
+  }>;
 }) {
   const query = await searchParams;
   const params = new URLSearchParams();
   if (query.originId) params.set('originId', query.originId);
   if (query.destinationId) params.set('destinationId', query.destinationId);
   if (query.date) params.set('date', query.date);
+
   let results: SearchResult[] = [];
-  let locations: Array<{ id: string; name: string }> = [];
+  let locations: SearchLocation[] = [];
   let error: string | null = null;
   try {
     const [trips, points] = await Promise.all([
@@ -38,127 +93,258 @@ export default async function SearchPage({
   } catch (caught) {
     error = caught instanceof Error ? caught.message : 'Seferler yüklenemedi.';
   }
+
   const names = new Map(locations.map((location) => [location.id, location.name]));
-  const origin = names.get(query.originId || '') || 'Kalkış';
-  const destination = names.get(query.destinationId || '') || 'Varış';
+  const origin = names.get(query.originId || '') || 'Tüm kalkışlar';
+  const destination = names.get(query.destinationId || '') || 'Tüm varışlar';
+  const activeDate = query.date || isoDate(0);
+
+  const activeTimeFilter = timeFilters.find((filter) => filter.key === query.time);
+  const filtered = activeTimeFilter
+    ? results.filter((item) => {
+        const hour = new Date(item.trip.departureTime).getHours();
+        return hour >= activeTimeFilter.from && hour < activeTimeFilter.to;
+      })
+    : results;
+
+  const sorted = [...filtered].sort((a, b) =>
+    query.sort === 'fiyat'
+      ? a.trip.basePrice - b.trip.basePrice ||
+        new Date(a.trip.departureTime).getTime() - new Date(b.trip.departureTime).getTime()
+      : new Date(a.trip.departureTime).getTime() - new Date(b.trip.departureTime).getTime(),
+  );
+
+  const availability = await Promise.all(sorted.map((item) => loadAvailability(item.trip.id)));
+  const cheapest = sorted.length ? Math.min(...sorted.map((item) => item.trip.basePrice)) : 0;
+
+  const baseParams = {
+    originId: query.originId,
+    destinationId: query.destinationId,
+    date: activeDate,
+    sort: query.sort,
+    time: query.time,
+  };
+
+  const dayStrip = Array.from({ length: 5 }, (_, index) => {
+    const day = dateFromIso(activeDate);
+    day.setDate(day.getDate() + index - 2);
+    const value = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(
+      day.getDate(),
+    ).padStart(2, '0')}`;
+    return { value, date: day, disabled: value < isoDate(0) };
+  });
+
   return (
-    <div className="page-shell">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <div className="rounded-2xl bg-slate-950 p-5 text-white sm:p-7">
-          <Link href="/#sefer-ara" className="text-sm font-bold text-red-400 hover:text-red-300">
-            ← Aramayı değiştir
+    <div className="canvas-cream min-h-[100dvh]">
+      <div className="screen screen-pad">
+        {/* Back + trip type -------------------------------------------- */}
+        <div className="top-row">
+          <Link href="/" aria-label="Ana sayfaya dön" className="icon-btn icon-btn-white">
+            <ArrowLeft className="h-5 w-5" aria-hidden />
           </Link>
-          <div className="mt-5 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <p className="eyebrow !text-red-400">Uygun seferler</p>
-              <h1 className="mt-2 flex flex-wrap items-center gap-3 text-3xl font-black sm:text-4xl">
-                <span>{origin}</span>
-                <ArrowRight className="h-6 w-6 text-red-500" />
-                <span>{destination}</span>
-              </h1>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-slate-300">
-              <CalendarDays className="h-5 w-5 text-red-400" />
-              {query.date
-                ? new Date(`${query.date}T12:00:00`).toLocaleDateString('tr-TR', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })
-                : 'Tüm tarihler'}
-            </div>
-          </div>
-        </div>
-        {error ? (
-          <p role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
-            {error}
-          </p>
-        ) : !results.length ? (
-          <div className="surface-card p-10 text-center">
-            <BusFront className="mx-auto h-12 w-12 text-stone-300" />
-            <h2 className="mt-4 text-xl font-black">Bu tarihte sefer bulunamadı</h2>
-            <p className="mt-2 text-sm text-slate-500">
-              Tarihi veya terminal seçimini değiştirerek tekrar deneyin.
-            </p>
-            <Link href="/#sefer-ara" className="primary-action mt-6">
-              Yeni arama
+
+          <nav aria-label="Sıralama" className="segmented">
+            <Link
+              href={buildHref(baseParams, { sort: 'saat' })}
+              aria-current={(query.sort || 'saat') === 'saat' ? 'true' : undefined}
+              className={`segmented-item ${
+                (query.sort || 'saat') === 'saat' ? 'segmented-item-active' : ''
+              }`}
+            >
+              En erken
             </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {results.map(({ trip, bus }) => {
-              const departure = new Date(trip.departureTime);
-              const arrival = new Date(trip.arrivalTime);
-              const minutes = Math.round((arrival.getTime() - departure.getTime()) / 60000);
+            <Link
+              href={buildHref(baseParams, { sort: 'fiyat' })}
+              aria-current={query.sort === 'fiyat' ? 'true' : undefined}
+              className={`segmented-item ${query.sort === 'fiyat' ? 'segmented-item-active' : ''}`}
+            >
+              En uygun
+            </Link>
+          </nav>
+        </div>
+
+        {/* Route panel -------------------------------------------------- */}
+        <div className="mt-6">
+          <RoutePanel originName={origin} destinationName={destination}>
+            <div className="flex items-center gap-2.5">
+              <details className="group min-w-0 flex-1">
+                <summary className="btn btn-primary w-full cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                  <SlidersHorizontal className="h-4 w-4" aria-hidden />
+                  Aramayı düzenle
+                </summary>
+                <div className="mt-4 rounded-[1.5rem] bg-white p-4 shadow-card">
+                  {locations.length ? (
+                    <SearchPanel
+                      locations={locations}
+                      defaultOriginId={query.originId ?? ''}
+                      defaultDestinationId={query.destinationId ?? ''}
+                      defaultDate={activeDate}
+                    />
+                  ) : (
+                    <p role="alert" className="alert-error">
+                      Sefer noktaları yüklenemedi.
+                    </p>
+                  )}
+                </div>
+              </details>
+
+              <Link
+                href={buildHref(baseParams, {
+                  originId: query.destinationId ?? null,
+                  destinationId: query.originId ?? null,
+                })}
+                aria-label="Yönü ters çevir"
+                className="btn btn-quiet shrink-0 self-start px-5"
+              >
+                Ters çevir
+                <Repeat className="h-4 w-4" aria-hidden />
+              </Link>
+            </div>
+          </RoutePanel>
+        </div>
+
+        {/* Summary chips ------------------------------------------------ */}
+        <div className="rail-scroll mt-4">
+          <span className="chip pointer-events-none">
+            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
+              day: 'numeric',
+              month: 'long',
+            })}
+          </span>
+          <span className="chip pointer-events-none capitalize">
+            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
+              month: 'long',
+              year: 'numeric',
+            })}
+          </span>
+          <span className="chip pointer-events-none">
+            <BusFront className="h-4 w-4" aria-hidden />
+            {sorted.length} sefer
+          </span>
+        </div>
+
+        {/* Date strip --------------------------------------------------- */}
+        <nav aria-label="Tarih seçimi" className="mt-4">
+          <ul className="flex justify-between gap-1.5 lg:justify-start lg:gap-3">
+            {dayStrip.map(({ value, date, disabled }) => {
+              const active = value === activeDate;
               return (
-                <article
-                  key={trip.id}
-                  className="surface-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg"
+                <li key={value} className="min-w-0">
+                  <Link
+                    href={buildHref(baseParams, { date: value })}
+                    aria-current={active ? 'date' : undefined}
+                    className={`date-cell ${active ? 'date-cell-active' : ''} ${
+                      disabled ? 'pointer-events-none opacity-40' : ''
+                    }`}
+                  >
+                    <span className="text-[0.6875rem] font-semibold uppercase">
+                      {date.toLocaleDateString('tr-TR', { weekday: 'narrow' })}
+                    </span>
+                    <span className="num font-display text-lg font-bold leading-none">
+                      {date.getDate()}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        {/* Count + filters ---------------------------------------------- */}
+        <details className="group mt-7" open={Boolean(activeTimeFilter)}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 [&::-webkit-details-marker]:hidden">
+            <h1 className="title-lg">
+              {sorted.length} sefer <span className="text-ink-400">bulundu</span>
+            </h1>
+            <span
+              className="icon-btn icon-btn-white relative h-12 w-12"
+              aria-label="Saat filtrelerini aç"
+            >
+              <SlidersHorizontal className="h-[1.125rem] w-[1.125rem]" aria-hidden />
+              {activeTimeFilter ? (
+                <span className="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-signal-500 ring-2 ring-white" />
+              ) : null}
+            </span>
+          </summary>
+
+          <div className="rail-scroll mt-4">
+            {timeFilters.map(({ key, label, icon: Icon }) => {
+              const active = query.time === key;
+              return (
+                <Link
+                  key={key}
+                  href={buildHref(baseParams, { time: active ? null : key })}
+                  aria-current={active ? 'true' : undefined}
+                  className={`chip ${active ? 'chip-active' : ''}`}
                 >
-                  <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_auto] lg:items-center">
-                    <div>
-                      <div className="flex items-center gap-5">
-                        <div>
-                          <p className="text-2xl font-black tabular-nums">
-                            {departure.toLocaleTimeString('tr-TR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                          <p className="text-sm font-semibold text-slate-600">{origin}</p>
-                        </div>
-                        <div className="flex min-w-20 flex-1 items-center">
-                          <span className="h-2.5 w-2.5 rounded-full bg-red-700" />
-                          <span className="h-px flex-1 bg-stone-300" />
-                          <BusFront className="mx-2 h-5 w-5 text-red-700" />
-                          <span className="h-px flex-1 bg-stone-300" />
-                          <span className="h-2.5 w-2.5 rounded-full border-2 border-slate-400 bg-white" />
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-black tabular-nums">
-                            {arrival.toLocaleTimeString('tr-TR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </p>
-                          <p className="text-sm font-semibold text-slate-600">{destination}</p>
-                        </div>
-                      </div>
-                      <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 border-t border-stone-100 pt-4 text-xs font-medium text-slate-500">
-                        <span className="flex items-center gap-1.5">
-                          <Clock3 className="h-4 w-4" />
-                          {Math.floor(minutes / 60)} sa {minutes % 60} dk
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Route className="h-4 w-4" />
-                          Direkt sefer
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <UsersRound className="h-4 w-4" />
-                          {bus.seatLayout?.layout || '2+1'} koltuk
-                        </span>
-                        <span>
-                          {bus.model} • {bus.plateNumber}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between gap-5 border-t border-stone-100 pt-5 lg:block lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0 lg:text-right">
-                      <div>
-                        <p className="text-xs font-semibold text-slate-500">Kişi başı</p>
-                        <p className="text-2xl font-black">
-                          {trip.basePrice.toLocaleString('tr-TR')} ₺
-                        </p>
-                      </div>
-                      <Link href={`/trips/${trip.id}`} className="primary-action lg:mt-4">
-                        Seferi seç <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </div>
-                  </div>
-                </article>
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {label}
+                </Link>
               );
             })}
           </div>
-        )}
+        </details>
+
+        {/* Results ------------------------------------------------------ */}
+        <div className="mt-4">
+          {error ? (
+            <p role="alert" className="alert-error">
+              {error} API bağlantısını kontrol edip sayfayı yenileyin.
+            </p>
+          ) : !sorted.length ? (
+            <div className="empty-state">
+              <span className="grid h-16 w-16 place-items-center rounded-full bg-cream-300 text-ink-400">
+                <BusFront className="h-7 w-7" aria-hidden />
+              </span>
+              <h2 className="title-md mt-4">Bu seçimde sefer yok</h2>
+              <p className="subtle mt-2 max-w-xs">
+                {activeTimeFilter
+                  ? 'Saat filtresini kaldırarak ya da tarihi değiştirerek tekrar deneyin.'
+                  : 'Tarihi veya terminal seçimini değiştirerek tekrar deneyin.'}
+              </p>
+              {activeTimeFilter ? (
+                <Link href={buildHref(baseParams, { time: null })} className="btn btn-quiet mt-6">
+                  Saat filtresini kaldır
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            <ul className="grid gap-4 lg:grid-cols-2">
+              {sorted.map(({ trip, route, bus }, index) => {
+                const seats = availability[index];
+                const originName = names.get(route.originId) || origin;
+                const destinationName = names.get(route.destinationId) || destination;
+                return (
+                  <li key={trip.id} className="min-w-0">
+                    <JourneyCard
+                      href={`/trips/${trip.id}`}
+                      originName={originName}
+                      destinationName={destinationName}
+                      departureTime={trip.departureTime}
+                      arrivalTime={trip.arrivalTime}
+                      price={trip.basePrice}
+                      badge={
+                        sorted.length > 1 && trip.basePrice === cheapest
+                          ? 'En uygun fiyat'
+                          : undefined
+                      }
+                      facts={[
+                        {
+                          label: 'Süre',
+                          value: formatDuration(
+                            minutesBetween(trip.departureTime, trip.arrivalTime),
+                          ),
+                        },
+                        { label: 'Araç', value: bus.plateNumber },
+                        { label: 'Boş koltuk', value: seats ? `${seats.available}` : '—' },
+                      ]}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

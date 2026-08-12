@@ -1,5 +1,7 @@
-import Link from 'next/link';
 import { AuthForm } from '@/components/AuthForm';
+import { AuthShell } from '@/components/AuthShell';
+
+export const metadata = { title: 'Hesap oluştur' };
 
 export default async function RegisterPage({
   searchParams,
@@ -8,20 +10,17 @@ export default async function RegisterPage({
 }) {
   const { returnTo } = await searchParams;
   return (
-    <div className="page-shell">
-      <div className="mx-auto max-w-lg">
-        <Link href="/" className="text-sm font-bold text-red-700">
-          ← Ana sayfa
-        </Link>
-        <div className="surface-card mt-5 p-6 sm:p-8">
-          <p className="eyebrow">Yeni yolcu</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight">Hesabınızı oluşturun</h1>
-          <p className="mb-7 mt-2 text-sm leading-6 text-slate-600">
-            Seferlerinizi ve biletlerinizi tek hesapta yönetin.
-          </p>
-          <AuthForm mode="register" returnTo={returnTo} />
-        </div>
-      </div>
-    </div>
+    <AuthShell
+      eyebrow="Yeni yolcu"
+      title="Hesabınızı oluşturun"
+      description="Seferlerinizi, biletlerinizi ve canlı takibi tek hesapta yönetin."
+      highlights={[
+        'Biletleriniz hesabınızda saklanır',
+        'Koltuk seçimi saniyeler içinde',
+        'QR ile temassız biniş',
+      ]}
+    >
+      <AuthForm mode="register" returnTo={returnTo} />
+    </AuthShell>
   );
 }

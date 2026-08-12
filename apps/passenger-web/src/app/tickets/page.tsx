@@ -1,23 +1,43 @@
-import { ArrowRight, CalendarDays, Ticket } from 'lucide-react';
+import { ArrowRight, BusFront, Radio, Ticket, UserRound } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { authenticatedApiFetch } from '@/lib/server-api';
+import {
+  formatDayMonth,
+  formatTime,
+  placeCodeClass,
+  placeShortName,
+  ticketStatusLabel,
+  tripStatusLabel,
+} from '@/lib/format';
+
+export const metadata = { title: 'Biletlerim' };
 
 type PassengerTicket = {
   id: string;
   ticketNo: string;
   status: string;
   trip: {
+    id: string;
+    status: string;
     departureTime: string;
+    arrivalTime: string;
+    bus?: { plateNumber?: string };
     route: { origin: { name: string }; destination: { name: string } };
   };
   tripSeat: { seatNo: string };
 };
 
+/**
+ * Ticket wallet. Built on the same rail-and-facts card as the search results in
+ * `ui/trip-search-reference.png`, on the sage home canvas because this is a
+ * browse surface rather than a booking step.
+ */
 export default async function MyTicketsPage() {
   let active: PassengerTicket[] = [];
   let past: PassengerTicket[] = [];
   let cancelled: PassengerTicket[] = [];
+
   const response = await authenticatedApiFetch('/tickets');
   if (!response || response.status === 401) redirect('/login?returnTo=/tickets');
   try {
@@ -30,93 +50,159 @@ export default async function MyTicketsPage() {
   } catch {
     // Render the safe empty state if the ticket response cannot be decoded.
   }
+
   const groups = [
-    {
-      title: 'Aktif biletler',
-      copy: 'Yaklaşan ve devam eden yolculuklar',
-      tickets: active,
-      emphasized: true,
-    },
-    { title: 'Geçmiş seferler', copy: 'Tamamlanan yolculuklar', tickets: past, emphasized: false },
-    {
-      title: 'İptal edilenler',
-      copy: 'Geçerliliği sona eren biletler',
-      tickets: cancelled,
-      emphasized: false,
-    },
+    { key: 'active', title: 'Aktif biletler', tickets: active, tone: 'active' as const },
+    { key: 'past', title: 'Geçmiş seferler', tickets: past, tone: 'muted' as const },
+    { key: 'cancelled', title: 'İptal edilenler', tickets: cancelled, tone: 'muted' as const },
   ];
+
+  const isEmpty = !active.length && !past.length && !cancelled.length;
+
   return (
-    <div className="page-shell">
-      <div className="mx-auto max-w-5xl space-y-7">
-        <header className="rounded-3xl bg-slate-950 p-6 text-white sm:p-8">
-          <p className="eyebrow !text-red-400">Yolculuk cüzdanı</p>
-          <div className="mt-2 flex items-center gap-3">
-            <Ticket className="h-8 w-8 text-red-500" />
-            <h1 className="text-3xl font-black">Biletlerim</h1>
-          </div>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">
-            Aktif biletinizi, güvenli QR kodunuzu ve canlı takip bağlantınızı tek yerden yönetin.
-          </p>
-        </header>
-        {!active.length && !past.length && !cancelled.length ? (
-          <div className="surface-card p-10 text-center">
-            <Ticket className="mx-auto h-12 w-12 text-stone-300" />
-            <h2 className="mt-4 text-xl font-black">Henüz biletiniz yok</h2>
-            <p className="mt-2 text-sm text-slate-500">İlk yolculuğunuz için sefer arayın.</p>
-            <Link href="/#sefer-ara" className="primary-action mt-6">
+    <div className="canvas-sage min-h-[100dvh]">
+      <div className="screen-wide screen-pad">
+        <div className="top-row">
+          <p className="font-display text-[1.375rem] font-bold text-ink-900">Biletlerim</p>
+          {/* The desktop rail already carries the account control. */}
+          <Link href="/hesap" aria-label="Hesabım" className="icon-btn icon-btn-white lg:hidden">
+            <UserRound className="h-5 w-5" aria-hidden />
+          </Link>
+        </div>
+
+        <h1 className="sr-only">Biletlerim</h1>
+
+        <p className="caption mt-2">
+          Biniş QR kodunuz, koltuk bilginiz ve canlı takip bağlantınız tek ekranda.
+        </p>
+
+        {isEmpty ? (
+          <div className="empty-state mt-7">
+            <span className="grid h-16 w-16 place-items-center rounded-full bg-sage-200 text-ink-400">
+              <Ticket className="h-7 w-7" aria-hidden />
+            </span>
+            <h2 className="title-md mt-4">Henüz biletiniz yok</h2>
+            <p className="subtle mt-2 max-w-xs">
+              İlk yolculuğunuz için sefer arayın; bilet ve QR kodunuz otomatik olarak burada
+              listelenir.
+            </p>
+            <Link href="/search" className="btn btn-primary mt-6">
               Sefer ara
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
         ) : (
-          groups
-            .filter((group) => group.tickets.length)
-            .map((group) => (
-              <section key={group.title}>
-                <div className="mb-3">
-                  <h2 className="text-xl font-black">{group.title}</h2>
-                  <p className="text-sm text-slate-500">{group.copy}</p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {group.tickets.map((ticket) => (
-                    <Link
-                      href={`/tickets/${ticket.id}`}
-                      key={ticket.id}
-                      className={`surface-card group block overflow-hidden border-l-4 p-5 transition hover:-translate-y-0.5 hover:shadow-lg ${group.emphasized ? 'border-l-red-700' : 'border-l-stone-300 opacity-80'}`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-mono text-xs font-bold text-red-700">
-                            {ticket.ticketNo}
-                          </p>
-                          <h3 className="mt-2 flex items-center gap-2 font-black">
-                            <span>{ticket.trip.route.origin.name}</span>
-                            <ArrowRight className="h-4 w-4 text-red-700" />
-                            <span>{ticket.trip.route.destination.name}</span>
-                          </h3>
-                        </div>
-                        <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-black text-white">
-                          Koltuk {ticket.tripSeat.seatNo}
-                        </span>
-                      </div>
-                      <div className="mt-5 flex items-center justify-between border-t border-stone-100 pt-4 text-sm">
-                        <span className="flex items-center gap-2 text-slate-500">
-                          <CalendarDays className="h-4 w-4" />
-                          {new Date(ticket.trip.departureTime).toLocaleDateString('tr-TR', {
-                            day: 'numeric',
-                            month: 'long',
-                          })}
-                        </span>
-                        <span className="flex items-center gap-1 font-bold text-red-700">
-                          Detay <ArrowRight className="h-4 w-4" />
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            ))
+          <div className="mt-7 space-y-8">
+            {groups
+              .filter((group) => group.tickets.length)
+              .map((group) => (
+                <section key={group.key} aria-labelledby={`grup-${group.key}`}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h2 id={`grup-${group.key}`} className="title-md">
+                      {group.title}
+                    </h2>
+                    <span className="caption shrink-0">{group.tickets.length} bilet</span>
+                  </div>
+
+                  <ul className="mt-3 grid gap-4 lg:grid-cols-2">
+                    {group.tickets.map((ticket) => (
+                      <li key={ticket.id} className="min-w-0">
+                        <TicketCard ticket={ticket} tone={group.tone} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))}
+          </div>
         )}
       </div>
     </div>
+  );
+}
+
+function TicketCard({ ticket, tone }: { ticket: PassengerTicket; tone: 'active' | 'muted' }) {
+  const live =
+    ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
+  const isActive = tone === 'active';
+
+  return (
+    <article className="overflow-hidden rounded-card bg-white shadow-card">
+      <Link href={`/tickets/${ticket.id}`} className="flex transition hover:bg-cream-50">
+        <span className={`rail ${isActive ? '' : 'bg-cream-400'}`} aria-hidden>
+          <span className="rail-label">Ekspres</span>
+          <span className="num grid h-9 w-9 place-items-center rounded-full bg-ink-900 text-[0.8125rem] font-bold text-white">
+            {ticket.tripSeat.seatNo}
+          </span>
+        </span>
+
+        <span className="min-w-0 flex-1 px-4 py-4">
+          <span className="flex items-start justify-between gap-3">
+            <span className="num block text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-500">
+              {ticket.ticketNo}
+            </span>
+            <span className={`badge shrink-0 ${isActive ? 'badge-lime' : 'badge-muted'}`}>
+              {ticketStatusLabel[ticket.status] ?? ticket.status}
+            </span>
+          </span>
+
+          <span className="journey-row mt-2.5 items-center">
+            <span className="journey-from">
+              <span className={`${placeCodeClass(ticket.trip.route.origin.name)} block truncate`}>
+                {placeShortName(ticket.trip.route.origin.name)}
+              </span>
+            </span>
+            <span className="journey-badge mt-0" aria-hidden>
+              <BusFront className="h-4 w-4" />
+            </span>
+            <span className="journey-to">
+              <span
+                className={`${placeCodeClass(ticket.trip.route.destination.name)} block truncate`}
+              >
+                {placeShortName(ticket.trip.route.destination.name)}
+              </span>
+            </span>
+          </span>
+
+          <span className="caption mt-3 block truncate">
+            {formatDayMonth(ticket.trip.departureTime)} · {formatTime(ticket.trip.departureTime)} –{' '}
+            {formatTime(ticket.trip.arrivalTime)} ·{' '}
+            {tripStatusLabel[ticket.trip.status] ?? ticket.trip.status}
+          </span>
+        </span>
+      </Link>
+
+      <dl className="facts-strip">
+        <div className="fact">
+          <dt className="fact-label">Koltuk</dt>
+          <dd className="fact-value">{ticket.tripSeat.seatNo}</dd>
+        </div>
+        <div className="fact">
+          <dt className="fact-label">Kalkış</dt>
+          <dd className="fact-value">{formatTime(ticket.trip.departureTime)}</dd>
+        </div>
+        <div className="fact">
+          <dt className="fact-label">Araç</dt>
+          <dd className="fact-value">{ticket.trip.bus?.plateNumber ?? '—'}</dd>
+        </div>
+      </dl>
+
+      <div className="flex items-center justify-between gap-3 px-4 py-3.5">
+        {live ? (
+          <Link
+            href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
+            className="btn btn-lime btn-sm px-5"
+          >
+            <Radio className="h-4 w-4" aria-hidden />
+            Canlı izle
+          </Link>
+        ) : (
+          <span className="caption">Biniş kodu hazır</span>
+        )}
+        <Link href={`/tickets/${ticket.id}`} className="btn btn-primary btn-sm shrink-0 px-5">
+          Bileti aç
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      </div>
+    </article>
   );
 }

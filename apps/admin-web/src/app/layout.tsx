@@ -1,32 +1,26 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Archivo, Inter } from 'next/font/google';
+import Image from 'next/image';
 import Link from 'next/link';
 import { cookies } from 'next/headers';
-import {
-  Activity,
-  BusFront,
-  ChartNoAxesCombined,
-  LayoutDashboard,
-  LogOut,
-  Ticket,
-} from 'lucide-react';
+import { LogOut, ShieldCheck } from 'lucide-react';
 import { ADMIN_ACCESS_TOKEN_COOKIE } from '@/lib/auth';
+import { AdminNav } from '@/components/AdminNav';
 import './globals.css';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter', display: 'swap' });
+const display = Archivo({
+  subsets: ['latin', 'latin-ext'],
+  variable: '--font-display',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'Siirt Kurtalan Ekspres | Operasyon Merkezi',
-  description: 'Siirt Kurtalan Ekspres demo operasyon merkezi',
+  title: 'Operasyon Merkezi | Siirt Kurtalan Ekspres',
+  description: 'Siirt Kurtalan Ekspres sefer, bilet ve filo operasyon merkezi.',
 };
 
-const navigation = [
-  { href: '/dashboard', label: 'Genel Bakış', icon: LayoutDashboard },
-  { href: '/operations/trips', label: 'Ulaşım Operasyonları', icon: BusFront },
-  { href: '/tickets', label: 'Biletler', icon: Ticket },
-  { href: '/operations/fleet', label: 'Canlı Filo', icon: Activity },
-  { href: '/reports', label: 'Raporlar', icon: ChartNoAxesCombined },
-];
+export const viewport: Viewport = { themeColor: '#12100E' };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const authenticated = (await cookies()).has(ADMIN_ACCESS_TOKEN_COOKIE);
@@ -34,46 +28,67 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="tr" suppressHydrationWarning>
       <body
-        className={`${inter.variable} min-h-screen bg-slate-50 font-sans text-slate-950 antialiased`}
+        className={`${inter.variable} ${display.variable} min-h-screen bg-background font-sans text-ink-900 antialiased`}
       >
         {!authenticated ? (
           children
         ) : (
-          <div className="min-h-screen md:grid md:grid-cols-[260px_1fr]">
-            <aside className="border-b bg-slate-950 text-white md:min-h-screen md:border-b-0 md:border-r md:border-slate-800">
-              <div className="border-b border-slate-800 px-5 py-5">
-                <Link href="/dashboard" className="block">
-                  <span className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
-                    Siirt Kurtalan
+          <div className="min-h-screen md:grid md:grid-cols-[16rem_1fr]">
+            <aside className="bg-ink-950 text-white md:sticky md:top-0 md:flex md:h-screen md:flex-col md:border-r md:border-white/10">
+              <div className="flex items-center gap-3 border-b border-white/10 px-4 py-4">
+                <span className="grid shrink-0 place-items-center rounded-lg bg-white p-1 ring-1 ring-black/5">
+                  <Image
+                    src="/brand/logo.png"
+                    alt="Siirt Kurtalan Ekspres"
+                    width={92}
+                    height={37}
+                    priority
+                  />
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-2xs font-bold uppercase tracking-[0.16em] text-brand-300">
+                    Operasyon
                   </span>
-                  <span className="mt-1 block text-xl font-black">Ekspres Operasyon</span>
-                </Link>
+                  <span className="block truncate text-sm font-bold">Merkezi</span>
+                </span>
               </div>
-              <nav className="flex gap-1 overflow-x-auto p-3 md:grid md:overflow-visible md:p-4">
-                {navigation.map(({ href, label, icon: Icon }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="flex shrink-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white"
-                  >
-                    <Icon className="h-4 w-4 text-red-400" />
-                    {label}
-                  </Link>
-                ))}
-              </nav>
+
+              <div className="md:flex-1 md:overflow-y-auto">
+                <AdminNav />
+              </div>
+
+              <div className="hidden border-t border-white/10 p-4 md:block">
+                <p className="flex items-center gap-2 text-2xs font-semibold text-ink-400">
+                  <ShieldCheck className="h-3.5 w-3.5 text-brand-400" aria-hidden />
+                  Yetkili yönetici oturumu
+                </p>
+              </div>
             </aside>
+
             <div className="min-w-0">
-              <header className="flex h-16 items-center justify-between border-b bg-white px-4 md:px-6">
-                <div>
-                  <p className="text-sm font-semibold">Demo Operasyon Merkezi</p>
-                  <p className="text-xs text-slate-500">PostgreSQL ve Redis çalışma verisi</p>
+              <header className="sticky top-0 z-30 flex h-[var(--admin-header-h)] items-center justify-between gap-3 border-b border-ink-200 bg-white/95 px-4 backdrop-blur md:px-6">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-ink-900">Operasyon Merkezi</p>
+                  <p className="truncate text-2xs text-ink-500">
+                    PostgreSQL işlem verisi · Redis canlı konum
+                  </p>
                 </div>
-                <form action="/api/auth/logout" method="post">
-                  <button className="inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-semibold hover:bg-slate-50">
-                    <LogOut className="h-4 w-4" /> Çıkış
-                  </button>
-                </form>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Link
+                    href="/dashboard"
+                    className="ops-btn ops-btn-secondary hidden sm:inline-flex"
+                  >
+                    Panele dön
+                  </Link>
+                  <form action="/api/auth/logout" method="post">
+                    <button type="submit" className="ops-btn ops-btn-secondary">
+                      <LogOut className="h-4 w-4" aria-hidden />
+                      <span className="hidden sm:inline">Çıkış</span>
+                    </button>
+                  </form>
+                </div>
               </header>
+
               <main className="p-4 md:p-6 lg:p-8">{children}</main>
             </div>
           </div>

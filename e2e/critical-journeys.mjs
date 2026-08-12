@@ -46,7 +46,14 @@ async function passengerJourney(browser) {
     await page.goto('http://127.0.0.1:3000');
     const hero = page.getByRole('heading', { level: 1 });
     await visible(hero, 'passenger hero');
-    assert.match((await hero.textContent()) || '', /Yolculuğun kolay/);
+    assert.match((await hero.textContent()) || '', /Yolun/);
+    await noPageOverflow(page);
+
+    // The home screen opens the dedicated search view, which owns the journey
+    // editor behind its "Aramayı düzenle" control.
+    await page.getByRole('link', { name: 'Sefer arama ekranı' }).click();
+    await urlMatches(page, /\/search$/);
+    await page.getByRole('group').filter({ hasText: 'Aramayı düzenle' }).locator('summary').click();
     await page.getByLabel('Nereden').selectOption({ label: 'Siirt Terminali' });
     await page.getByLabel('Nereye').selectOption({ label: 'Diyarbakır Şehirlerarası Terminali' });
     await page.getByRole('button', { name: 'Sefer Ara' }).click();
@@ -59,8 +66,9 @@ async function passengerJourney(browser) {
     await page.getByRole('link', { name: /Koltuk seç/ }).click();
 
     await urlMatches(page, /\/login\?returnTo=/);
-    await page.getByLabel('E-posta').fill(passenger.email);
-    await page.getByLabel('Şifre').fill(passenger.password);
+    await page.getByLabel('E-posta', { exact: true }).fill(passenger.email);
+    // Exact, because the reveal toggle is also labelled "Şifreyi göster".
+    await page.getByLabel('Şifre', { exact: true }).fill(passenger.password);
     await page.getByRole('button', { name: 'Giriş Yap' }).click();
     await urlMatches(page, /\/trips\/[^/]+\/seats/);
 
