@@ -1,5 +1,5 @@
 import { BusFront } from 'lucide-react';
-import { placeShortName } from '@/lib/format';
+import { placeCodeClass, placeShortName } from '@/lib/format';
 
 /**
  * Tinted route panel from `ui/trip-search-reference.png`: a #E9E7D5 card with a
@@ -21,7 +21,9 @@ export function RoutePanel({
     <section className="panel-tint map-texture text-ink-700" aria-label="Seçili güzergâh">
       <div className="relative flex min-w-0 items-start gap-3">
         <div className="min-w-0 shrink">
-          <p className="code-2xl truncate">{placeShortName(originName)}</p>
+          <p className={`${placeCodeClass(originName, 'panel')} truncate`}>
+            {placeShortName(originName)}
+          </p>
           <p className="caption mt-1 truncate">{originName}</p>
         </div>
 
@@ -36,7 +38,9 @@ export function RoutePanel({
         </div>
 
         <div className="min-w-0 flex-1 text-right">
-          <p className="code-2xl truncate">{placeShortName(destinationName)}</p>
+          <p className={`${placeCodeClass(destinationName, 'panel')} truncate`}>
+            {placeShortName(destinationName)}
+          </p>
           <p className="caption mt-1 truncate">{destinationName}</p>
         </div>
       </div>

@@ -76,9 +76,13 @@ export function placeShortName(name: string): string {
  * The reference journey block leads with a three-letter airport code, so it can
  * afford a very large type size. Turkish settlement names are far longer, so
  * the long ones step down one size rather than being cut off by an ellipsis.
+ *
+ * `panel` is the full-width route card; `card` is the narrower journey card.
  */
-export function placeCodeClass(name: string): string {
-  return placeShortName(name).length > 8 ? 'code-lg' : 'code-xl';
+export function placeCodeClass(name: string, scale: 'card' | 'panel' = 'card'): string {
+  const long = placeShortName(name).length > 8;
+  if (scale === 'panel') return long ? 'code-xl' : 'code-2xl';
+  return long ? 'code-lg' : 'code-xl';
 }
 
 export const tripStatusLabel: Record<string, string> = {
