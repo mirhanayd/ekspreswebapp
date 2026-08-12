@@ -66,8 +66,9 @@ async function passengerJourney(browser) {
     await page.getByRole('link', { name: /Koltuk seç/ }).click();
 
     await urlMatches(page, /\/login\?returnTo=/);
-    await page.getByLabel('E-posta').fill(passenger.email);
-    await page.getByLabel('Şifre').fill(passenger.password);
+    await page.getByLabel('E-posta', { exact: true }).fill(passenger.email);
+    // Exact, because the reveal toggle is also labelled "Şifreyi göster".
+    await page.getByLabel('Şifre', { exact: true }).fill(passenger.password);
     await page.getByRole('button', { name: 'Giriş Yap' }).click();
     await urlMatches(page, /\/trips\/[^/]+\/seats/);
 
