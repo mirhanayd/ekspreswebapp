@@ -97,11 +97,41 @@
    * every booking surface is cream.
    * ---------------------------------------------------------------- */
   .canvas-sage {
-    @apply bg-sage-100;
+    @apply road-canvas bg-sage-100;
   }
 
   .canvas-cream {
-    @apply bg-cream-200;
+    @apply road-canvas bg-cream-200;
+  }
+
+  /* Slow-drifting lane markings behind the page. Two layers at different
+     speeds give the parallax of watching the road go by, at an opacity low
+     enough that it reads as texture rather than decoration. */
+  .road-canvas {
+    @apply relative isolate overflow-hidden;
+  }
+
+  .road-canvas::before {
+    content: '';
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.45];
+    background-image:
+      repeating-linear-gradient(100deg, currentColor 0 90px, transparent 90px 210px),
+      repeating-linear-gradient(100deg, currentColor 0 50px, transparent 50px 190px);
+    background-size:
+      1200px 3px,
+      600px 2px;
+    background-position:
+      0 34%,
+      0 71%;
+    background-repeat: repeat-x;
+    color: theme('colors.ink.900 / 8%');
+    animation: road-drift 42s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .road-canvas::before {
+      animation: none;
+    }
   }
 
   /* Phone-width column. The references are 375px screens with a 20-26px
@@ -413,6 +443,45 @@
   .select {
     @apply appearance-none bg-[length:1.1rem] bg-[right_1.25rem_center] bg-no-repeat pr-11;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236E8372' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+
+  /* ---------------------------------------------------------------- *
+   * Opening animation
+   * ---------------------------------------------------------------- */
+  .splash {
+    @apply fixed inset-0 z-[100] grid place-items-center bg-sage-100;
+    animation: splash-in 0.35s ease-out both;
+  }
+
+  .splash-leaving {
+    animation: splash-out 0.45s ease-in forwards;
+  }
+
+  .splash-stage {
+    @apply flex w-full max-w-sm flex-col items-center px-7;
+  }
+
+  .splash-mark {
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .splash-tagline {
+    @apply mt-3 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-500;
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+  }
+
+  .splash-road {
+    @apply relative mt-10 h-8 w-full;
+  }
+
+  .splash-road-line {
+    @apply absolute inset-x-0 bottom-0 border-t-2 border-dashed border-ink-900/20;
+    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
+  }
+
+  .splash-coach {
+    @apply absolute bottom-1 left-0;
+    animation: splash-drive 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
   }
 
   /* ---------------------------------------------------------------- *
