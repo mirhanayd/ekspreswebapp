@@ -1,8 +1,8 @@
 import Link from 'next/link';
-import { ArrowLeft, BusFront, Repeat, SlidersHorizontal, Sunrise, Sunset, Sun } from 'lucide-react';
+import { ArrowLeft, BusFront, SlidersHorizontal, Sunrise, Sunset, Sun } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/server-api';
-import { SearchPanel, type SearchLocation } from '@/components/SearchPanel';
-import { RoutePanel } from '@/components/RoutePanel';
+import type { SearchLocation } from '@/components/SearchPanel';
+import { JourneySearchBar } from '@/components/JourneySearchBar';
 import { JourneyCard } from '@/components/JourneyCard';
 import { dateFromIso, formatDuration, isoDate, minutesBetween } from '@/lib/format';
 
@@ -163,68 +163,19 @@ export default async function SearchPage({
           </nav>
         </div>
 
-        {/* Route panel -------------------------------------------------- */}
+        {/* Journey editor — the same bar as the home screen, always visible
+            whether or not the locations endpoint answered. ---------------- */}
         <div className="mt-6">
-          <RoutePanel originName={origin} destinationName={destination}>
-            <div className="flex items-center gap-2.5">
-              <details className="group min-w-0 flex-1">
-                <summary className="btn btn-primary w-full cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                  <SlidersHorizontal className="h-4 w-4" aria-hidden />
-                  Aramayı düzenle
-                </summary>
-                <div className="mt-4 rounded-[1.5rem] bg-white p-4 shadow-card">
-                  {locations.length ? (
-                    <SearchPanel
-                      locations={locations}
-                      defaultOriginId={query.originId ?? ''}
-                      defaultDestinationId={query.destinationId ?? ''}
-                      defaultDate={activeDate}
-                    />
-                  ) : (
-                    <p role="alert" className="alert-error">
-                      Sefer noktaları yüklenemedi.
-                    </p>
-                  )}
-                </div>
-              </details>
-
-              <Link
-                href={buildHref(baseParams, {
-                  originId: query.destinationId ?? null,
-                  destinationId: query.originId ?? null,
-                })}
-                aria-label="Yönü ters çevir"
-                className="btn btn-quiet shrink-0 self-start px-5"
-              >
-                Ters çevir
-                <Repeat className="h-4 w-4" aria-hidden />
-              </Link>
-            </div>
-          </RoutePanel>
-        </div>
-
-        {/* Summary chips ------------------------------------------------ */}
-        <div className="rail-scroll mt-4">
-          <span className="chip pointer-events-none">
-            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
-              day: 'numeric',
-              month: 'long',
-            })}
-          </span>
-          <span className="chip pointer-events-none capitalize">
-            {dateFromIso(activeDate).toLocaleDateString('tr-TR', {
-              month: 'long',
-              year: 'numeric',
-            })}
-          </span>
-          <span className="chip pointer-events-none">
-            <BusFront className="h-4 w-4" aria-hidden />
-            {sorted.length} sefer
-          </span>
+          <JourneySearchBar
+            locations={locations}
+            defaultOriginId={query.originId ?? ''}
+            defaultDestinationId={query.destinationId ?? ''}
+            defaultDate={activeDate}
+          />
         </div>
 
         {/* Date strip --------------------------------------------------- */}
-        <nav aria-label="Tarih seçimi" className="mt-4">
+        <nav aria-label="Tarih seçimi" className="mt-5">
           <ul className="flex justify-between gap-1.5 lg:justify-start lg:gap-3">
             {dayStrip.map(({ value, date, disabled }) => {
               const active = value === activeDate;

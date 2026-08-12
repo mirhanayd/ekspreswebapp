@@ -397,14 +397,28 @@
     @apply relative flex w-[3.9375rem] shrink-0 flex-col items-center justify-between bg-lime-500 py-4;
   }
 
+  /* Search results carry the darker ticket theme: near-black rail, lime
+     wordmark, soft sage facts strip. */
+  .rail-dark {
+    @apply bg-ink-900;
+  }
+
   .rail-label {
     writing-mode: vertical-rl;
     @apply rotate-180 text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-ink-900;
   }
 
+  .rail-label-invert {
+    @apply text-lime-400;
+  }
+
   /* Three-up tinted strip under the journey block (#FFFA93 in /ui). */
   .facts-strip {
     @apply grid grid-cols-3 divide-x divide-ink-900/10 bg-butter-200;
+  }
+
+  .facts-strip-soft {
+    @apply bg-sage-200;
   }
 
   .fact {
