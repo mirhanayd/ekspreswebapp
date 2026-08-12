@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import './globals.css';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import { BottomNav } from '@/components/BottomNav';
+import { SplashScreen } from '@/components/SplashScreen';
 import { TopNav } from '@/components/TopNav';
 
 const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter', display: 'swap' });
@@ -39,6 +40,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body
         className={`${inter.variable} ${display.variable} min-h-[100dvh] font-sans antialiased`}
       >
+        <SplashScreen />
+
         <a
           href="#icerik"
           className="sr-only focus:not-sr-only focus:absolute focus:left-5 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink-900 focus:px-5 focus:py-3 focus:text-sm focus:font-semibold focus:text-white"
