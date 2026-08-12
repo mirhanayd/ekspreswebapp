@@ -64,7 +64,8 @@ export default async function MyTicketsPage() {
       <div className="screen-wide screen-pad">
         <div className="top-row">
           <p className="font-display text-[1.375rem] font-bold text-ink-900">Biletlerim</p>
-          <Link href="/hesap" aria-label="Hesabım" className="icon-btn icon-btn-white">
+          {/* The desktop rail already carries the account control. */}
+          <Link href="/hesap" aria-label="Hesabım" className="icon-btn icon-btn-white lg:hidden">
             <UserRound className="h-5 w-5" aria-hidden />
           </Link>
         </div>
