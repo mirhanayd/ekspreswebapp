@@ -16,6 +16,12 @@ const MapView = dynamic(() => import('@/app/trips/[id]/MapView'), {
 export function DriverMap() {
   const { activeIndex, sharing } = useDriver();
   const [failed, setFailed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (loaded || failed) return;
+    const timer = window.setTimeout(() => setFailed(true), 8000);
+    return () => window.clearTimeout(timer);
+  }, [loaded, failed]);
   const [positionIndex, setPositionIndex] = useState(activeIndex);
   useEffect(() => {
     if (sharing) setPositionIndex(activeIndex);
@@ -57,7 +63,12 @@ export function DriverMap() {
         </div>
       ) : (
         <div className="h-[22rem] bg-sage-200" role="region" aria-label="Otobüsün demo haritası">
-          <MapView points={stops} vehicle={vehicle} onError={() => setFailed(true)} />
+          <MapView
+            points={stops}
+            vehicle={vehicle}
+            onError={() => setFailed(true)}
+            onLoad={() => setLoaded(true)}
+          />
         </div>
       )}
       <div className="flex items-center justify-between gap-3 px-4 py-3">

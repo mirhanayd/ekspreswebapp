@@ -18,10 +18,12 @@ export default function MapView({
   points,
   vehicle,
   onError,
+  onLoad,
 }: {
   points: RouteStopPoint[];
   vehicle?: { longitude: number; latitude: number; label: string };
   onError?: () => void;
+  onLoad?: () => void;
 }) {
   const initialViewState = useMemo(() => {
     if (points.length < 2) {
@@ -60,6 +62,7 @@ export default function MapView({
       attributionControl={false}
       style={{ width: '100%', height: '100%' }}
       onError={onError}
+      onLoad={onLoad}
     >
       <NavigationControl position="top-right" showCompass={false} />
 
