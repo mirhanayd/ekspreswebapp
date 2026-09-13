@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BadgePercent, House, Route, Ticket, UserRound } from 'lucide-react';
+import { driverNavigation, isDriverPath } from '@/features/driver/navigation';
 
 /**
  * Floating tab pill from `ui/mobile-home-reference.png`: a near-black capsule
@@ -18,35 +19,42 @@ export function BottomNav({ authenticated }: { authenticated: boolean }) {
   // its own control rather than by a tab bar.
   if (pathname.includes('/live')) return null;
 
-  const items = [
-    { href: '/', label: 'Ana sayfa', icon: House, active: pathname === '/' },
-    {
-      href: '/search',
-      label: 'Sefer ara',
-      icon: Route,
-      active: pathname.startsWith('/search') || pathname.startsWith('/trips'),
-    },
-    {
-      href: '/tickets',
-      label: 'Biletlerim',
-      icon: Ticket,
-      active: pathname.startsWith('/tickets'),
-    },
-    {
-      href: '/kampanyalar',
-      label: 'Kampanyalar',
-      icon: BadgePercent,
-      active: pathname.startsWith('/kampanyalar'),
-    },
-    authenticated
-      ? { href: '/hesap', label: 'Hesabım', icon: UserRound, active: pathname.startsWith('/hesap') }
-      : {
-          href: '/login',
-          label: 'Giriş yap',
-          icon: UserRound,
-          active: pathname.startsWith('/login'),
+  const items = isDriverPath(pathname)
+    ? driverNavigation.map(({ match, ...item }) => ({ ...item, active: match(pathname) }))
+    : [
+        { href: '/', label: 'Ana sayfa', icon: House, active: pathname === '/' },
+        {
+          href: '/search',
+          label: 'Sefer ara',
+          icon: Route,
+          active: pathname.startsWith('/search') || pathname.startsWith('/trips'),
         },
-  ];
+        {
+          href: '/tickets',
+          label: 'Biletlerim',
+          icon: Ticket,
+          active: pathname.startsWith('/tickets'),
+        },
+        {
+          href: '/kampanyalar',
+          label: 'Kampanyalar',
+          icon: BadgePercent,
+          active: pathname.startsWith('/kampanyalar'),
+        },
+        authenticated
+          ? {
+              href: '/hesap',
+              label: 'Hesabım',
+              icon: UserRound,
+              active: pathname.startsWith('/hesap'),
+            }
+          : {
+              href: '/login',
+              label: 'Giriş yap',
+              icon: UserRound,
+              active: pathname.startsWith('/login'),
+            },
+      ];
 
   return (
     <nav aria-label="Alt menü" className="tab-bar">

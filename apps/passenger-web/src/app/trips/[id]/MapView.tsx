@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { BusFront } from 'lucide-react';
 import { Layer, Map, Marker, NavigationControl, Source } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -13,7 +14,17 @@ export type RouteStopPoint = {
 
 const TURKEY_CENTER = { longitude: 41.94, latitude: 37.93, zoom: 6.5 };
 
-export default function MapView({ points }: { points: RouteStopPoint[] }) {
+export default function MapView({
+  points,
+  vehicle,
+  onError,
+  onLoad,
+}: {
+  points: RouteStopPoint[];
+  vehicle?: { longitude: number; latitude: number; label: string };
+  onError?: () => void;
+  onLoad?: () => void;
+}) {
   const initialViewState = useMemo(() => {
     if (points.length < 2) {
       const single = points[0];
@@ -50,6 +61,8 @@ export default function MapView({ points }: { points: RouteStopPoint[] }) {
       mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
       attributionControl={false}
       style={{ width: '100%', height: '100%' }}
+      onError={onError}
+      onLoad={onLoad}
     >
       <NavigationControl position="top-right" showCompass={false} />
 
@@ -85,6 +98,17 @@ export default function MapView({ points }: { points: RouteStopPoint[] }) {
           </Marker>
         );
       })}
+      {vehicle ? (
+        <Marker longitude={vehicle.longitude} latitude={vehicle.latitude}>
+          <span
+            title={vehicle.label}
+            aria-label={vehicle.label}
+            className="grid h-11 w-11 place-items-center rounded-full border-[3px] border-white bg-signal-500 text-white shadow-float"
+          >
+            <BusFront className="h-5 w-5" aria-hidden />
+          </span>
+        </Marker>
+      ) : null}
     </Map>
   );
 }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { BadgePercent, House, Route, Ticket, UserRound } from 'lucide-react';
 import { BrandMark } from './BrandLogo';
+import { driverNavigation, isDriverPath } from '@/features/driver/navigation';
 
 const items = [
   { href: '/', label: 'Ana sayfa', icon: House, match: (p: string) => p === '/' },
@@ -34,6 +35,7 @@ const items = [
  */
 export function TopNav({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
+  const driver = isDriverPath(pathname);
 
   // Live tracking is a full-screen immersive map with its own chrome, so the
   // rail stands down there exactly as the tab pill does.
@@ -42,13 +44,17 @@ export function TopNav({ authenticated }: { authenticated: boolean }) {
   return (
     <header className="fixed inset-x-0 top-0 z-50 hidden h-[var(--app-header-h)] items-center lg:flex">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-6">
-        <Link href="/" aria-label="Siirt Kurtalan Ekspres ana sayfa" className="inline-flex">
+        <Link
+          href={driver ? '/driver' : '/'}
+          aria-label="Siirt Kurtalan Ekspres ana sayfa"
+          className="inline-flex"
+        >
           <BrandMark className="w-32" />
         </Link>
 
         <nav aria-label="Ana menü" className="rounded-full bg-ink-900 p-1.5 shadow-panel">
           <ul className="flex items-center gap-1">
-            {items.map(({ href, label, icon: Icon, match }) => {
+            {(driver ? driverNavigation : items).map(({ href, label, icon: Icon, match }) => {
               const active = match(pathname);
               return (
                 <li key={href}>
@@ -71,9 +77,9 @@ export function TopNav({ authenticated }: { authenticated: boolean }) {
         </nav>
 
         <Link
-          href={authenticated ? '/hesap' : '/login'}
+          href={driver ? '/driver/profil' : authenticated ? '/hesap' : '/login'}
           className="icon-btn icon-btn-white icon-btn-sm"
-          aria-label={authenticated ? 'Hesabım' : 'Giriş yap'}
+          aria-label={driver ? 'Şoför profili' : authenticated ? 'Hesabım' : 'Giriş yap'}
         >
           <UserRound className="h-[1.125rem] w-[1.125rem]" aria-hidden />
         </Link>
