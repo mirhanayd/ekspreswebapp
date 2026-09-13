@@ -41,6 +41,11 @@ This project is a Turborepo-managed monorepo containing:
 
 ### Presentation Demo
 
+The frontend-only driver presentation starts at `http://localhost:3000/driver` with
+`pnpm --filter passenger-web dev`. It uses the passenger design system, mock passengers,
+local boarding state and a simulated location view; no backend is required.
+See [Driver demo and presentation flow](docs/project/DRIVER_DEMO.md).
+
 `pnpm demo:reset` is a guarded, local-only reset. It applies idempotent migrations and recreates stable accounts, locations, a PostGIS route, a 39-seat bus, future trips, an in-progress trip, and an active ticket. It is safe to rerun against the documented local database and refuses remote or production-like database targets.
 
 Demo accounts:

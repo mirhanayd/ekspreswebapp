@@ -12,6 +12,14 @@ Demo MVP presentation release complete
 
 ## Current Campaign
 
+- Issue #62: frontend-only driver presentation demo in `/driver`, on
+  `feature/62-driver-demo`. Six screen types reuse the passenger visual system;
+  boarding, filters, stop progression and location sharing use local mock state.
+- Local verification: passenger TypeScript and lint pass; three driver Playwright
+  scenarios pass, including mobile/desktop overflow and offline map fallback.
+  Production build and full infrastructure release gate await CI.
+- Presentation entry and walkthrough: `docs/project/DRIVER_DEMO.md`.
+
 - Issue #58: rebuild the passenger frontend from the canonical `/ui` reference screens.
 - Branch: `feat/ui-reference-rebuild`.
 - PR: #59 (supersedes #57, now closed).

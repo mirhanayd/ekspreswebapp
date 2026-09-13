@@ -128,6 +128,7 @@ try {
 
   const { runCriticalJourneys } = await import('../e2e/critical-journeys.mjs');
   await runCriticalJourneys({ headed: process.argv.includes('--headed') });
+  await command('pnpm', ['exec', 'playwright', 'test', 'e2e/driver-demo.spec.mjs']);
   exitCode = 0;
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);

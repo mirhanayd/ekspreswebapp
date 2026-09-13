@@ -26,6 +26,10 @@ Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, respon
 
 ## 4. Repository Structure (Planned)
 
+- The frontend-only driver demo lives in `apps/passenger-web/src/app/driver` and
+  `src/features/driver`, reusing passenger design tokens and navigation. It must not
+  call passenger transaction or real GPS APIs. See `docs/project/DRIVER_DEMO.md`.
+
 - `apps/web-passenger`
 - `apps/web-admin`
 - `apps/api`
