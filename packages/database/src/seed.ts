@@ -30,9 +30,7 @@ function assertLocalDemoDatabase(connectionString: string) {
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
   const databaseName = url.pathname.replace(/^\//, '').toLowerCase();
   if (!localHosts.has(url.hostname) || databaseName.includes('prod')) {
-    throw new Error(
-      'SAFETY GUARD: demo reset is allowed only for a local non-production database.',
-    );
+    throw new Error('SAFETY GUARD: demo reset is allowed only for a local non-production database.');
   }
 }
 
@@ -66,10 +64,12 @@ function createSeatLayout() {
 async function insertUsers(client: PoolClient) {
   const passengerHash = await bcrypt.hash(DEMO_CREDENTIALS.passenger.password, 10);
   const adminHash = await bcrypt.hash(DEMO_CREDENTIALS.admin.password, 10);
+  const driverHash = await bcrypt.hash(DEMO_CREDENTIALS.driver.password, 10);
   await client.query(
     `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
      VALUES ($1, $2, $3, 'Demo', 'Yolcu', 'passenger'),
-            ($4, $5, $6, 'Demo', 'Yönetici', 'admin')`,
+            ($4, $5, $6, 'Demo', 'Yönetici', 'admin'),
+            ($7, $8, $9, 'Mehmet', 'Kaya', 'driver')`,
     [
       DEMO_IDS.passenger,
       DEMO_CREDENTIALS.passenger.email,
@@ -77,6 +77,9 @@ async function insertUsers(client: PoolClient) {
       DEMO_IDS.admin,
       DEMO_CREDENTIALS.admin.email,
       adminHash,
+      DEMO_IDS.driver,
+      DEMO_CREDENTIALS.driver.email,
+      driverHash,
     ],
   );
 }
@@ -102,13 +105,7 @@ async function insertTransport(client: PoolClient) {
     await client.query(
       `INSERT INTO route_stops (id, route_id, location_id, stop_order, estimated_minutes_from_start)
        VALUES ($1, $2, $3, $4, $5)`,
-      [
-        demoUuid(`route-stop:${stop.order}`),
-        DEMO_IDS.route,
-        stop.locationId,
-        stop.order,
-        stop.minutes,
-      ],
+      [demoUuid(`route-stop:${stop.order}`), DEMO_IDS.route, stop.locationId, stop.order, stop.minutes],
     );
   }
 
@@ -121,24 +118,9 @@ async function insertTransport(client: PoolClient) {
 
   const now = new Date();
   const trips = [
-    {
-      id: DEMO_IDS.morningTrip,
-      departure: dateAt(1, 9),
-      arrival: dateAt(1, 12),
-      status: 'scheduled',
-    },
-    {
-      id: DEMO_IDS.afternoonTrip,
-      departure: dateAt(1, 14),
-      arrival: dateAt(1, 17),
-      status: 'scheduled',
-    },
-    {
-      id: DEMO_IDS.followingTrip,
-      departure: dateAt(2, 9),
-      arrival: dateAt(2, 12),
-      status: 'scheduled',
-    },
+    { id: DEMO_IDS.morningTrip, departure: dateAt(1, 9), arrival: dateAt(1, 12), status: 'scheduled' },
+    { id: DEMO_IDS.afternoonTrip, departure: dateAt(1, 14), arrival: dateAt(1, 17), status: 'scheduled' },
+    { id: DEMO_IDS.followingTrip, departure: dateAt(2, 9), arrival: dateAt(2, 12), status: 'scheduled' },
     {
       id: DEMO_IDS.liveTrip,
       departure: new Date(now.getTime() - 30 * 60 * 1000),
@@ -152,18 +134,17 @@ async function insertTransport(client: PoolClient) {
        VALUES ($1, $2, $3, $4, $5, $6, 450)`,
       [trip.id, DEMO_IDS.route, DEMO_IDS.bus, trip.departure, trip.arrival, trip.status],
     );
+    await client.query(
+      `INSERT INTO trip_drivers (id, trip_id, driver_id) VALUES ($1, $2, $3)`,
+      [demoUuid(`trip-driver:${trip.id}`), trip.id, DEMO_IDS.driver],
+    );
 
     for (let seatNo = 1; seatNo <= 39; seatNo++) {
       const purchased = trip.id === DEMO_IDS.liveTrip && seatNo === 1;
       await client.query(
         `INSERT INTO trip_seats (id, trip_id, seat_no, seat_type, price_minor, status, version)
          VALUES ($1, $2, $3, 'standard', 45000, $4, 1)`,
-        [
-          demoUuid(`trip-seat:${trip.id}:${seatNo}`),
-          trip.id,
-          String(seatNo),
-          purchased ? 'purchased' : 'available',
-        ],
+        [demoUuid(`trip-seat:${trip.id}:${seatNo}`), trip.id, String(seatNo), purchased ? 'purchased' : 'available'],
       );
     }
   }
@@ -179,16 +160,18 @@ async function insertActiveTicketScenario(client: PoolClient) {
   );
   await client.query(
     `INSERT INTO orders
-       (id, order_no, user_id, trip_id, trip_seat_id, status, total_minor, currency,
-        idempotency_key, passenger_first_name, passenger_last_name, passenger_phone,
-        passenger_email, expires_at)
-     VALUES ($1, 'SKE-DEMO-AKTIF', $2, $3, $4, 'paid', 45000, 'TRY', $5,
-             'Demo', 'Yolcu', '0555 000 56 56', $6, now() + interval '1 day')`,
+       (id, order_no, user_id, trip_id, trip_seat_id, boarding_location_id, alighting_location_id,
+        status, total_minor, currency, idempotency_key, passenger_first_name, passenger_last_name,
+        passenger_phone, passenger_email, expires_at)
+     VALUES ($1, 'SKE-DEMO-AKTIF', $2, $3, $4, $5, $6, 'paid', 45000, 'TRY', $7,
+             'Demo', 'Yolcu', '0555 000 56 56', $8, now() + interval '1 day')`,
     [
       DEMO_IDS.activeOrder,
       DEMO_IDS.passenger,
       DEMO_IDS.liveTrip,
       tripSeatId,
+      DEMO_IDS.siirt,
+      DEMO_IDS.diyarbakir,
       demoUuid('idempotency:active-ticket'),
       DEMO_CREDENTIALS.passenger.email,
     ],
@@ -212,6 +195,11 @@ async function insertActiveTicketScenario(client: PoolClient) {
       DEMO_IDS.activeQrTokenHash,
     ],
   );
+  await client.query(
+    `INSERT INTO passenger_boarding (id, ticket_id, status)
+     VALUES ($1, $2, 'pending')`,
+    [demoUuid('boarding:active-ticket'), DEMO_IDS.activeTicket],
+  );
 }
 
 async function main() {
@@ -225,17 +213,15 @@ async function main() {
     await client.query('BEGIN');
     await client.query(`
       TRUNCATE TABLE
-        tickets, payments, orders, seat_holds, trip_seats, trips, buses,
-        route_stops, routes, locations, users
+        passenger_boarding, trip_drivers, tickets, payments, orders, seat_holds, trip_seats, trips,
+        buses, route_stops, routes, locations, users
       RESTART IDENTITY CASCADE
     `);
     await insertUsers(client);
     await insertTransport(client);
     await insertActiveTicketScenario(client);
     await client.query('COMMIT');
-    console.log(
-      'Demo reset complete: accounts, transport, future trips, seats, and active ticket ready.',
-    );
+    console.log('Demo reset complete: passenger, admin, driver, trips, seats, ticket and assignments ready.');
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

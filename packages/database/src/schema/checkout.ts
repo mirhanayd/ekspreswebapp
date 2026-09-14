@@ -1,7 +1,7 @@
 import { pgTable, text, timestamp, uuid, integer, uniqueIndex } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 import { users } from './users';
-import { trips, tripSeats } from './transport';
+import { locations, trips, tripSeats } from './transport';
 
 // ── Orders ──────────────────────────────────────────────────────
 
@@ -17,6 +17,8 @@ export const orders = pgTable('orders', {
   tripSeatId: uuid('trip_seat_id')
     .references(() => tripSeats.id)
     .notNull(),
+  boardingLocationId: uuid('boarding_location_id').references(() => locations.id),
+  alightingLocationId: uuid('alighting_location_id').references(() => locations.id),
   status: text('status').notNull().default('pending'), // pending, paid, cancelled, expired
   totalMinor: integer('total_minor').notNull(), // price in kuruş
   currency: text('currency').notNull().default('TRY'),
@@ -41,6 +43,16 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   tripSeat: one(tripSeats, {
     fields: [orders.tripSeatId],
     references: [tripSeats.id],
+  }),
+  boardingLocation: one(locations, {
+    fields: [orders.boardingLocationId],
+    references: [locations.id],
+    relationName: 'orderBoardingLocation',
+  }),
+  alightingLocation: one(locations, {
+    fields: [orders.alightingLocationId],
+    references: [locations.id],
+    relationName: 'orderAlightingLocation',
   }),
   payments: many(payments),
   ticket: one(tickets),

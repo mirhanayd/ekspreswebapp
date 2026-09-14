@@ -2,68 +2,15 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1786230933043,
-      "tag": "0000_enable_postgis",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1786267816753,
-      "tag": "0001_eager_roughhouse",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1786268254110,
-      "tag": "0002_spooky_vargas",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1786274147919,
-      "tag": "0003_seat-inventory",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1786276235358,
-      "tag": "0004_checkout-order-tickets",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1786278875648,
-      "tag": "0005_ticket_seat_unique_idx",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1786323142869,
-      "tag": "0006_seat-hold-active-unique",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1786400268590,
-      "tag": "0007_payment-order-unique",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
-      "when": 1786401373380,
-      "tag": "0008_route-geometry",
-      "breakpoints": true
-    }
+    { "idx": 0, "version": "7", "when": 1786230933043, "tag": "0000_enable_postgis", "breakpoints": true },
+    { "idx": 1, "version": "7", "when": 1786267816753, "tag": "0001_eager_roughhouse", "breakpoints": true },
+    { "idx": 2, "version": "7", "when": 1786268254110, "tag": "0002_spooky_vargas", "breakpoints": true },
+    { "idx": 3, "version": "7", "when": 1786274147919, "tag": "0003_seat-inventory", "breakpoints": true },
+    { "idx": 4, "version": "7", "when": 1786276235358, "tag": "0004_checkout-order-tickets", "breakpoints": true },
+    { "idx": 5, "version": "7", "when": 1786278875648, "tag": "0005_ticket_seat_unique_idx", "breakpoints": true },
+    { "idx": 6, "version": "7", "when": 1786323142869, "tag": "0006_seat-hold-active-unique", "breakpoints": true },
+    { "idx": 7, "version": "7", "when": 1786400268590, "tag": "0007_payment-order-unique", "breakpoints": true },
+    { "idx": 8, "version": "7", "when": 1786401373380, "tag": "0008_route-geometry", "breakpoints": true },
+    { "idx": 9, "version": "7", "when": 1789416000000, "tag": "0009_driver-operations", "breakpoints": true }
   ]
 }
