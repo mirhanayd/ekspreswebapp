@@ -10,6 +10,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { TrackingModule } from './tracking/tracking.module';
 import { AdminModule } from './admin/admin.module';
+import { DriverModule } from './driver/driver.module';
 import { DatabaseModule } from './database';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -39,6 +40,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     TicketsModule,
     TrackingModule,
     AdminModule,
+    DriverModule,
   ],
   controllers: [AppController],
   providers: [
