@@ -66,10 +66,12 @@ function createSeatLayout() {
 async function insertUsers(client: PoolClient) {
   const passengerHash = await bcrypt.hash(DEMO_CREDENTIALS.passenger.password, 10);
   const adminHash = await bcrypt.hash(DEMO_CREDENTIALS.admin.password, 10);
+  const driverHash = await bcrypt.hash(DEMO_CREDENTIALS.driver.password, 10);
   await client.query(
     `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
      VALUES ($1, $2, $3, 'Demo', 'Yolcu', 'passenger'),
-            ($4, $5, $6, 'Demo', 'Yönetici', 'admin')`,
+            ($4, $5, $6, 'Demo', 'Yönetici', 'admin'),
+            ($7, $8, $9, 'Mehmet', 'Kaya', 'driver')`,
     [
       DEMO_IDS.passenger,
       DEMO_CREDENTIALS.passenger.email,
@@ -77,6 +79,9 @@ async function insertUsers(client: PoolClient) {
       DEMO_IDS.admin,
       DEMO_CREDENTIALS.admin.email,
       adminHash,
+      DEMO_IDS.driver,
+      DEMO_CREDENTIALS.driver.email,
+      driverHash,
     ],
   );
 }
@@ -152,6 +157,11 @@ async function insertTransport(client: PoolClient) {
        VALUES ($1, $2, $3, $4, $5, $6, 450)`,
       [trip.id, DEMO_IDS.route, DEMO_IDS.bus, trip.departure, trip.arrival, trip.status],
     );
+    await client.query(`INSERT INTO trip_drivers (id, trip_id, driver_id) VALUES ($1, $2, $3)`, [
+      demoUuid(`trip-driver:${trip.id}`),
+      trip.id,
+      DEMO_IDS.driver,
+    ]);
 
     for (let seatNo = 1; seatNo <= 39; seatNo++) {
       const purchased = trip.id === DEMO_IDS.liveTrip && seatNo === 1;
@@ -179,16 +189,18 @@ async function insertActiveTicketScenario(client: PoolClient) {
   );
   await client.query(
     `INSERT INTO orders
-       (id, order_no, user_id, trip_id, trip_seat_id, status, total_minor, currency,
-        idempotency_key, passenger_first_name, passenger_last_name, passenger_phone,
-        passenger_email, expires_at)
-     VALUES ($1, 'SKE-DEMO-AKTIF', $2, $3, $4, 'paid', 45000, 'TRY', $5,
-             'Demo', 'Yolcu', '0555 000 56 56', $6, now() + interval '1 day')`,
+       (id, order_no, user_id, trip_id, trip_seat_id, boarding_location_id, alighting_location_id,
+        status, total_minor, currency, idempotency_key, passenger_first_name, passenger_last_name,
+        passenger_phone, passenger_email, expires_at)
+     VALUES ($1, 'SKE-DEMO-AKTIF', $2, $3, $4, $5, $6, 'paid', 45000, 'TRY', $7,
+             'Demo', 'Yolcu', '0555 000 56 56', $8, now() + interval '1 day')`,
     [
       DEMO_IDS.activeOrder,
       DEMO_IDS.passenger,
       DEMO_IDS.liveTrip,
       tripSeatId,
+      DEMO_IDS.siirt,
+      DEMO_IDS.diyarbakir,
       demoUuid('idempotency:active-ticket'),
       DEMO_CREDENTIALS.passenger.email,
     ],
@@ -212,6 +224,11 @@ async function insertActiveTicketScenario(client: PoolClient) {
       DEMO_IDS.activeQrTokenHash,
     ],
   );
+  await client.query(
+    `INSERT INTO passenger_boarding (id, ticket_id, status)
+     VALUES ($1, $2, 'pending')`,
+    [demoUuid('boarding:active-ticket'), DEMO_IDS.activeTicket],
+  );
 }
 
 async function main() {
@@ -225,8 +242,8 @@ async function main() {
     await client.query('BEGIN');
     await client.query(`
       TRUNCATE TABLE
-        tickets, payments, orders, seat_holds, trip_seats, trips, buses,
-        route_stops, routes, locations, users
+        passenger_boarding, trip_drivers, tickets, payments, orders, seat_holds, trip_seats, trips,
+        buses, route_stops, routes, locations, users
       RESTART IDENTITY CASCADE
     `);
     await insertUsers(client);
@@ -234,7 +251,7 @@ async function main() {
     await insertActiveTicketScenario(client);
     await client.query('COMMIT');
     console.log(
-      'Demo reset complete: accounts, transport, future trips, seats, and active ticket ready.',
+      'Demo reset complete: passenger, admin, driver, trips, seats, ticket and assignments ready.',
     );
   } catch (error) {
     await client.query('ROLLBACK');

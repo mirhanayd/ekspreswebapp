@@ -2,15 +2,15 @@
 
 ## 1. Product Goal
 
-Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, responsive web application for a local bus company to showcase ticketing, real-time vehicle tracking, and seat reservations, aiming for a 5-7 minute company presentation.
+Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, responsive web application for a local bus company to showcase ticketing, real-time vehicle tracking, seat reservations, and driver operations, aiming for a 5-7 minute company presentation.
 
 ## 2. Approved Stack
 
-- **Web (Passenger & Admin):** Next.js App Router + TypeScript
+- **Web (Passenger, Driver & Admin):** Next.js App Router + TypeScript
 - **API:** NestJS + TypeScript
 - **Main DB:** PostgreSQL
 - **Geographic DB:** PostGIS
-- **Cache/Hold:** Redis
+- **Cache/Hold/Tracking:** Redis
 - **Map:** MapLibre GL JS
 - **ORM/SQL:** Drizzle ORM
 - **Containerization:** Docker Compose
@@ -26,10 +26,11 @@ Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, respon
 
 ## 4. Repository Structure (Planned)
 
-- `apps/web-passenger`
-- `apps/web-admin`
+- `apps/passenger-web`
+- `apps/driver-web`
+- `apps/admin-web`
 - `apps/api`
-- `apps/tracking-sim`
+- `apps/tracking-simulator`
 - `packages/ui`
 - `packages/contracts`
 - `packages/database`
@@ -75,8 +76,9 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - **NEVER** change the repository visibility from PRIVATE.
 - Do not commit `.env` files with actual secrets; use `.env.example`.
 - Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
-- Admin APIs must declare `@Roles('admin')` and remain protected by the global JWT and roles guards.
-- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, and ticket concurrency invariants.
+- Admin APIs must declare `@Roles('admin')`; driver operational APIs must declare `@Roles('driver')`; both remain protected by the global JWT and roles guards.
+- Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.
+- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, and boarding-state invariants.
 
 ## 11. Migration Rules
 

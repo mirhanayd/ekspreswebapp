@@ -2,57 +2,50 @@
 
 ## Verified Release Baseline
 
-- SHA: `51dd1f9b3ef03c35dfcdb4538ded88d86cbef1ad`
-- Baseline: PR #59 merged; the deterministic Playwright release gate is required and green.
-- Closure artifact: PR #56 final release-readiness audit and roadmap reconciliation.
+- Base SHA for the driver operations campaign: `673ca5e69144cf21f3109afd4184bf107d3e2120`.
+- GitHub issue: `#64 Driver operations app without OBUS integration`.
+- Working branch: `feature/64-driver-operations`.
+- Previous Demo MVP passenger/admin release remains the compatibility baseline.
 
 ## Current Phase
 
-Demo MVP presentation release complete
+Driver operations extension implemented on a feature branch and ready for repository quality gates.
 
 ## Current Campaign
 
-- Issue #58: rebuild the passenger frontend from the canonical `/ui` reference screens.
-- Branch: `feat/ui-reference-rebuild`.
-- PR: #59 (supersedes #57, now closed).
-- Status: complete; the passenger visual layer is reproduced from `ui/mobile-home-reference.png`,
-  `ui/trip-search-reference.png` and `ui/live-map-reference.png`, with no backend change. Merged
-  head passed full CI run `31604110828`.
+- Add an OBUS-independent driver workflow backed by the existing PostgreSQL/Redis/NestJS platform.
+- Add a `driver` role and trip assignments.
+- Add driver-only trip, manifest, boarding-state, trip-status and GPS APIs.
+- Feed mobile GPS into the existing Redis snapshot/pub-sub pipeline used by passenger live tracking.
+- Add a mobile-first `apps/driver-web` interface aligned with the passenger visual language.
 
-## Completed Major Capabilities
+## Driver Capability Set
 
-- Monorepo, Docker PostgreSQL/PostGIS/Redis, migrations, and CI.
-- JWT authentication API foundation.
-- Transport, trip search/detail, seat inventory, checkout, ticket, tracking, and admin foundations.
-- PostgreSQL-authoritative seat holds with row locking, active-hold uniqueness, expiry reconciliation, and 5/5 integration proof.
-- Authenticated passenger ownership for holds, orders, payments, tickets, and QR, with cross-user negative tests.
-- Admin-only API enforcement with passenger/unauthenticated denial tests.
-- Expired-order/hold payment rejection and serialized one-payment/one-ticket behavior.
-- Deterministic, guarded demo reset with stable accounts, PostGIS route geometry, future trips, seats, active ticket, and live scenario.
-- Cookie-backed passenger login/register/logout, trip search, authenticated seat hold, server-priced checkout, payment, ticket list/detail, and QR retrieval.
-- Real HTTP demo journey verification from login through QR.
-- Real scannable QR rendering with short-lived signed payloads and hashed-at-rest ticket secrets.
-- Ticket-entitled tracking bootstrap/socket access with Redis snapshot and PostGIS-route simulator movement.
-- Authenticated admin overview, transport, ticket, fleet, and report operations backed by PostgreSQL,
-  PostGIS, and Redis.
-- Passenger visual system reproduced from the canonical `/ui` reference screens: sage and cream
-  canvases, near-black forest chrome, lime selection, amber live highlights, floating tab pill.
-- Accessible passenger search, trip, coach-seat, checkout, ticket/QR, and live-map presentation
-  surfaces, verified for horizontal overflow at 375 / 390 / 430 / 768 / 1024 / 1440.
-- Deterministic Playwright passenger/admin critical journeys against production builds and real
-  PostgreSQL/PostGIS/Redis infrastructure.
-- Reliable authenticated return-to navigation after passenger login.
+- Driver authentication is separately role-gated.
+- Drivers can access only assigned trips.
+- Assigned route stops are shown in operational order.
+- Passenger manifests expose seat and company-owned booking contact details.
+- Passenger status can be persisted as `pending`, `boarded` or `no_show`.
+- Orders can retain boarding/alighting location IDs; legacy/full-route orders fall back to the route origin for boarding grouping.
+- Driver can update trip status (`scheduled`, `boarding`, `in_transit`, `completed`).
+- Browser geolocation can publish `MOBILE_APP` positions for the assigned bus/trip.
+- Mobile positions update `tracking:latest:<tripId>` and publish to `trip_locations`, preserving the existing passenger tracking consumer.
+- Deterministic demo seed includes a driver account and trip assignments.
 
-## Remaining Work
+## OBUS Boundary
 
-No remaining Demo MVP engineering work. Before an external presentation, run the deterministic
-preflight on the presentation machine and prepare an offline recording fallback.
+No OBUS/Obilet credentials or APIs are required for the driver demo. A future OBUS adapter can synchronize trips/manifests into the local canonical model without changing the driver UI contract.
 
-## Current Blocker
+## Validation Status
 
-No Demo MVP code blocker. Public staging and production remain explicitly outside this release.
+- Repository write access is working and implementation commits are being created on `feature/64-driver-operations`.
+- The execution container still cannot clone `github.com` directly and does not have the repository dependencies installed, so local pnpm quality gates are not claimed as passed.
+- `apps/driver-web` is a new pnpm workspace. `pnpm-lock.yaml` must be regenerated with pnpm before a frozen-lockfile CI run can pass.
+- Browser geolocation requires HTTPS in production (localhost is the normal development exception); ordinary mobile web pages do not guarantee background/lock-screen GPS continuity.
 
 ## Next Campaign
 
-Pilot planning only: hosting/TLS, managed secrets, production observability, security scanning, PWA,
-physical-device QA, backup/restore, and real payment/GPS integrations.
+- Run `corepack enable && pnpm install` in a normal repository clone to regenerate `pnpm-lock.yaml`.
+- Run migration/reset and full format/lint/typecheck/test/build gates.
+- Add physical-device QA for GPS behavior.
+- Integrate OBUS only after official credentials and API contracts are supplied.

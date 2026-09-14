@@ -3,6 +3,7 @@ import { createHash } from 'crypto';
 export const DEMO_CREDENTIALS = {
   passenger: { email: 'yolcu@siirtkurtalan.demo', password: 'Demo123!' },
   admin: { email: 'admin@siirtkurtalan.demo', password: 'Admin123!' },
+  driver: { email: 'sofor@siirtkurtalan.demo', password: 'Sofor123!' },
 } as const;
 
 export function demoUuid(name: string): string {
@@ -13,6 +14,7 @@ export function demoUuid(name: string): string {
 export const DEMO_IDS = {
   passenger: demoUuid('user:passenger'),
   admin: demoUuid('user:admin'),
+  driver: demoUuid('user:driver'),
   siirt: demoUuid('location:siirt'),
   kurtalan: demoUuid('location:kurtalan'),
   batman: demoUuid('location:batman'),
