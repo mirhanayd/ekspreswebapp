@@ -35,15 +35,27 @@ export default function DriverLoginPage() {
         <div className="brand-mark">SKE</div>
         <p className="eyebrow">SÜRÜCÜ OPERASYON</p>
         <h1>Günün seferi burada.</h1>
-        <p className="muted">Durakları, yolcuları ve canlı konum paylaşımını tek ekrandan yönetin.</p>
+        <p className="muted">
+          Durakları, yolcuları ve canlı konum paylaşımını tek ekrandan yönetin.
+        </p>
         <form onSubmit={submit} className="login-form">
           <label>
             E-posta
-            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required />
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              required
+            />
           </label>
           <label>
             Şifre
-            <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" required />
+            <input
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              type="password"
+              required
+            />
           </label>
           {error ? <p className="error-box">{error}</p> : null}
           <button className="primary-button" disabled={pending} type="submit">

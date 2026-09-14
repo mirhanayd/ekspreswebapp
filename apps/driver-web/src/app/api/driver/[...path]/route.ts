@@ -12,12 +12,15 @@ async function proxy(request: NextRequest, context: { params: Promise<{ path: st
   if (contentType) headers.set('Content-Type', contentType);
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);
-  const upstream = await fetch(`${API_BASE_URL}/driver/${path.join('/')}${request.nextUrl.search}`, {
-    method: request.method,
-    headers,
-    body: hasBody ? await request.arrayBuffer() : undefined,
-    cache: 'no-store',
-  });
+  const upstream = await fetch(
+    `${API_BASE_URL}/driver/${path.join('/')}${request.nextUrl.search}`,
+    {
+      method: request.method,
+      headers,
+      body: hasBody ? await request.arrayBuffer() : undefined,
+      cache: 'no-store',
+    },
+  );
   const responseHeaders = new Headers();
   const upstreamContentType = upstream.headers.get('content-type');
   if (upstreamContentType) responseHeaders.set('Content-Type', upstreamContentType);

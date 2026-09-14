@@ -192,9 +192,7 @@ export class DriverService implements OnModuleDestroy {
       })
       .from(schema.tripDrivers)
       .innerJoin(schema.trips, eq(schema.tripDrivers.tripId, schema.trips.id))
-      .where(
-        and(eq(schema.tripDrivers.driverId, driverId), eq(schema.tripDrivers.tripId, tripId)),
-      )
+      .where(and(eq(schema.tripDrivers.driverId, driverId), eq(schema.tripDrivers.tripId, tripId)))
       .limit(1);
 
     if (!assignment) throw new ForbiddenException('Trip is not assigned to this driver');
@@ -219,7 +217,9 @@ export class DriverService implements OnModuleDestroy {
       .innerJoin(schema.orders, eq(schema.tickets.orderId, schema.orders.id))
       .innerJoin(schema.tripSeats, eq(schema.tickets.tripSeatId, schema.tripSeats.id))
       .leftJoin(schema.passengerBoarding, eq(schema.passengerBoarding.ticketId, schema.tickets.id))
-      .where(and(eq(schema.tickets.tripId, tripId), inArray(schema.tickets.status, ['active', 'used'])));
+      .where(
+        and(eq(schema.tickets.tripId, tripId), inArray(schema.tickets.status, ['active', 'used'])),
+      );
 
     return rows.map((row) => ({ ...row, boardingStatus: row.boardingStatus || 'pending' }));
   }

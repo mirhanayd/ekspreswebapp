@@ -62,7 +62,9 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw Object.assign(new Error(body.message || 'İşlem tamamlanamadı.'), { status: response.status });
+    throw Object.assign(new Error(body.message || 'İşlem tamamlanamadı.'), {
+      status: response.status,
+    });
   }
   return response.json();
 }
@@ -106,7 +108,10 @@ export function DriverDashboard() {
         assigned[0];
       if (preferred) await loadTrip(preferred.id);
     } catch (error) {
-      if ((error as { status?: number }).status === 401 || (error as { status?: number }).status === 403) {
+      if (
+        (error as { status?: number }).status === 401 ||
+        (error as { status?: number }).status === 403
+      ) {
         router.replace('/login');
         return;
       }
@@ -119,7 +124,8 @@ export function DriverDashboard() {
   useEffect(() => {
     void load();
     return () => {
-      if (watchId.current !== null && navigator.geolocation) navigator.geolocation.clearWatch(watchId.current);
+      if (watchId.current !== null && navigator.geolocation)
+        navigator.geolocation.clearWatch(watchId.current);
     };
   }, [load]);
 
@@ -188,7 +194,9 @@ export function DriverDashboard() {
           }),
         })
           .then(() => setLastLocationAt(new Date().toISOString()))
-          .catch((error) => setMessage(error instanceof Error ? error.message : 'Konum gönderilemedi.'));
+          .catch((error) =>
+            setMessage(error instanceof Error ? error.message : 'Konum gönderilemedi.'),
+          );
       },
       (error) => {
         setMessage(
@@ -209,11 +217,19 @@ export function DriverDashboard() {
     router.replace('/login');
   }
 
-  if (loading) return <main className="app-shell"><div className="loading-card">Sürücü paneli hazırlanıyor…</div></main>;
+  if (loading)
+    return (
+      <main className="app-shell">
+        <div className="loading-card">Sürücü paneli hazırlanıyor…</div>
+      </main>
+    );
   if (!trip) {
     return (
       <main className="app-shell">
-        <section className="empty-card"><strong>Atanmış sefer yok.</strong><span>Operasyon ekibinin sefer ataması burada görünecek.</span></section>
+        <section className="empty-card">
+          <strong>Atanmış sefer yok.</strong>
+          <span>Operasyon ekibinin sefer ataması burada görünecek.</span>
+        </section>
       </main>
     );
   }
@@ -225,29 +241,66 @@ export function DriverDashboard() {
           <p className="eyebrow light">SİİRT KURTALAN EKSPRES</p>
           <h1>Sürücü</h1>
         </div>
-        <button className="ghost-button light-button" onClick={logout}>Çıkış</button>
+        <button className="ghost-button light-button" onClick={logout}>
+          Çıkış
+        </button>
       </header>
 
       <section className="trip-hero">
         <div className="trip-hero-top">
-          <span className={`status-pill status-${trip.status}`}>{statusText[trip.status] || trip.status}</span>
+          <span className={`status-pill status-${trip.status}`}>
+            {statusText[trip.status] || trip.status}
+          </span>
           <span className="plate">{trip.bus.plateNumber}</span>
         </div>
-        <p className="date-line">{date(trip.departureTime)} · {time(trip.departureTime)} kalkış</p>
-        <h2>{trip.route.origin.name} <span>→</span> {trip.route.destination.name}</h2>
-        <p>{trip.bus.model || 'Otobüs'} · {time(trip.arrivalTime)} planlanan varış</p>
+        <p className="date-line">
+          {date(trip.departureTime)} · {time(trip.departureTime)} kalkış
+        </p>
+        <h2>
+          {trip.route.origin.name} <span>→</span> {trip.route.destination.name}
+        </h2>
+        <p>
+          {trip.bus.model || 'Otobüs'} · {time(trip.arrivalTime)} planlanan varış
+        </p>
         <div className="status-actions">
-          <button onClick={() => setTripStatus('boarding')} className={trip.status === 'boarding' ? 'active' : ''}>Yolcu alımı</button>
-          <button onClick={() => setTripStatus('in_transit')} className={trip.status === 'in_transit' ? 'active' : ''}>Yola çık</button>
-          <button onClick={() => setTripStatus('completed')} className={trip.status === 'completed' ? 'active' : ''}>Tamamla</button>
+          <button
+            onClick={() => setTripStatus('boarding')}
+            className={trip.status === 'boarding' ? 'active' : ''}
+          >
+            Yolcu alımı
+          </button>
+          <button
+            onClick={() => setTripStatus('in_transit')}
+            className={trip.status === 'in_transit' ? 'active' : ''}
+          >
+            Yola çık
+          </button>
+          <button
+            onClick={() => setTripStatus('completed')}
+            className={trip.status === 'completed' ? 'active' : ''}
+          >
+            Tamamla
+          </button>
         </div>
       </section>
 
       <section className="metric-grid">
-        <article><span>Yolcu</span><strong>{counts.total}</strong></article>
-        <article><span>Bindi</span><strong>{counts.boarded}</strong></article>
-        <article><span>Bekliyor</span><strong>{counts.pending}</strong></article>
-        <article><span>Gelmedi</span><strong>{counts.noShow}</strong></article>
+        <article>
+          <span>Yolcu</span>
+          <strong>{counts.total}</strong>
+        </article>
+        <article>
+          <span>Bindi</span>
+          <strong>{counts.boarded}</strong>
+        </article>
+        <article>
+          <span>Bekliyor</span>
+          <strong>{counts.pending}</strong>
+        </article>
+        <article>
+          <span>Gelmedi</span>
+          <strong>{counts.noShow}</strong>
+        </article>
       </section>
 
       <section className={`location-card ${sharing ? 'sharing' : ''}`}>
@@ -262,7 +315,10 @@ export function DriverDashboard() {
               : 'Başlattığınızda konum yalnızca atanmış sefer için paylaşılır.'}
           </p>
         </div>
-        <button className={sharing ? 'danger-button' : 'primary-button compact'} onClick={sharing ? stopLocationSharing : startLocationSharing}>
+        <button
+          className={sharing ? 'danger-button' : 'primary-button compact'}
+          onClick={sharing ? stopLocationSharing : startLocationSharing}
+        >
           {sharing ? 'Durdur' : 'Konumu başlat'}
         </button>
       </section>
@@ -271,25 +327,40 @@ export function DriverDashboard() {
 
       <section className="section-block">
         <div className="section-heading">
-          <div><p className="eyebrow">GÜZERGÂH</p><h3>Durulacak otogarlar</h3></div>
+          <div>
+            <p className="eyebrow">GÜZERGÂH</p>
+            <h3>Durulacak otogarlar</h3>
+          </div>
           <span>{trip.route.stops.length} durak</span>
         </div>
         <div className="stop-list">
           {trip.route.stops.map((stop, index) => (
             <article className="stop-card" key={stop.id}>
-              <div className="stop-rail"><span>{index + 1}</span><i /></div>
+              <div className="stop-rail">
+                <span>{index + 1}</span>
+                <i />
+              </div>
               <div className="stop-content">
                 <div className="stop-title">
-                  <div><strong>{stop.location.name}</strong><small>+{stop.estimatedMinutesFromStart} dk</small></div>
+                  <div>
+                    <strong>{stop.location.name}</strong>
+                    <small>+{stop.estimatedMinutesFromStart} dk</small>
+                  </div>
                   <span className="passenger-count">{stop.passengers.length} binecek</span>
                 </div>
                 {stop.passengers.length > 0 ? (
                   <div className="stop-passengers">
                     {stop.passengers.map((passenger) => (
-                      <PassengerRow passenger={passenger} key={passenger.ticketId} onStatus={setPassengerStatus} />
+                      <PassengerRow
+                        passenger={passenger}
+                        key={passenger.ticketId}
+                        onStatus={setPassengerStatus}
+                      />
                     ))}
                   </div>
-                ) : <p className="no-passenger">Bu durakta binecek kayıtlı yolcu yok.</p>}
+                ) : (
+                  <p className="no-passenger">Bu durakta binecek kayıtlı yolcu yok.</p>
+                )}
               </div>
             </article>
           ))}
@@ -298,42 +369,80 @@ export function DriverDashboard() {
 
       <section className="section-block passenger-all">
         <div className="section-heading">
-          <div><p className="eyebrow">MANİFESTO</p><h3>Tüm yolcular</h3></div>
+          <div>
+            <p className="eyebrow">MANİFESTO</p>
+            <h3>Tüm yolcular</h3>
+          </div>
           <span>{counts.total} kişi</span>
         </div>
         <div className="manifest-list">
           {trip.manifest.map((passenger) => (
-            <PassengerRow passenger={passenger} key={passenger.ticketId} onStatus={setPassengerStatus} />
+            <PassengerRow
+              passenger={passenger}
+              key={passenger.ticketId}
+              onStatus={setPassengerStatus}
+            />
           ))}
         </div>
       </section>
 
       {trips.length > 1 ? (
         <section className="section-block other-trips">
-          <div className="section-heading"><div><p className="eyebrow">SEFERLER</p><h3>Diğer atamalar</h3></div></div>
-          {trips.filter((item) => item.id !== trip.id).map((item) => (
-            <button className="trip-switcher" key={item.id} onClick={() => loadTrip(item.id)}>
-              <span>{date(item.departureTime)} · {time(item.departureTime)}</span>
-              <strong>{item.route.name}</strong>
-              <small>{statusText[item.status] || item.status}</small>
-            </button>
-          ))}
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">SEFERLER</p>
+              <h3>Diğer atamalar</h3>
+            </div>
+          </div>
+          {trips
+            .filter((item) => item.id !== trip.id)
+            .map((item) => (
+              <button className="trip-switcher" key={item.id} onClick={() => loadTrip(item.id)}>
+                <span>
+                  {date(item.departureTime)} · {time(item.departureTime)}
+                </span>
+                <strong>{item.route.name}</strong>
+                <small>{statusText[item.status] || item.status}</small>
+              </button>
+            ))}
         </section>
       ) : null}
     </main>
   );
 }
 
-function PassengerRow({ passenger, onStatus }: { passenger: Passenger; onStatus: (ticketId: string, status: Passenger['boardingStatus']) => Promise<void> }) {
+function PassengerRow({
+  passenger,
+  onStatus,
+}: {
+  passenger: Passenger;
+  onStatus: (ticketId: string, status: Passenger['boardingStatus']) => Promise<void>;
+}) {
   return (
     <div className="passenger-row">
       <div className="seat-box">{passenger.seatNo}</div>
       <div className="passenger-main">
-        <strong>{passenger.firstName} {passenger.lastName}</strong>
+        <strong>
+          {passenger.firstName} {passenger.lastName}
+        </strong>
         <span>{passenger.phone || passenger.email || passenger.ticketNo}</span>
       </div>
-      {passenger.phone ? <a className="phone-button" href={`tel:${passenger.phone.replace(/\s/g, '')}`} aria-label={`${passenger.firstName} adlı yolcuyu ara`}>Ara</a> : null}
-      <select value={passenger.boardingStatus} onChange={(event) => void onStatus(passenger.ticketId, event.target.value as Passenger['boardingStatus'])} aria-label="Yolcu durumu">
+      {passenger.phone ? (
+        <a
+          className="phone-button"
+          href={`tel:${passenger.phone.replace(/\s/g, '')}`}
+          aria-label={`${passenger.firstName} adlı yolcuyu ara`}
+        >
+          Ara
+        </a>
+      ) : null}
+      <select
+        value={passenger.boardingStatus}
+        onChange={(event) =>
+          void onStatus(passenger.ticketId, event.target.value as Passenger['boardingStatus'])
+        }
+        aria-label="Yolcu durumu"
+      >
         <option value="pending">Bekliyor</option>
         <option value="boarded">Bindi</option>
         <option value="no_show">Gelmedi</option>

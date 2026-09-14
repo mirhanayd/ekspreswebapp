@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
   });
   const profile = await me.json().catch(() => ({}));
   if (!me.ok || profile.role !== 'driver') {
-    return NextResponse.json({ message: 'Bu hesap sürücü uygulamasına yetkili değil.' }, { status: 403 });
+    return NextResponse.json(
+      { message: 'Bu hesap sürücü uygulamasına yetkili değil.' },
+      { status: 403 },
+    );
   }
 
   const response = NextResponse.json({ authenticated: true });

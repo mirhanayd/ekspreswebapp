@@ -30,7 +30,9 @@ function assertLocalDemoDatabase(connectionString: string) {
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
   const databaseName = url.pathname.replace(/^\//, '').toLowerCase();
   if (!localHosts.has(url.hostname) || databaseName.includes('prod')) {
-    throw new Error('SAFETY GUARD: demo reset is allowed only for a local non-production database.');
+    throw new Error(
+      'SAFETY GUARD: demo reset is allowed only for a local non-production database.',
+    );
   }
 }
 
@@ -105,7 +107,13 @@ async function insertTransport(client: PoolClient) {
     await client.query(
       `INSERT INTO route_stops (id, route_id, location_id, stop_order, estimated_minutes_from_start)
        VALUES ($1, $2, $3, $4, $5)`,
-      [demoUuid(`route-stop:${stop.order}`), DEMO_IDS.route, stop.locationId, stop.order, stop.minutes],
+      [
+        demoUuid(`route-stop:${stop.order}`),
+        DEMO_IDS.route,
+        stop.locationId,
+        stop.order,
+        stop.minutes,
+      ],
     );
   }
 
@@ -118,9 +126,24 @@ async function insertTransport(client: PoolClient) {
 
   const now = new Date();
   const trips = [
-    { id: DEMO_IDS.morningTrip, departure: dateAt(1, 9), arrival: dateAt(1, 12), status: 'scheduled' },
-    { id: DEMO_IDS.afternoonTrip, departure: dateAt(1, 14), arrival: dateAt(1, 17), status: 'scheduled' },
-    { id: DEMO_IDS.followingTrip, departure: dateAt(2, 9), arrival: dateAt(2, 12), status: 'scheduled' },
+    {
+      id: DEMO_IDS.morningTrip,
+      departure: dateAt(1, 9),
+      arrival: dateAt(1, 12),
+      status: 'scheduled',
+    },
+    {
+      id: DEMO_IDS.afternoonTrip,
+      departure: dateAt(1, 14),
+      arrival: dateAt(1, 17),
+      status: 'scheduled',
+    },
+    {
+      id: DEMO_IDS.followingTrip,
+      departure: dateAt(2, 9),
+      arrival: dateAt(2, 12),
+      status: 'scheduled',
+    },
     {
       id: DEMO_IDS.liveTrip,
       departure: new Date(now.getTime() - 30 * 60 * 1000),
@@ -134,17 +157,23 @@ async function insertTransport(client: PoolClient) {
        VALUES ($1, $2, $3, $4, $5, $6, 450)`,
       [trip.id, DEMO_IDS.route, DEMO_IDS.bus, trip.departure, trip.arrival, trip.status],
     );
-    await client.query(
-      `INSERT INTO trip_drivers (id, trip_id, driver_id) VALUES ($1, $2, $3)`,
-      [demoUuid(`trip-driver:${trip.id}`), trip.id, DEMO_IDS.driver],
-    );
+    await client.query(`INSERT INTO trip_drivers (id, trip_id, driver_id) VALUES ($1, $2, $3)`, [
+      demoUuid(`trip-driver:${trip.id}`),
+      trip.id,
+      DEMO_IDS.driver,
+    ]);
 
     for (let seatNo = 1; seatNo <= 39; seatNo++) {
       const purchased = trip.id === DEMO_IDS.liveTrip && seatNo === 1;
       await client.query(
         `INSERT INTO trip_seats (id, trip_id, seat_no, seat_type, price_minor, status, version)
          VALUES ($1, $2, $3, 'standard', 45000, $4, 1)`,
-        [demoUuid(`trip-seat:${trip.id}:${seatNo}`), trip.id, String(seatNo), purchased ? 'purchased' : 'available'],
+        [
+          demoUuid(`trip-seat:${trip.id}:${seatNo}`),
+          trip.id,
+          String(seatNo),
+          purchased ? 'purchased' : 'available',
+        ],
       );
     }
   }
@@ -221,7 +250,9 @@ async function main() {
     await insertTransport(client);
     await insertActiveTicketScenario(client);
     await client.query('COMMIT');
-    console.log('Demo reset complete: passenger, admin, driver, trips, seats, ticket and assignments ready.');
+    console.log(
+      'Demo reset complete: passenger, admin, driver, trips, seats, ticket and assignments ready.',
+    );
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;
