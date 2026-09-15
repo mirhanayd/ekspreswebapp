@@ -37,4 +37,11 @@ describe('Database Integration Smoke Tests', () => {
     expect(res.rows[0].postgis_version).toBeDefined();
     expect(typeof res.rows[0].postgis_version).toBe('string');
   });
+
+  it('should have durable tracking history storage after migrations', async () => {
+    const res = await client.pool.query(
+      `SELECT to_regclass('public.tracking_positions')::text AS table_name;`,
+    );
+    expect(res.rows[0].table_name).toBe('tracking_positions');
+  });
 });
