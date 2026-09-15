@@ -2,7 +2,7 @@
 
 ## 1. Product Goal
 
-Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, responsive web application for a local bus company to showcase ticketing, real-time vehicle tracking, seat reservations, and driver operations, aiming for a 5-7 minute company presentation.
+Develop the Siirt Kurtalan Ekspres bus platform as a modern passenger, driver and admin product with ticketing, live vehicle tracking, seat reservations and driver operations, while keeping the architecture suitable for a first real operator deployment.
 
 ## 2. Approved Stack
 
@@ -10,12 +10,14 @@ Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, respon
 - **API:** NestJS + TypeScript
 - **Main DB:** PostgreSQL
 - **Geographic DB:** PostGIS
-- **Cache/Hold/Tracking:** Redis
+- **Cache/Hold/Tracking:** Redis-compatible Key Value
+- **Object Storage:** S3-compatible storage (Cloudflare R2 is the initial target when uploads are introduced)
 - **Map:** MapLibre GL JS
 - **ORM/SQL:** Drizzle ORM
 - **Containerization:** Docker Compose
 - **CI/CD:** GitHub Actions
 - **Package Manager:** pnpm
+- **First production-like hosting target:** Vercel for the three Next.js apps; Render Frankfurt for NestJS, PostgreSQL/PostGIS and Redis-compatible Key Value
 
 ## 3. Source-of-Truth Documents
 
@@ -23,6 +25,7 @@ Develop a Demo MVP of "Siirt Kurtalan Ekspres Bus Platform" – a modern, respon
 - `docs/project/ROADMAP_SUMMARY.md`
 - `docs/project/DELIVERY_WORKFLOW.md`
 - `docs/project/CURRENT.md`
+- `docs/deployment/PRODUCTION.md`
 
 ## 4. Repository Structure (Planned)
 
@@ -78,7 +81,9 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
 - Admin APIs must declare `@Roles('admin')`; driver operational APIs must declare `@Roles('driver')`; both remain protected by the global JWT and roles guards.
 - Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.
-- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, and boarding-state invariants.
+- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants.
+- Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
+- Production secrets belong in the hosting provider's secret store, never in Git.
 
 ## 11. Migration Rules
 
