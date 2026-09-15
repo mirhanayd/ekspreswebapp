@@ -42,11 +42,11 @@ Do not run `demo:reset` against production. Demo reset contains destructive, loc
 
 Create three Vercel projects from the same GitHub repository. Use the matching application directory as each project's Root Directory:
 
-| Project | Root Directory |
-| --- | --- |
+| Project   | Root Directory       |
+| --------- | -------------------- |
 | passenger | `apps/passenger-web` |
-| admin | `apps/admin-web` |
-| driver | `apps/driver-web` |
+| admin     | `apps/admin-web`     |
+| driver    | `apps/driver-web`    |
 
 Set the following environment variables on all three projects:
 
