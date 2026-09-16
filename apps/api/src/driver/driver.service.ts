@@ -2,6 +2,7 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
+  Logger,
   NotFoundException,
   OnModuleDestroy,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import Redis from 'ioredis';
 import { schema } from '@ekspres/database';
 import { DRIZZLE } from '../database/database.module';
+import { TrackingPosition } from '../tracking/tracking.types';
 import { TransportService } from '../transport/transport.service';
 import {
   DriverAssignmentDto,
@@ -22,6 +24,9 @@ import {
 @Injectable()
 export class DriverService implements OnModuleDestroy {
   private readonly redis: Redis;
+  private readonly logger = new Logger(DriverService.name);
+  private readonly trackingLatestTtlSeconds: number;
+  private readonly trackingHistoryIntervalSeconds: number;
 
   constructor(
     @Inject(DRIZZLE) private readonly db: NodePgDatabase<typeof schema>,
@@ -29,6 +34,11 @@ export class DriverService implements OnModuleDestroy {
     configService: ConfigService,
   ) {
     this.redis = new Redis(configService.get<string>('REDIS_URL') || 'redis://localhost:6379');
+    this.trackingLatestTtlSeconds = configService.get<number>('TRACKING_LATEST_TTL_SECONDS', 120);
+    this.trackingHistoryIntervalSeconds = configService.get<number>(
+      'TRACKING_HISTORY_INTERVAL_SECONDS',
+      30,
+    );
   }
 
   async listDrivers() {
@@ -161,8 +171,11 @@ export class DriverService implements OnModuleDestroy {
 
   async publishLocation(driverId: string, tripId: string, dto: DriverLocationDto) {
     const assignment = await this.assertAssignment(driverId, tripId);
-    const sequence = await this.redis.incr(`tracking:sequence:${tripId}`);
-    const position = {
+    const sequenceKey = `tracking:sequence:${tripId}`;
+    const sequence = await this.redis.incr(sequenceKey);
+    await this.redis.expire(sequenceKey, Math.max(this.trackingLatestTtlSeconds, 86400));
+
+    const position: TrackingPosition = {
       tripId,
       busId: assignment.busId,
       longitude: dto.longitude,
@@ -171,17 +184,55 @@ export class DriverService implements OnModuleDestroy {
       headingDeg: dto.headingDeg,
       recordedAt: dto.recordedAt || new Date().toISOString(),
       sequence,
-      source: 'MOBILE_APP' as const,
+      source: 'MOBILE_APP',
     };
 
     const serialized = JSON.stringify(position);
     await this.redis
       .multi()
-      .set(`tracking:latest:${tripId}`, serialized, 'EX', 60 * 60 * 6)
+      .set(`tracking:latest:${tripId}`, serialized, 'EX', this.trackingLatestTtlSeconds)
       .publish('trip_locations', serialized)
       .exec();
 
+    await this.persistTrackingHistory(position);
     return position;
+  }
+
+  private async persistTrackingHistory(position: TrackingPosition) {
+    const gateKey = `tracking:history:gate:${position.tripId}`;
+    const acquired = await this.redis
+      .set(gateKey, '1', 'EX', this.trackingHistoryIntervalSeconds, 'NX')
+      .catch((error: Error) => {
+        this.logger.warn(`Tracking history gate unavailable: ${error.message}`);
+        return null;
+      });
+
+    if (acquired !== 'OK') return;
+
+    try {
+      await this.db
+        .insert(schema.trackingPositions)
+        .values({
+          tripId: position.tripId,
+          busId: position.busId,
+          position: {
+            type: 'Point',
+            coordinates: [position.longitude, position.latitude],
+          },
+          speedKph: position.speedKph,
+          headingDeg: position.headingDeg,
+          recordedAt: new Date(position.recordedAt),
+          sequence: position.sequence,
+          source: position.source,
+        })
+        .onConflictDoNothing();
+    } catch (error) {
+      this.logger.warn(
+        `Tracking history snapshot failed for trip ${position.tripId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
   private async assertAssignment(driverId: string, tripId: string) {

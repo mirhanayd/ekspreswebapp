@@ -12,6 +12,11 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 const TICK_RATE_MS = 2000;
 const PROGRESS_PER_TICK = 0.01;
 const START_PROGRESS = Number(process.env.SIMULATOR_START_PERCENT || 18) / 100;
+const configuredTrackingTtl = Number(process.env.TRACKING_LATEST_TTL_SECONDS || 120);
+const TRACKING_LATEST_TTL_SECONDS =
+  Number.isInteger(configuredTrackingTtl) && configuredTrackingTtl >= 30
+    ? configuredTrackingTtl
+    : 120;
 
 type ActiveTripRow = {
   tripId: string;
@@ -98,7 +103,7 @@ async function main() {
         const message = JSON.stringify(position);
         await redis
           .multi()
-          .set(`tracking:latest:${state.tripId}`, message, 'EX', 300)
+          .set(`tracking:latest:${state.tripId}`, message, 'EX', TRACKING_LATEST_TTL_SECONDS)
           .publish('trip_locations', message)
           .exec();
         state.progress = state.progress >= 1 ? START_PROGRESS : state.progress + PROGRESS_PER_TICK;

@@ -9,10 +9,20 @@ import { Injectable, Logger } from '@nestjs/common';
 import { TrackingAccessService } from './tracking-access.service';
 import { TrackingPosition } from './tracking.types';
 
+const websocketOrigins = (
+  process.env.WEB_ORIGINS ||
+  process.env.WEB_ORIGIN ||
+  'http://localhost:3000,http://localhost:3002,http://localhost:3003'
+)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 @Injectable()
 @WebSocketGateway({
   cors: {
-    origin: [process.env.WEB_ORIGIN || 'http://localhost:3000'],
+    origin: websocketOrigins,
+    credentials: true,
   },
   path: '/api/tracking',
 })
