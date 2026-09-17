@@ -25,6 +25,10 @@ import { RolesGuard } from './auth/guards/roles.guard';
     }),
     LoggerModule.forRoot({
       pinoHttp: {
+        redact: {
+          paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]'],
+          censor: '[Redacted]',
+        },
         transport:
           process.env.NODE_ENV !== 'production'
             ? { target: 'pino-pretty', options: { singleLine: true } }
