@@ -10,7 +10,9 @@ function decodeAccessTokenPayload(accessToken: string): AccessTokenPayload | nul
   try {
     const encodedPayload = accessToken.split('.')[1];
     if (!encodedPayload) return null;
-    return JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8')) as AccessTokenPayload;
+    return JSON.parse(
+      Buffer.from(encodedPayload, 'base64url').toString('utf8'),
+    ) as AccessTokenPayload;
   } catch {
     return null;
   }
