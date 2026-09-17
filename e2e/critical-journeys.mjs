@@ -198,12 +198,18 @@ async function driverAndTrackingJourney(browser) {
     const passengerStatus = driverPage.getByRole('combobox', { name: 'Yolcu durumu' }).first();
     await passengerStatus.selectOption('boarded');
     await visible(
-      driverPage.locator('article').filter({ hasText: 'Bindi' }).getByText('1', { exact: true }),
+      driverPage
+        .locator('.metric-grid article')
+        .filter({ hasText: 'Bindi' })
+        .getByText('1', { exact: true }),
       'boarded passenger count',
     );
     await passengerStatus.selectOption('no_show');
     await visible(
-      driverPage.locator('article').filter({ hasText: 'Gelmedi' }).getByText('1', { exact: true }),
+      driverPage
+        .locator('.metric-grid article')
+        .filter({ hasText: 'Gelmedi' })
+        .getByText('1', { exact: true }),
       'no-show passenger count',
     );
 
