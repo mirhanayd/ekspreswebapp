@@ -15,6 +15,7 @@
     "test:e2e": "node scripts/run-e2e.mjs",
     "test:e2e:full": "pnpm build && pnpm test:e2e",
     "test:e2e:headed": "node scripts/run-e2e.mjs --headed",
+    "test:e2e:staging": "node scripts/run-staging-e2e.mjs",
     "test:e2e:install": "playwright install chromium",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" \"playwright.config.mjs\" \"e2e/**/*.mjs\" \"scripts/**/*.mjs\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\" \"playwright.config.mjs\" \"e2e/**/*.mjs\" \"scripts/**/*.mjs\"",
@@ -33,6 +34,9 @@
     "demo:reset": "pnpm db:migrate && pnpm --filter @ekspres/database demo:reset && pnpm tracking:reset",
     "demo:verify": "pnpm --filter @ekspres/database demo:verify",
     "demo:journey": "pnpm --filter @ekspres/database demo:journey",
+    "staging:seed": "pnpm --filter @ekspres/database staging:seed",
+    "staging:verify": "pnpm --filter @ekspres/database staging:verify",
+    "staging:verify:tracking": "pnpm --filter @ekspres/database staging:verify -- --require-tracking",
     "tracking:simulate": "pnpm --filter @ekspres/database build && pnpm --filter tracking-simulator build && pnpm --filter tracking-simulator start",
     "tracking:reset": "pnpm --filter tracking-simulator reset"
   },

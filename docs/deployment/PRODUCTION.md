@@ -8,7 +8,7 @@ This document defines the first production-like topology for EkspresWeb. It inte
 - Admin web: Vercel project rooted at `apps/admin-web`.
 - Driver web: Vercel project rooted at `apps/driver-web`.
 - API + Socket.IO: Render web service in Frankfurt, defined by `render.yaml`.
-- Durable database: Render PostgreSQL 16 in Frankfurt with PostGIS enabled by migration `0000_enable_postgis.sql`.
+- Durable database: Neon PostgreSQL 16 in Frankfurt with PostGIS enabled by migration `0000_enable_postgis.sql`.
 - Realtime/cache: Render Key Value in Frankfurt, connected to the API by the internal `REDIS_URL`.
 - Object storage: S3-compatible contract prepared for Cloudflare R2 or another compatible provider. No upload feature depends on it yet.
 
@@ -37,6 +37,38 @@ Required secret/config values at Blueprint creation:
 The API receives `DATABASE_URL` and `REDIS_URL` from the Render-managed datastores. Before each API release, the Blueprint runs `pnpm db:migrate` as the pre-deploy command. The health check is `/api/v1/status`.
 
 Do not run `demo:reset` against production. Demo reset contains destructive, local/demo-only behavior.
+
+## Remote staging fixture
+
+`pnpm staging:seed` is the only supported remote fixture command. It reuses the local demo fixture
+without truncating shared tables or deleting user accounts. Existing demo accounts are resolved by
+email, so their remote IDs remain stable; only transaction data attached to the four deterministic
+fixture trips is refreshed.
+
+The command refuses to run unless all safety conditions are true:
+
+- `STAGING_SEED_CONFIRM=ekspres-staging` is set for that invocation.
+- The database name is exactly `ekspres_staging`.
+- The URL is a direct, non-pooler Neon connection.
+- SSL is enabled with `sslmode=require`, `verify-ca` or `verify-full`.
+
+Use a direct connection string injected at runtime; never write it to the repository or shell
+history. The seed runs in one transaction under a PostgreSQL advisory lock. Verify the result with
+`pnpm staging:verify`.
+
+After the three public URLs and API URL are exported, run the full HTTPS gate:
+
+```bash
+PASSENGER_BASE_URL=https://<passenger-host> \
+ADMIN_BASE_URL=https://<admin-host> \
+DRIVER_BASE_URL=https://<driver-host> \
+API_URL=https://<api-host>/api/v1 \
+pnpm test:e2e:staging
+```
+
+Finally run `pnpm staging:verify:tracking` with the same direct database injection. It requires at
+least one `MOBILE_APP` sample in `tracking_positions`, proving that the driver GPS path reached
+PostGIS in addition to Redis and the passenger WebSocket.
 
 ## Vercel projects
 
