@@ -10,6 +10,7 @@ This project is a Turborepo-managed monorepo containing:
 
 - **`apps/passenger-web`**: Next.js (App Router) passenger interface.
 - **`apps/admin-web`**: Next.js (App Router) admin dashboard.
+- **`apps/driver-web`**: Next.js driver operations and foreground GPS interface.
 - **`apps/api`**: NestJS backend API.
 - **`apps/tracking-simulator`**: Node.js CLI script for GPS simulation.
 
@@ -49,6 +50,7 @@ Demo accounts:
 | --------- | -------------------------- | ----------- |
 | Passenger | `yolcu@siirtkurtalan.demo` | `Demo123!`  |
 | Admin     | `admin@siirtkurtalan.demo` | `Admin123!` |
+| Driver    | `sofor@siirtkurtalan.demo` | `Sofor123!` |
 
 For the passenger journey and operations view, run the API, passenger app, and admin app in
 separate terminals:
@@ -84,9 +86,10 @@ pnpm build
 pnpm test:e2e
 ```
 
-The runner resets and verifies the local demo state, starts the production API/passenger/admin and
-tracking processes, waits for their health endpoints, exercises the passenger purchase/QR/live-map
-and admin authorization/operations journeys, and always stops the exact processes it started.
+The runner resets and verifies the local demo state, starts the production API/passenger/admin/driver
+and tracking processes, waits for their health endpoints, exercises passenger purchase/QR, admin
+authorization/operations, driver manifest/boarding/GPS and passenger WebSocket live tracking, and
+always stops the exact processes it started.
 `pnpm test:e2e:full` performs the build and gate together; `pnpm test:e2e:headed` uses a visible
 browser for local diagnosis.
 

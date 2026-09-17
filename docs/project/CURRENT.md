@@ -8,18 +8,17 @@
 
 ## Current Phase
 
-Production deployment and storage foundation.
+Production-like staging workflow verification.
 
 ## Current Campaign
 
-- GitHub issue: `#66 chore: production deployment and storage foundation`.
-- Working branch: `chore/66-production-deploy-foundation`.
-- Standardize API/web production environment variables.
-- Keep PostgreSQL/PostGIS as the durable source of truth and Redis as the live tracking/cache layer.
-- Replace inconsistent hard-coded live-location TTL values with `TRACKING_LATEST_TTL_SECONDS`.
-- Persist a sampled GPS history in PostGIS using `TRACKING_HISTORY_INTERVAL_SECONDS` rather than writing every live update.
-- Add a Render Frankfurt Blueprint for API/PostgreSQL/Key Value and a Vercel runbook for the three Next.js apps.
-- Define an S3-compatible object-storage environment contract without coupling current product flows to a storage vendor.
+- GitHub issue: `#68 ops: external production rollout and smoke test`.
+- Working branch: `feature/68-staging-seed-e2e`.
+- Add a guarded, non-global remote staging fixture that preserves existing user IDs.
+- Exercise passenger booking/ticket/QR, admin operations, driver manifest/boarding/GPS and passenger
+  WebSocket tracking over the deployed HTTPS topology.
+- Verify Redis live state indirectly through the entitled passenger tracking UI and verify sampled
+  `MOBILE_APP` history directly in PostGIS.
 
 ## Driver Capability Set
 
@@ -46,8 +45,8 @@ No OBUS/Obilet credentials or APIs are required for the current deployment found
 
 ## Next Gate
 
-- Run the full CI suite for issue #66.
-- Review the Render Blueprint without storing secrets in Git.
-- Merge only after CI is green.
-- Provision Render/Vercel resources after the deployment configuration is merged.
-- Perform physical-device HTTPS GPS QA after the hosted driver application is available.
+- Run the full local CI suite and open the issue #68 PR.
+- Seed the remote staging fixture through a direct Neon connection without exposing it.
+- Pass the full HTTPS E2E and PostGIS tracking-history verification.
+- Perform physical-device HTTPS GPS QA.
+- Close #68 only after all workflow evidence is recorded.

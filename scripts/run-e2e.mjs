@@ -114,6 +114,11 @@ try {
     ['apps/admin-web/node_modules/next/dist/bin/next', 'start', 'apps/admin-web', '-p', '3002'],
     sharedWebEnv,
   );
+  startService(
+    'driver',
+    ['apps/driver-web/node_modules/next/dist/bin/next', 'start', 'apps/driver-web', '-p', '3004'],
+    sharedWebEnv,
+  );
   startService('tracking', ['apps/tracking-simulator/dist/index.js'], {
     NODE_ENV: 'production',
     SIMULATOR_HEALTH_PORT: '3003',
@@ -123,6 +128,7 @@ try {
     waitFor('api', 'http://127.0.0.1:3001/api/v1/status'),
     waitFor('passenger', 'http://127.0.0.1:3000'),
     waitFor('admin', 'http://127.0.0.1:3002/login'),
+    waitFor('driver', 'http://127.0.0.1:3004/login'),
     waitFor('tracking', 'http://127.0.0.1:3003/status'),
   ]);
 

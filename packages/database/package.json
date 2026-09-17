@@ -14,8 +14,10 @@
     "demo:reset": "node --import tsx src/seed.ts",
     "demo:verify": "node --import tsx src/scripts/demo-verify.ts",
     "demo:journey": "node --import tsx src/scripts/demo-journey.ts",
+    "staging:seed": "node --import tsx src/scripts/staging-seed.ts",
+    "staging:verify": "node --import tsx src/scripts/staging-verify.ts",
     "test:integration": "vitest run test/database.integration.test.ts",
-    "test": "vitest run test/config.test.ts",
+    "test": "vitest run test/config.test.ts test/staging-seed-safety.test.ts",
     "lint": "eslint src/ --ext .ts",
     "typecheck": "tsc --noEmit"
   },
