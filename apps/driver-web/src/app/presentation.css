@@ -1,0 +1,94 @@
+.loading-card,
+.empty-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  border-radius: 30px;
+  padding: 32px;
+  background:
+    radial-gradient(circle at top right, rgba(217, 255, 86, 0.18), transparent 34%),
+    linear-gradient(145deg, #13231c 0%, #1a2f25 55%, #203b2d 100%);
+  color: #f6f7ef;
+  box-shadow: 0 24px 60px rgba(12, 27, 20, 0.22);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.loading-card::before,
+.empty-card::before {
+  content: 'SİİRT KURTALAN EKSPRES  ·  SÜRÜCÜ OPERASYON';
+  position: absolute;
+  top: 28px;
+  left: 32px;
+  right: 32px;
+  color: #d9ff56;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.loading-card::after,
+.empty-card::after {
+  content: '';
+  position: absolute;
+  top: 78px;
+  left: 32px;
+  right: 32px;
+  height: 190px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0 22%, transparent 22% 26%, rgba(255, 255, 255, 0.05) 26% 48%, transparent 48% 52%, rgba(255, 255, 255, 0.04) 52% 100%),
+    linear-gradient(rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.035));
+}
+
+.empty-card strong {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  font-size: clamp(28px, 7vw, 46px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+
+.empty-card span {
+  position: relative;
+  z-index: 1;
+  max-width: 540px;
+  color: rgba(246, 247, 239, 0.72);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.loading-card {
+  justify-content: center;
+  padding-top: 230px;
+  color: rgba(246, 247, 239, 0.85);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .loading-card,
+  .empty-card {
+    min-height: 360px;
+    border-radius: 24px;
+    padding: 24px;
+  }
+
+  .loading-card::before,
+  .empty-card::before {
+    top: 24px;
+    left: 24px;
+    right: 24px;
+  }
+
+  .loading-card::after,
+  .empty-card::after {
+    top: 72px;
+    left: 24px;
+    right: 24px;
+    height: 150px;
+  }
+}
