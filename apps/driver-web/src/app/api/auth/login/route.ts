@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import { API_BASE_URL } from '@/lib/server-api';
 
+type AccessTokenPayload = {
+  role?: string;
+};
+
+function decodeAccessTokenPayload(accessToken: string): AccessTokenPayload | null {
+  try {
+    const encodedPayload = accessToken.split('.')[1];
+    if (!encodedPayload) return null;
+    return JSON.parse(
+      Buffer.from(encodedPayload, 'base64url').toString('utf8'),
+    ) as AccessTokenPayload;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const upstream = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
@@ -17,12 +33,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const me = await fetch(`${API_BASE_URL}/auth/me`, {
-    headers: { Authorization: `Bearer ${payload.accessToken}` },
-    cache: 'no-store',
-  });
-  const profile = await me.json().catch(() => ({}));
-  if (!me.ok || profile.role !== 'driver') {
+  const tokenPayload = decodeAccessTokenPayload(payload.accessToken);
+  if (tokenPayload?.role !== 'driver') {
     return NextResponse.json(
       { message: 'Bu hesap sürücü uygulamasına yetkili değil.' },
       { status: 403 },
