@@ -161,6 +161,21 @@ try {
 
   const { runCriticalJourneys } = await import('../e2e/critical-journeys.mjs');
   await runCriticalJourneys({ headed: process.argv.includes('--headed') });
+  startService(
+    'driver-isolated',
+    ['apps/driver-web/node_modules/next/dist/bin/next', 'start', 'apps/driver-web', '-p', '3011'],
+    {
+      ...sharedWebEnv,
+      API_URL: 'http://127.0.0.1:3099/api/v1',
+      NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3099/api/v1',
+      ABLY_API_KEY: '',
+    },
+  );
+  await waitFor('driver-isolated', 'http://127.0.0.1:3011/login');
+  const { runServerlessDriverRegression } = await import('../e2e/serverless-auth.mjs');
+  await runServerlessDriverRegression('http://127.0.0.1:3011');
+  if (rejectedLegacyRequests !== 0)
+    throw new Error('Driver regression attempted a legacy API request.');
   exitCode = 0;
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
