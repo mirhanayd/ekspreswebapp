@@ -11,7 +11,7 @@ Develop the Siirt Kurtalan Ekspres bus platform as a modern passenger, driver an
 - **Legacy API during migration:** NestJS + TypeScript only as a temporary compatibility fallback
 - **Main DB:** PostgreSQL
 - **Geographic DB:** PostGIS
-- **Cache/Hold:** serverless-compatible Redis/Key Value where ephemeral state is still required
+- **Cache/Hold target:** PostgreSQL transactions/expiration; no new Redis/KV unless a measured need is approved
 - **Realtime target:** managed Pub/Sub (Ably is the initial migration target); durable GPS remains in PostGIS
 - **Object Storage:** S3-compatible storage (Cloudflare R2 is the initial target when uploads are introduced)
 - **Map:** MapLibre GL JS
@@ -80,6 +80,7 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - **NEVER** print or expose tokens, credentials, cookies, SSH keys, or secret values.
 - **NEVER** change the repository visibility from PRIVATE.
 - Do not commit `.env` files with actual secrets; use `.env.example`.
+- Shared server authentication lives in `packages/database/src/server`; Route Handlers must reuse it.
 - Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
 - Admin and driver APIs must enforce signed JWT role checks server-side. NestJS routes may use `@Roles`; serverless Route Handlers must apply equivalent framework-neutral guards.
 - Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.

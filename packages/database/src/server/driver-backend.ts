@@ -1,26 +1,10 @@
 import * as bcrypt from 'bcryptjs';
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
-import { createDatabaseClient } from '../client.js';
+import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
 
-type DatabaseClient = ReturnType<typeof createDatabaseClient>;
-
-let client: DatabaseClient | null = null;
-
-function db() {
-  if (!client) client = createDatabaseClient();
-  return client.db;
-}
-
-export class DriverBackendError extends Error {
-  constructor(
-    readonly status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = 'DriverBackendError';
-  }
-}
+export { ServerError as DriverBackendError } from './errors.js';
+import { ServerError as DriverBackendError } from './errors.js';
 
 export type DriverPrincipal = {
   id: string;

@@ -11,7 +11,14 @@
 
 Incremental serverless backend migration.
 
-## Current Campaign
+## Authentication checkpoint (#76)
+
+- Baseline: PR #74 merged at `2e44d26ff2a848a4e55728a06dd31a8d68bb7344`.
+- #73 is the migration epic; #76 extracts shared server authentication and migrates passenger auth.
+- Driver signed JWT logic now uses the framework-neutral server layer with strict token validation.
+- Passenger/admin business endpoints remain legacy until their individual cutovers pass tests.
+
+## Previous Campaign
 
 - Issue #72: move driver operations off Render to Vercel Route Handlers + Neon.
 - Branch: `feature/72-serverless-backend-migration`.
