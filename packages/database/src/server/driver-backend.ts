@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcryptjs';
+import { authService } from './auth-service.js';
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
@@ -16,20 +16,7 @@ export async function authenticateDriver(
   email: string,
   password: string,
 ): Promise<DriverPrincipal> {
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = await db().query.users.findFirst({
-    where: eq(schema.users.email, normalizedEmail),
-  });
-
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    throw new DriverBackendError(401, 'Giriş bilgileri doğrulanamadı.');
-  }
-
-  if (user.role !== 'driver') {
-    throw new DriverBackendError(403, 'Bu hesap sürücü uygulamasına yetkili değil.');
-  }
-
-  return { id: user.id, email: user.email, role: user.role };
+  return authService.login({ email: email.trim().toLowerCase(), password }, 'driver');
 }
 
 async function getTripDetails(tripId: string) {

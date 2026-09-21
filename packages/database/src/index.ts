@@ -4,3 +4,4 @@ export { validateConfig, type DatabaseConfig } from './config.js';
 export * from './server/driver-backend.js';
 export * from './server/auth.js';
 export { ServerError } from './server/errors.js';
+export { authService, createAuthService, validateAuthInput } from './server/auth-service.js';

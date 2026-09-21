@@ -15,7 +15,10 @@ Incremental serverless backend migration.
 
 - Baseline: PR #74 merged at `2e44d26ff2a848a4e55728a06dd31a8d68bb7344`.
 - #73 is the migration epic; #76 extracts shared server authentication and migrates passenger auth.
-- Driver signed JWT logic now uses the framework-neutral server layer with strict token validation.
+- Driver signed JWT and credential logic now use the shared framework-neutral server layer.
+- Passenger register/login/me now query Neon from Node Route Handlers; logout remains local.
+- Passenger staging requires DATABASE_URL and the existing JWT_SECRET before HTTPS auth smoke.
+- Full CI and HTTPS staging verification remain release gates, not assumed successes.
 - Passenger/admin business endpoints remain legacy until their individual cutovers pass tests.
 
 ## Previous Campaign

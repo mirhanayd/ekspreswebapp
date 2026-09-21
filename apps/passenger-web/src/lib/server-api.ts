@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { ACCESS_TOKEN_COOKIE } from './auth';
+import { sessionResponse } from './server-auth';
 
 export const API_BASE_URL =
   process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
@@ -10,6 +11,7 @@ export async function getAccessToken(): Promise<string | undefined> {
 
 export async function authenticatedApiFetch(path: string, init: Parameters<typeof fetch>[1] = {}) {
   const token = await getAccessToken();
+  if (path === '/auth/me') return sessionResponse(token);
   if (!token) return null;
 
   const headers = new Headers(init.headers);
