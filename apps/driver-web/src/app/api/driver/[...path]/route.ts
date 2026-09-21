@@ -8,7 +8,7 @@ import {
   recordDriverLocation,
   updateDriverPassengerStatus,
   updateDriverTripStatus,
-} from '../../../../../../../packages/database/src/server/driver-backend';
+} from '@ekspres/database';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
