@@ -218,18 +218,15 @@ async function publishManagedRealtime(channel: string, data: unknown) {
   if (!apiKey) return;
 
   const authorization = Buffer.from(apiKey).toString('base64');
-  await fetch(
-    `https://main.realtime.ably.net/channels/${encodeURIComponent(channel)}/messages`,
-    {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${authorization}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'location', data }),
-      signal: AbortSignal.timeout(2000),
+  await fetch(`https://main.realtime.ably.net/channels/${encodeURIComponent(channel)}/messages`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${authorization}`,
+      'Content-Type': 'application/json',
     },
-  ).catch(() => undefined);
+    body: JSON.stringify({ name: 'location', data }),
+    signal: AbortSignal.timeout(2000),
+  }).catch(() => undefined);
 }
 
 export async function recordDriverLocation(
