@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import { signAccessToken } from '@/lib/server-auth';
-import {
-  authenticateDriver,
-  DriverBackendError,
-} from '../../../../../../../packages/database/src/server/driver-backend';
+import { authenticateDriver, DriverBackendError } from '@ekspres/database';
 
 export const runtime = 'nodejs';
 
