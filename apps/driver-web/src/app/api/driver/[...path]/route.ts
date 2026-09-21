@@ -8,7 +8,7 @@ import {
   recordDriverLocation,
   updateDriverPassengerStatus,
   updateDriverTripStatus,
-} from '../../../../../../../../packages/database/src/server/driver-backend';
+} from '../../../../../../../packages/database/src/server/driver-backend';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -78,7 +78,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
     }
 
     if (request.method === 'GET' && path.length === 2 && path[0] === 'trips') {
-      return json(await getDriverTrip(user.sub, path[1]));
+      return json(await getDriverTrip(user.sub, path[1]!));
     }
 
     if (
@@ -94,7 +94,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       return json(
         await updateDriverTripStatus(
           user.sub,
-          path[1],
+          path[1]!,
           body.status as 'scheduled' | 'boarding' | 'in_transit' | 'completed',
         ),
       );
@@ -113,8 +113,8 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       return json(
         await updateDriverPassengerStatus(
           user.sub,
-          path[1],
-          path[3],
+          path[1]!,
+          path[3]!,
           body.status as 'pending' | 'boarded' | 'no_show',
         ),
       );
@@ -127,7 +127,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       path[2] === 'location'
     ) {
       const body = (await request.json()) as Record<string, unknown>;
-      return json(await recordDriverLocation(user.sub, path[1], validateLocation(body)), 201);
+      return json(await recordDriverLocation(user.sub, path[1]!, validateLocation(body)), 201);
     }
 
     return json({ message: 'Endpoint bulunamadı.' }, 404);
