@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       sameSite: 'lax',
       secure:
-        request.nextUrl.protocol === 'https:' || request.headers.get('x-forwarded-proto') === 'https',
+        request.nextUrl.protocol === 'https:' ||
+        request.headers.get('x-forwarded-proto') === 'https',
       path: '/',
       maxAge: 60 * 60 * 24,
     });
