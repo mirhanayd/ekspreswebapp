@@ -7,17 +7,19 @@ Develop the Siirt Kurtalan Ekspres bus platform as a modern passenger, driver an
 ## 2. Approved Stack
 
 - **Web (Passenger, Driver & Admin):** Next.js App Router + TypeScript
-- **API:** NestJS + TypeScript
+- **API/BFF target:** Next.js Route Handlers + framework-neutral TypeScript server logic on Vercel
+- **Legacy API during migration:** NestJS + TypeScript only as a temporary compatibility fallback
 - **Main DB:** PostgreSQL
 - **Geographic DB:** PostGIS
-- **Cache/Hold/Tracking:** Redis-compatible Key Value
+- **Cache/Hold:** serverless-compatible Redis/Key Value where ephemeral state is still required
+- **Realtime target:** managed Pub/Sub (Ably is the initial migration target); durable GPS remains in PostGIS
 - **Object Storage:** S3-compatible storage (Cloudflare R2 is the initial target when uploads are introduced)
 - **Map:** MapLibre GL JS
 - **ORM/SQL:** Drizzle ORM
 - **Containerization:** Docker Compose
 - **CI/CD:** GitHub Actions
 - **Package Manager:** pnpm
-- **First production-like hosting target:** Vercel for the three Next.js apps; Render Frankfurt for NestJS, PostgreSQL/PostGIS and Redis-compatible Key Value
+- **Production-like hosting target:** Vercel for web/serverless handlers + Neon PostgreSQL/PostGIS; Render is temporary legacy fallback until issue #73 completes
 
 ## 3. Source-of-Truth Documents
 
@@ -79,7 +81,7 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - **NEVER** change the repository visibility from PRIVATE.
 - Do not commit `.env` files with actual secrets; use `.env.example`.
 - Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
-- Admin APIs must declare `@Roles('admin')`; driver operational APIs must declare `@Roles('driver')`; both remain protected by the global JWT and roles guards.
+- Admin and driver APIs must enforce signed JWT role checks server-side. NestJS routes may use `@Roles`; serverless Route Handlers must apply equivalent framework-neutral guards.
 - Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.
 - PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants.
 - Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
