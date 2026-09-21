@@ -1,54 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/server-api';
+import { signAccessToken } from '@/lib/server-auth';
+import { authenticateDriver, DriverBackendError } from '@ekspres/database';
 
-type AccessTokenPayload = {
-  role?: string;
-};
-
-function decodeAccessTokenPayload(accessToken: string): AccessTokenPayload | null {
-  try {
-    const encodedPayload = accessToken.split('.')[1];
-    if (!encodedPayload) return null;
-    return JSON.parse(
-      Buffer.from(encodedPayload, 'base64url').toString('utf8'),
-    ) as AccessTokenPayload;
-  } catch {
-    return null;
-  }
-}
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  const upstream = await fetch(`${API_BASE_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: await request.text(),
-    cache: 'no-store',
-  });
-  const payload = await upstream.json().catch(() => ({}));
-  if (!upstream.ok || typeof payload.accessToken !== 'string') {
-    return NextResponse.json(
-      { message: payload.message || 'Giriş bilgileri doğrulanamadı.' },
-      { status: upstream.status },
-    );
-  }
+  try {
+    const body = (await request.json()) as { email?: unknown; password?: unknown };
+    if (typeof body.email !== 'string' || typeof body.password !== 'string') {
+      return NextResponse.json({ message: 'E-posta ve şifre zorunludur.' }, { status: 400 });
+    }
 
-  const tokenPayload = decodeAccessTokenPayload(payload.accessToken);
-  if (tokenPayload?.role !== 'driver') {
-    return NextResponse.json(
-      { message: 'Bu hesap sürücü uygulamasına yetkili değil.' },
-      { status: 403 },
-    );
-  }
+    const principal = await authenticateDriver(body.email, body.password);
+    const accessToken = signAccessToken(principal);
+    const response = NextResponse.json({ authenticated: true });
 
-  const response = NextResponse.json({ authenticated: true });
-  response.cookies.set(ACCESS_TOKEN_COOKIE, payload.accessToken, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure:
-      request.nextUrl.protocol === 'https:' || request.headers.get('x-forwarded-proto') === 'https',
-    path: '/',
-    maxAge: 60 * 60 * 24,
-  });
-  return response;
+    response.cookies.set(ACCESS_TOKEN_COOKIE, accessToken, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure:
+        request.nextUrl.protocol === 'https:' ||
+        request.headers.get('x-forwarded-proto') === 'https',
+      path: '/',
+      maxAge: 60 * 60 * 24,
+    });
+
+    return response;
+  } catch (error) {
+    if (error instanceof DriverBackendError) {
+      return NextResponse.json({ message: error.message }, { status: error.status });
+    }
+
+    console.error('Driver login failed', error);
+    return NextResponse.json({ message: 'Giriş şu anda tamamlanamıyor.' }, { status: 500 });
+  }
 }

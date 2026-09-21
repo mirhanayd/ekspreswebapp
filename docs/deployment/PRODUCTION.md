@@ -1,87 +1,68 @@
 # Production Deployment Foundation
 
-This document defines the first production-like topology for EkspresWeb. It intentionally keeps the application portable: PostgreSQL/PostGIS, Redis-compatible Key Value, S3-compatible object storage, and ordinary Node/Next.js deployments remain the contracts.
+The platform is migrating from an always-on NestJS/Render backend to a serverless-first topology. The migration is intentionally incremental so working passenger/admin flows remain available until equivalent Vercel handlers pass E2E.
 
 ## Target topology
 
-- Passenger web: Vercel project rooted at `apps/passenger-web`.
-- Admin web: Vercel project rooted at `apps/admin-web`.
-- Driver web: Vercel project rooted at `apps/driver-web`.
-- API + Socket.IO: Render web service in Frankfurt, defined by `render.yaml`.
-- Durable database: Render PostgreSQL 16 in Frankfurt with PostGIS enabled by migration `0000_enable_postgis.sql`.
-- Realtime/cache: Render Key Value in Frankfurt, connected to the API by the internal `REDIS_URL`.
-- Object storage: S3-compatible contract prepared for Cloudflare R2 or another compatible provider. No upload feature depends on it yet.
+- Passenger web: Vercel, `apps/passenger-web`.
+- Admin web: Vercel, `apps/admin-web`.
+- Driver web + driver BFF: Vercel, `apps/driver-web`.
+- Durable database: Neon PostgreSQL/PostGIS.
+- Realtime target: managed Pub/Sub; Ably is the initial migration target for trip-scoped vehicle location fan-out.
+- Ephemeral hold/cache state: serverless-compatible Redis/Key Value only where still required.
+- Legacy compatibility API: Render/NestJS until issue #73 completes.
+- Object storage: S3-compatible contract for future uploads.
 
-The API, PostgreSQL and Key Value resources must stay in the same Render region so they can use private/internal connections.
+## Driver serverless path
+
+Issue #72 moves the driver application off the Render request path:
+
+1. Driver login runs in a Node.js Next.js Route Handler on Vercel.
+2. Credentials are verified against the Neon users table.
+3. A signed HTTP-only JWT cookie identifies the driver.
+4. Driver trip reads and mutations query Neon directly.
+5. Every trip operation verifies that the JWT driver is assigned to the target trip.
+6. GPS ingestion persists sampled durable points in PostGIS.
+7. If `ABLY_API_KEY` is configured, accepted positions are published to `trip:<tripId>:location`.
+
+Required driver Vercel runtime secrets/config:
+
+- `DATABASE_URL`: Neon pooled PostgreSQL connection string with PostGIS database.
+- `JWT_SECRET`: the same high-entropy signing secret used for the current staging identity contract.
+- `TRACKING_HISTORY_INTERVAL_SECONDS`: optional; defaults to 30.
+- `ABLY_API_KEY`: optional during #72; required when the managed realtime subscriber cutover is enabled.
+
+`ABLY_API_KEY` is server-side only. Never expose it through a `NEXT_PUBLIC_*` variable.
+
+## Temporary passenger/admin path
+
+Until issue #73 is complete, passenger/admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+
+Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 
 ## Tracking data policy
 
-Live location and durable history serve different purposes:
+- PostgreSQL/PostGIS remains authoritative for durable sampled GPS history.
+- Live fan-out is moving from Render Redis pub/sub + Socket.IO to managed realtime.
+- The managed realtime channel is ephemeral transport, not the durable source of truth.
+- Passenger authorization must be checked before issuing any realtime subscription capability in the final cutover.
+- Default durable history interval remains 30 seconds per trip.
 
-1. Every accepted driver GPS update refreshes `tracking:latest:<tripId>` in Redis and is published on `trip_locations` for Socket.IO consumers.
-2. `TRACKING_LATEST_TTL_SECONDS` defaults to 120 seconds. A stale vehicle therefore disappears from the authoritative live snapshot instead of looking permanently online.
-3. Durable GPS history is written to PostgreSQL/PostGIS at most once per trip per `TRACKING_HISTORY_INTERVAL_SECONDS`, default 30 seconds.
-4. `tracking_positions.position` is a PostGIS `geometry(Point, 4326)` column with trip/time and GiST indexes for later route-deviation, terminal-proximity and operational analytics.
+## Migration order
 
-The durable history interval is deliberately slower than the live update cadence so a moving vehicle does not generate unnecessary database writes.
+1. #72: move driver HTTP/login/GPS ingestion off Render.
+2. Verify driver login/dashboard while Render is sleeping.
+3. #73: migrate passenger auth/transport/seats/checkout/tickets.
+4. Migrate admin APIs.
+5. Replace passenger Socket.IO subscription with managed realtime token auth.
+6. Move any remaining seat-hold/latest-location ephemeral requirements to a serverless-compatible store.
+7. Run full passenger + driver + admin E2E.
+8. Remove Render API/Key Value only after the replacement paths are verified.
 
-## Render deployment
+## Object storage
 
-`render.yaml` defines `ekspres-api`, `ekspres-postgres` and `ekspres-redis` in Frankfurt. Creating a Render Blueprint from the repository will request secret values that are intentionally not stored in Git.
-
-Required secret/config values at Blueprint creation:
-
-- `JWT_SECRET`: unique high-entropy production secret, minimum 32 characters.
-- `WEB_ORIGINS`: comma-separated public web origins, for example `https://www.example.com,https://admin.example.com,https://driver.example.com`.
-
-The API receives `DATABASE_URL` and `REDIS_URL` from the Render-managed datastores. Before each API release, the Blueprint runs `pnpm db:migrate` as the pre-deploy command. The health check is `/api/v1/status`.
-
-Do not run `demo:reset` against production. Demo reset contains destructive, local/demo-only behavior.
-
-## Vercel projects
-
-Create three Vercel projects from the same GitHub repository. Use the matching application directory as each project's Root Directory:
-
-| Project   | Root Directory       |
-| --------- | -------------------- |
-| passenger | `apps/passenger-web` |
-| admin     | `apps/admin-web`     |
-| driver    | `apps/driver-web`    |
-
-Set the following environment variables on all three projects:
-
-- `API_URL=https://<api-host>/api/v1`
-- `NEXT_PUBLIC_API_URL=https://<api-host>/api/v1`
-
-`API_URL` is the server-side contract. `NEXT_PUBLIC_API_URL` is also exposed to browser code where required by live tracking. `API_BASE_URL` remains a driver-web compatibility fallback but should not be used for new production configuration.
-
-After assigning final Vercel domains, update Render `WEB_ORIGINS` to contain all three exact HTTPS origins and redeploy the API.
-
-## S3-compatible object storage
-
-Object storage is intentionally not used for ticketing or GPS state. When uploads are added, configure the API with:
-
-- `OBJECT_STORAGE_ENDPOINT`
-- `OBJECT_STORAGE_REGION`
-- `OBJECT_STORAGE_BUCKET`
-- `OBJECT_STORAGE_ACCESS_KEY_ID`
-- `OBJECT_STORAGE_SECRET_ACCESS_KEY`
-- optional `OBJECT_STORAGE_PUBLIC_BASE_URL`
-
-For Cloudflare R2, use its S3-compatible endpoint and `auto` region. Keep credentials only in the hosting provider's secret store.
-
-## Deployment order
-
-1. Merge a green deployment-foundation PR.
-2. Create/sync the Render Blueprint.
-3. Confirm migrations, PostGIS and `/api/v1/status` are healthy.
-4. Deploy passenger/admin/driver projects on Vercel with the Render API URL.
-5. Set Render `WEB_ORIGINS` to the final Vercel/custom domains and redeploy the API.
-6. Test passenger login/booking, admin login, driver login, driver GPS publish and passenger live tracking on HTTPS.
-7. Add custom domains only after the generated deployment URLs pass the smoke tests.
+Object storage remains separate from ticketing and GPS state. When uploads are introduced, use the existing S3-compatible environment contract and keep credentials only in provider secret stores.
 
 ## Scaling notes
 
-Start with one API instance. PostgreSQL remains authoritative for ticket/order/boarding invariants; Redis carries latest-location and pub/sub traffic. If the API is scaled to multiple instances later, Socket.IO fan-out must use a Redis-compatible adapter so rooms/events are shared across instances.
-
-Do not add Kafka, Kubernetes or microservices solely for the first operator deployment. Split services only when measured load or operational ownership requires it.
+Keep business invariants in PostgreSQL transactions and constraints. Realtime services carry ephemeral fan-out only. Avoid introducing Kafka, Kubernetes or microservices until measured load or operational ownership justifies them.

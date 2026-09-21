@@ -2,52 +2,46 @@
 
 ## Verified Release Baseline
 
-- Driver operations campaign `#64` has been merged to `main` by PR `#65`.
-- Merge commit: `ce715677452aae46ae229c31de5821ddad8588cd`.
-- PR #65 reported a green CI gate covering install, format, lint, typecheck, tests, production build, database checks and critical E2E journeys.
+- Driver presentation/staging restoration was merged by PR #71.
+- Current `main` baseline begins at commit `0f6f7812af1b936a4add67c9da55c87df06fd244`.
+- Staging uses Vercel for the three web apps and Neon PostgreSQL/PostGIS for durable data.
+- Render remains a temporary compatibility backend and currently causes visible free-tier cold starts.
 
 ## Current Phase
 
-Production deployment and storage foundation.
+Incremental serverless backend migration.
 
 ## Current Campaign
 
-- GitHub issue: `#66 chore: production deployment and storage foundation`.
-- Working branch: `chore/66-production-deploy-foundation`.
-- Standardize API/web production environment variables.
-- Keep PostgreSQL/PostGIS as the durable source of truth and Redis as the live tracking/cache layer.
-- Replace inconsistent hard-coded live-location TTL values with `TRACKING_LATEST_TTL_SECONDS`.
-- Persist a sampled GPS history in PostGIS using `TRACKING_HISTORY_INTERVAL_SECONDS` rather than writing every live update.
-- Add a Render Frankfurt Blueprint for API/PostgreSQL/Key Value and a Vercel runbook for the three Next.js apps.
-- Define an S3-compatible object-storage environment contract without coupling current product flows to a storage vendor.
+- Issue #72: move driver operations off Render to Vercel Route Handlers + Neon.
+- Branch: `feature/72-serverless-backend-migration`.
+- Driver login, trip reads, trip status, passenger boarding state and GPS ingestion are being moved into the driver Vercel project.
+- JWT role and driver-to-trip assignment checks remain server-side.
+- GPS history remains durable in PostGIS.
+- When `ABLY_API_KEY` is configured, serverless GPS ingestion can publish to a trip-scoped managed realtime channel.
+- Issue #73 tracks passenger/admin migration, realtime subscriber cutover and final Render/NestJS removal.
+
+## Temporary Hybrid State
+
+- Driver HTTP operations: Vercel Route Handlers -> Neon.
+- Passenger/admin HTTP operations: existing NestJS/Render API until #73 migrates them.
+- Passenger live tracking: existing Socket.IO path until managed realtime subscription replaces it.
+- Render resources must not be deleted until passenger booking, tickets, admin and live tracking pass E2E on the replacement path.
 
 ## Driver Capability Set
 
-- Driver authentication is separately role-gated.
+- Driver authentication is role-gated.
 - Drivers can access only assigned trips.
-- Assigned route stops are shown in operational order.
-- Passenger manifests expose seat and company-owned booking contact details.
-- Passenger status can be persisted as `pending`, `boarded` or `no_show`.
-- Driver can update trip operational status (`scheduled`, `boarding`, `in_transit`, `completed`).
-- Browser geolocation can publish `MOBILE_APP` positions for the assigned bus/trip.
-- Mobile positions feed the same Redis snapshot/pub-sub pipeline consumed by passenger live tracking.
-
-## Production Tracking Direction
-
-- Redis contains the short-lived authoritative latest location and pub/sub stream.
-- PostgreSQL/PostGIS stores sampled historical positions for analytics and operational history.
-- Default latest-position TTL: 120 seconds.
-- Default durable history interval: 30 seconds per trip.
-- Driver/browser GPS remains foreground web GPS; lock-screen/background continuity requires a later native or platform-specific implementation.
-
-## OBUS Boundary
-
-No OBUS/Obilet credentials or APIs are required for the current deployment foundation. A future OBUS adapter can synchronize trips/manifests into the local canonical model without changing the driver UI contract.
+- Assigned route stops and passenger manifests remain available.
+- Passenger status persists as `pending`, `boarded` or `no_show`.
+- Driver can update trip status.
+- Browser geolocation can submit positions for the assigned bus/trip.
+- PostGIS stores sampled durable tracking history.
 
 ## Next Gate
 
-- Run the full CI suite for issue #66.
-- Review the Render Blueprint without storing secrets in Git.
-- Merge only after CI is green.
-- Provision Render/Vercel resources after the deployment configuration is merged.
-- Perform physical-device HTTPS GPS QA after the hosted driver application is available.
+- Open PR for #72 and run the complete CI gate.
+- Configure `DATABASE_URL` and `JWT_SECRET` on the driver Vercel project.
+- Optionally configure `ABLY_API_KEY` for managed realtime publishing.
+- Smoke-test driver login/dashboard with Render asleep.
+- After #72 is stable, continue issue #73 endpoint group by endpoint group.
