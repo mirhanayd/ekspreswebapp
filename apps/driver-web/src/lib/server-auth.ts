@@ -46,7 +46,9 @@ export function verifyAccessToken(token: string): AccessTokenPrincipal | null {
   if (left.length !== right.length || !timingSafeEqual(left, right)) return null;
 
   try {
-    const decoded = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as Partial<AccessTokenPrincipal>;
+    const decoded = JSON.parse(
+      Buffer.from(payload, 'base64url').toString('utf8'),
+    ) as Partial<AccessTokenPrincipal>;
     const now = Math.floor(Date.now() / 1000);
     if (
       typeof decoded.sub !== 'string' ||
