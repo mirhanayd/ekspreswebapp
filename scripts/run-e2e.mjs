@@ -1,9 +1,15 @@
 import { spawn, spawnSync } from 'node:child_process';
+import { createServer } from 'node:http';
 
 const isWindows = process.platform === 'win32';
 const serviceLogs = new Map();
 const services = [];
 let cleaningUp = false;
+let rejectedLegacyRequests = 0;
+const unavailableLegacy = createServer((_request, response) => {
+  rejectedLegacyRequests++;
+  response.writeHead(503).end();
+});
 
 function command(name, args) {
   return new Promise((resolve, reject) => {
@@ -73,6 +79,7 @@ function stopService(child) {
 function cleanup() {
   if (cleaningUp) return;
   cleaningUp = true;
+  unavailableLegacy.close();
   for (const { child } of services.reverse()) stopService(child);
 }
 
@@ -85,6 +92,7 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
 
 let exitCode = 1;
 try {
+  process.env.JWT_SECRET ||= 'playwright-test-secret-with-at-least-thirty-two-characters';
   await command('pnpm', ['demo:reset']);
 
   const sharedWebEnv = {
@@ -125,6 +133,31 @@ try {
     waitFor('admin', 'http://127.0.0.1:3002/login'),
     waitFor('tracking', 'http://127.0.0.1:3003/status'),
   ]);
+
+  await new Promise((resolve, reject) => {
+    unavailableLegacy.once('error', reject);
+    unavailableLegacy.listen(3099, '127.0.0.1', resolve);
+  });
+  startService(
+    'passenger-auth-isolated',
+    [
+      'apps/passenger-web/node_modules/next/dist/bin/next',
+      'start',
+      'apps/passenger-web',
+      '-p',
+      '3010',
+    ],
+    {
+      ...sharedWebEnv,
+      API_URL: 'http://127.0.0.1:3099/api/v1',
+      NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3099/api/v1',
+    },
+  );
+  await waitFor('passenger-auth-isolated', 'http://127.0.0.1:3010/login');
+  const { runServerlessAuthJourney } = await import('../e2e/serverless-auth.mjs');
+  await runServerlessAuthJourney('http://127.0.0.1:3010');
+  if (rejectedLegacyRequests !== 0)
+    throw new Error('Serverless auth attempted a legacy API request.');
 
   const { runCriticalJourneys } = await import('../e2e/critical-journeys.mjs');
   await runCriticalJourneys({ headed: process.argv.includes('--headed') });
