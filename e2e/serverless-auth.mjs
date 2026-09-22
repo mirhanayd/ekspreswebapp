@@ -77,6 +77,54 @@ export async function runServerlessAuthJourney(baseURL) {
   }
 }
 
+export async function runServerlessTransportJourney(baseURL) {
+  const context = await request.newContext({ baseURL });
+  try {
+    const [locationsResponse, routesResponse, tripsResponse] = await Promise.all([
+      context.get('/api/transport/locations'),
+      context.get('/api/transport/routes'),
+      context.get('/api/transport/trips'),
+    ]);
+    assert.equal(locationsResponse.status(), 200);
+    assert.equal(routesResponse.status(), 200);
+    assert.equal(tripsResponse.status(), 200);
+    assert.equal(locationsResponse.headers()['cache-control'], 'no-store');
+    const locations = await locationsResponse.json();
+    const routes = await routesResponse.json();
+    const trips = await tripsResponse.json();
+    assert.ok(locations.length >= 4, 'staging presentation locations must remain available');
+    assert.ok(routes.length > 0, 'at least one configured route must be available');
+    assert.ok(trips.length > 0, 'at least one trip must be available');
+
+    const trip = trips[0];
+    const date = trip.trip.departureTime.slice(0, 10);
+    const filtered = await context.get('/api/transport/trips', {
+      params: {
+        date,
+        originId: trip.route.originId,
+        destinationId: trip.route.destinationId,
+      },
+    });
+    assert.equal(filtered.status(), 200);
+    assert.ok((await filtered.json()).some((item) => item.trip.id === trip.trip.id));
+    const detail = await context.get(`/api/transport/trips/${trip.trip.id}`);
+    assert.equal(detail.status(), 200);
+    assert.equal((await detail.json()).id, trip.trip.id);
+    assert.equal((await context.get('/api/transport/trips?date=not-a-date')).status(), 400);
+    assert.equal((await context.get('/api/transport/trips/not-a-uuid')).status(), 400);
+    assert.equal(
+      (await context.get('/')).status(),
+      200,
+      'home server render uses direct Neon queries',
+    );
+    process.stdout.write(
+      'PASS serverless transport: locations → routes → filtered trips → detail; legacy backend unavailable\n',
+    );
+  } finally {
+    await context.dispose();
+  }
+}
+
 export async function runServerlessDriverRegression(baseURL) {
   const context = await request.newContext({ baseURL });
   try {
