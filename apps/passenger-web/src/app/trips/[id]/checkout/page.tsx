@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Armchair, BusFront, CalendarDays, Clock3 } from 'lucide-react';
 import CheckoutForm from './CheckoutForm';
-import { API_BASE_URL } from '@/lib/server-api';
 import { getTripDetails } from '@/lib/server-transport';
+import { getSeatMap } from '@/lib/server-seats';
 import { BookingSteps } from '@/components/BookingSteps';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { RoutePanel } from '@/components/RoutePanel';
@@ -79,16 +79,10 @@ export default async function CheckoutPage({
   let trip: TripSummary | null = null;
   let priceMinor: number | null = null;
   try {
-    const [tripData, seatResponse] = await Promise.all([
-      getTripDetails(id),
-      fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
-    ]);
-    if (seatResponse.ok) {
-      const seats = await seatResponse.json();
-      trip = tripData;
-      priceMinor =
-        seats.seats?.find((seat: { seatNo: string }) => seat.seatNo === seatNo)?.priceMinor ?? null;
-    }
+    const [tripData, seats] = await Promise.all([getTripDetails(id), getSeatMap(id)]);
+    trip = tripData;
+    priceMinor =
+      seats.seats?.find((seat: { seatNo: string }) => seat.seatNo === seatNo)?.priceMinor ?? null;
   } catch {
     // The verified price guard below prevents checkout with incomplete data.
   }

@@ -1,8 +1,7 @@
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SeatSelector from './SeatSelector';
-import { API_BASE_URL } from '@/lib/server-api';
 import { getTripDetails } from '@/lib/server-transport';
+import { getSeatMap } from '@/lib/server-seats';
 import { BookingSteps } from '@/components/BookingSteps';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { formatLongDate, formatTime, placeShortName } from '@/lib/format';
@@ -14,13 +13,8 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
   let seatMapData;
   let tripData;
   try {
-    const [seats, trip] = await Promise.all([
-      fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
-      getTripDetails(id),
-    ]);
-    if (seats.status === 404) notFound();
-    if (!seats.ok) throw new Error();
-    seatMapData = await seats.json();
+    const [seats, trip] = await Promise.all([getSeatMap(id), getTripDetails(id)]);
+    seatMapData = seats;
     tripData = trip;
   } catch {
     return (

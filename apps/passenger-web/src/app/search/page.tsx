@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, BusFront, SlidersHorizontal, Sunrise, Sunset, Sun } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/server-api';
 import { getLocations, getTrips } from '@/lib/server-transport';
+import { getSeatMap } from '@/lib/server-seats';
 import type { SearchLocation } from '@/components/SearchPanel';
 import { JourneySearchBar } from '@/components/JourneySearchBar';
 import { JourneyCard } from '@/components/JourneyCard';
@@ -46,9 +46,7 @@ function buildHref(base: Record<string, string | undefined>, patch: Record<strin
 /** Live seat inventory per trip, from the public seat-map endpoint. */
 async function loadAvailability(tripId: string): Promise<Availability> {
   try {
-    const response = await fetch(`${API_BASE_URL}/seats/trip/${tripId}`, { cache: 'no-store' });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { seats?: Array<{ status: string }> };
+    const data = (await getSeatMap(tripId)) as { seats?: Array<{ status: string }> };
     const seats = data.seats ?? [];
     if (!seats.length) return null;
     return {

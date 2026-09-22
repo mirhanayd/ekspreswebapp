@@ -12,7 +12,7 @@ import {
   Usb,
   Wifi,
 } from 'lucide-react';
-import { API_BASE_URL } from '@/lib/server-api';
+import { getSeatMap } from '@/lib/server-seats';
 import { getTripDetails } from '@/lib/server-transport';
 import { toLngLat } from '@/lib/geo';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -64,9 +64,7 @@ const fleetStandard = [
 
 async function loadAvailability(tripId: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/seats/trip/${tripId}`, { cache: 'no-store' });
-    if (!response.ok) return null;
-    const data = (await response.json()) as { seats?: Array<{ status: string }> };
+    const data = (await getSeatMap(tripId)) as { seats?: Array<{ status: string }> };
     const seats = data.seats ?? [];
     if (!seats.length) return null;
     return {
