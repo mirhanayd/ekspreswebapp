@@ -7,6 +7,19 @@ import {
 } from '@ekspres/database';
 import { ACCESS_TOKEN_COOKIE } from './auth';
 
+function authFailureKind(error: unknown) {
+  if (!(error instanceof Error)) return 'unknown';
+  if (error.message === 'DATABASE_URL is missing in environment variables or configuration.') {
+    return 'missing_database_url';
+  }
+  if (error.message === 'JWT_SECRET is not configured.') return 'missing_jwt_secret';
+
+  const code = (error as Error & { code?: unknown }).code;
+  return typeof code === 'string' && /^[A-Z0-9]{2,10}$/.test(code)
+    ? `database_${code}`
+    : 'unexpected';
+}
+
 export function authErrorResponse(error: unknown) {
   const status =
     error instanceof ServerError ? error.status : error instanceof SyntaxError ? 400 : 500;
@@ -16,7 +29,8 @@ export function authErrorResponse(error: unknown) {
       : status === 400
         ? 'Geçersiz istek.'
         : 'İşlem şu anda tamamlanamıyor.';
-  // Do not log DB/driver exceptions: their details can contain credentials or submitted data.
+  // Record only a bounded category. Raw DB/config errors may contain credentials or submitted data.
+  if (status === 500) console.error('Passenger authentication failed', authFailureKind(error));
   const response = NextResponse.json(
     { message },
     { status, headers: { 'Cache-Control': 'no-store' } },
