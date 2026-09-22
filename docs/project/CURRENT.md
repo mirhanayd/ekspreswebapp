@@ -3,7 +3,7 @@
 ## Verified Release Baseline
 
 - Driver presentation/staging restoration was merged by PR #71.
-- Current `main` baseline begins at commit `0f6f7812af1b936a4add67c9da55c87df06fd244`.
+- Passenger serverless authentication was merged by PR #77 at `e301a0f64f222d1757c858e17bfda84500530233`.
 - Staging uses Vercel for the three web apps and Neon PostgreSQL/PostGIS for durable data.
 - Render remains a temporary compatibility backend and currently causes visible free-tier cold starts.
 
@@ -11,15 +11,15 @@
 
 Incremental serverless backend migration.
 
-## Authentication checkpoint (#76)
+## Passenger serverless checkpoints
 
-- Baseline: PR #74 merged at `2e44d26ff2a848a4e55728a06dd31a8d68bb7344`.
-- #73 is the migration epic; #76 extracts shared server authentication and migrates passenger auth.
+- #73 is the migration epic; #76 extracted shared server authentication and migrated passenger auth.
 - Driver signed JWT and credential logic now use the shared framework-neutral server layer.
 - Passenger register/login/me now query Neon from Node Route Handlers; logout remains local.
-- Passenger staging requires DATABASE_URL and the existing JWT_SECRET before HTTPS auth smoke.
-- Full CI and HTTPS staging verification remain release gates, not assumed successes.
-- Passenger/admin business endpoints remain legacy until their individual cutovers pass tests.
+- PR #77 passed full CI and HTTPS Preview auth smoke with the legacy API unavailable.
+- #78 migrates locations, routes, trip search and trip detail to shared Neon-backed queries and same-origin Node Route Handlers.
+- Passenger home/search/trip server renders reuse the same framework-neutral transport service and do not proxy those reads through Render.
+- Seat inventory/holds, checkout, tickets, admin APIs and passenger realtime remain legacy until their individual cutovers pass tests.
 
 ## Previous Campaign
 
@@ -34,7 +34,9 @@ Incremental serverless backend migration.
 ## Temporary Hybrid State
 
 - Driver HTTP operations: Vercel Route Handlers -> Neon.
-- Passenger/admin HTTP operations: existing NestJS/Render API until #73 migrates them.
+- Passenger authentication: Vercel Route Handlers -> Neon.
+- Passenger transport discovery: Vercel Route Handlers/shared server queries -> Neon while #78 is in review.
+- Passenger booking/ticket and admin HTTP operations: existing NestJS/Render API until #73 migrates them.
 - Passenger live tracking: existing Socket.IO path until managed realtime subscription replaces it.
 - Render resources must not be deleted until passenger booking, tickets, admin and live tracking pass E2E on the replacement path.
 
@@ -50,8 +52,6 @@ Incremental serverless backend migration.
 
 ## Next Gate
 
-- Open PR for #72 and run the complete CI gate.
-- Configure `DATABASE_URL` and `JWT_SECRET` on the driver Vercel project.
-- Optionally configure `ABLY_API_KEY` for managed realtime publishing.
-- Smoke-test driver login/dashboard with Render asleep.
-- After #72 is stable, continue issue #73 endpoint group by endpoint group.
+- Complete #78 CI and HTTPS Preview transport smoke with the legacy API unavailable.
+- Continue #73 with PostgreSQL-backed seat inventory and hold transactions.
+- Keep Render available as rollback until the passenger/admin/realtime replacement paths pass final E2E.

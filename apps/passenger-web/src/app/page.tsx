@@ -1,7 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, BusFront, Clock3, MapPin, Ticket, Wallet } from 'lucide-react';
-import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
+import { authenticatedApiFetch } from '@/lib/server-api';
+import { getLocations, getRoutes, getTrips } from '@/lib/server-transport';
 import type { SearchLocation } from '@/components/SearchPanel';
 import { HomeJourney } from '@/components/HomeJourney';
 import { RewardLadder } from '@/components/RewardLadder';
@@ -35,17 +36,6 @@ type ActiveTicket = {
   };
 };
 
-async function loadJson<T>(path: string, fallback: T): Promise<T> {
-  try {
-    const response = await fetch(`${API_BASE_URL}${path}`, { cache: 'no-store' });
-    if (!response.ok) return fallback;
-    return (await response.json()) as T;
-  } catch {
-    // The screen keeps its shell and shows an actionable notice instead.
-    return fallback;
-  }
-}
-
 /**
  * The passenger's own wallet: the next journey to surface, plus how many
  * journeys they have taken so the reward ladder reflects real history.
@@ -74,9 +64,9 @@ async function loadWallet(): Promise<{ active: ActiveTicket | null; tripCount: n
  */
 export default async function Home() {
   const [locations, routes, trips, wallet] = await Promise.all([
-    loadJson<Location[]>('/transport/locations', []),
-    loadJson<Route[]>('/transport/routes', []),
-    loadJson<TripResult[]>('/transport/trips', []),
+    getLocations().catch(() => [] as Location[]),
+    getRoutes().catch(() => [] as Route[]),
+    getTrips().catch(() => [] as TripResult[]),
     loadWallet(),
   ]);
   const activeTicket = wallet.active;

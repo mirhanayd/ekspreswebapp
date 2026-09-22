@@ -60,9 +60,27 @@ The auth HTTP E2E test runs against a separate passenger process whose legacy AP
 points to a rejecting local endpoint. This gate proves auth independence; it does not
 claim that transport, booking or realtime have migrated.
 
+## Passenger transport checkpoint (#78)
+
+Passenger locations, configured routes, trip search and trip detail use the shared
+framework-neutral transport service in `packages/database/src/server`. Public
+`/api/transport/*` Route Handlers run in the Node.js runtime and query Neon directly.
+Passenger Server Components reuse the same service instead of making a server-to-server
+request to Render.
+
+Trip filters are validated and applied in PostgreSQL. Dates use the existing
+`YYYY-MM-DD` public contract and UTC day boundaries. Direct server consumers receive the
+same JSON-safe date values as HTTP clients. These handlers require only the passenger
+project's existing pooled `DATABASE_URL`; no Redis/KV or additional provider is needed.
+
+The transport E2E gate starts the passenger application with its legacy API URL pointed
+to a rejecting endpoint, then verifies locations, routes, filtered trips, trip detail,
+invalid-input handling and the home server render. Seat availability/holds are a
+separate migration checkpoint and remain on the compatibility backend for now.
+
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, passenger non-auth HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, passenger seat/checkout/ticket HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 

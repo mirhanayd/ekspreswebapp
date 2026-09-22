@@ -5,3 +5,9 @@ export * from './server/driver-backend.js';
 export * from './server/auth.js';
 export { ServerError } from './server/errors.js';
 export { authService, createAuthService, validateAuthInput } from './server/auth-service.js';
+export {
+  transportService,
+  createTransportService,
+  validateTripSearch,
+  type TripSearch,
+} from './server/transport-service.js';

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Armchair, BusFront, CalendarDays, Clock3 } from 'lucide-react';
 import CheckoutForm from './CheckoutForm';
 import { API_BASE_URL } from '@/lib/server-api';
+import { getTripDetails } from '@/lib/server-transport';
 import { BookingSteps } from '@/components/BookingSteps';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { RoutePanel } from '@/components/RoutePanel';
@@ -18,7 +19,7 @@ export const metadata = { title: 'Yolcu ve ödeme' };
 type TripSummary = {
   departureTime: string;
   arrivalTime: string;
-  bus?: { plateNumber?: string; model?: string };
+  bus?: { plateNumber?: string; model?: string | null };
   route?: { origin?: { name: string }; destination?: { name: string } };
 };
 
@@ -78,12 +79,12 @@ export default async function CheckoutPage({
   let trip: TripSummary | null = null;
   let priceMinor: number | null = null;
   try {
-    const [tripResponse, seatResponse] = await Promise.all([
-      fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' }),
+    const [tripData, seatResponse] = await Promise.all([
+      getTripDetails(id),
       fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
     ]);
-    if (tripResponse.ok && seatResponse.ok) {
-      const [tripData, seats] = await Promise.all([tripResponse.json(), seatResponse.json()]);
+    if (seatResponse.ok) {
+      const seats = await seatResponse.json();
       trip = tripData;
       priceMinor =
         seats.seats?.find((seat: { seatNo: string }) => seat.seatNo === seatNo)?.priceMinor ?? null;

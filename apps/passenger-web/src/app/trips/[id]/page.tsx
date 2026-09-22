@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ServerError } from '@ekspres/database';
 import {
   Armchair,
   BusFront,
@@ -12,6 +13,7 @@ import {
   Wifi,
 } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/server-api';
+import { getTripDetails } from '@/lib/server-transport';
 import { toLngLat } from '@/lib/geo';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { RoutePanel } from '@/components/RoutePanel';
@@ -39,7 +41,7 @@ type TripDetail = {
   basePrice: number;
   bus: {
     plateNumber: string;
-    model?: string;
+    model?: string | null;
     totalSeats: number;
     seatLayout?: { layout?: string };
   };
@@ -86,11 +88,9 @@ export default async function TripDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   let trip: TripDetail;
   try {
-    const response = await fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' });
-    if (response.status === 404) notFound();
-    if (!response.ok) throw new Error();
-    trip = await response.json();
-  } catch {
+    trip = await getTripDetails(id);
+  } catch (error) {
+    if (error instanceof ServerError && error.status === 404) notFound();
     return (
       <div className="canvas-cream min-h-[100dvh]">
         <div className="screen screen-pad">
