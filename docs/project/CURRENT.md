@@ -17,9 +17,10 @@ Incremental serverless backend migration.
 - Driver signed JWT and credential logic now use the shared framework-neutral server layer.
 - Passenger register/login/me now query Neon from Node Route Handlers; logout remains local.
 - PR #77 passed full CI and HTTPS Preview auth smoke with the legacy API unavailable.
-- #78 migrates locations, routes, trip search and trip detail to shared Neon-backed queries and same-origin Node Route Handlers.
+- #78 / PR #79 migrated locations, routes, trip search and trip detail to shared Neon-backed queries and same-origin Node Route Handlers.
 - Passenger home/search/trip server renders reuse the same framework-neutral transport service and do not proxy those reads through Render.
-- Seat inventory/holds, checkout, tickets, admin APIs and passenger realtime remain legacy until their individual cutovers pass tests.
+- #80 migrates seat inventory, hold/release, expiration and concurrency to PostgreSQL-backed serverless handlers without Redis/KV.
+- Checkout, tickets, admin APIs and passenger realtime remain legacy until their individual cutovers pass tests.
 
 ## Previous Campaign
 
@@ -35,8 +36,9 @@ Incremental serverless backend migration.
 
 - Driver HTTP operations: Vercel Route Handlers -> Neon.
 - Passenger authentication: Vercel Route Handlers -> Neon.
-- Passenger transport discovery: Vercel Route Handlers/shared server queries -> Neon while #78 is in review.
-- Passenger booking/ticket and admin HTTP operations: existing NestJS/Render API until #73 migrates them.
+- Passenger transport discovery: Vercel Route Handlers/shared server queries -> Neon.
+- Passenger seat inventory/holds: Vercel Route Handlers/shared PostgreSQL transactions -> Neon while #80 is in review.
+- Passenger checkout/ticket and admin HTTP operations: existing NestJS/Render API until #73 migrates them.
 - Passenger live tracking: existing Socket.IO path until managed realtime subscription replaces it.
 - Render resources must not be deleted until passenger booking, tickets, admin and live tracking pass E2E on the replacement path.
 
@@ -52,6 +54,6 @@ Incremental serverless backend migration.
 
 ## Next Gate
 
-- Complete #78 CI and HTTPS Preview transport smoke with the legacy API unavailable.
-- Continue #73 with PostgreSQL-backed seat inventory and hold transactions.
+- Complete #80 CI and HTTPS Preview seat smoke with the legacy API unavailable.
+- Continue #73 with serverless checkout/payment transactions.
 - Keep Render available as rollback until the passenger/admin/realtime replacement paths pass final E2E.
