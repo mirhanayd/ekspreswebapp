@@ -9,7 +9,7 @@ The platform is migrating from an always-on NestJS/Render backend to a serverles
 - Driver web + driver BFF: Vercel, `apps/driver-web`.
 - Durable database: Neon PostgreSQL/PostGIS.
 - Realtime target: managed Pub/Sub; Ably is the initial migration target for trip-scoped vehicle location fan-out.
-- Ephemeral hold/cache state: serverless-compatible Redis/Key Value only where still required.
+- Ephemeral hold state: PostgreSQL transactions and expiration. No additional Redis/KV is required for holds.
 - Legacy compatibility API: Render/NestJS until issue #73 completes.
 - Object storage: S3-compatible contract for future uploads.
 
@@ -34,9 +34,35 @@ Required driver Vercel runtime secrets/config:
 
 `ABLY_API_KEY` is server-side only. Never expose it through a `NEXT_PUBLIC_*` variable.
 
+## Passenger authentication checkpoint (#76)
+
+Passenger `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` and
+`GET /api/passenger/auth/me` run on Vercel's Node.js runtime against Neon. Server-side
+session reads use the same service. Logout deletes the HTTP-only cookie locally.
+Driver credentials and passenger credentials share framework-neutral services in
+`packages/database/src/server`; neither auth path calls Render.
+
+Before staging this checkpoint, configure the passenger project for both the deployment
+scope being tested (Preview) and its staging domain (Production):
+
+- `DATABASE_URL`: pooled Neon connection for the existing staging database.
+- `JWT_SECRET`: same signing secret as the existing driver/legacy backend.
+
+Do not create a new database, rotate the signing secret, or expose either variable with
+`NEXT_PUBLIC_`. Existing sessions remain compatible. New registrations always create a
+passenger. Email case remains unchanged for compatibility with existing accounts.
+Registration passwords must fit bcrypt's 72-byte limit; existing login passwords retain
+legacy verification behavior. Duplicate emails return 409; invalid sessions return 401
+and Route Handler responses clear the invalid cookie. Session responses never include
+password hashes and have `Cache-Control: no-store`.
+
+The auth HTTP E2E test runs against a separate passenger process whose legacy API URL
+points to a rejecting local endpoint. This gate proves auth independence; it does not
+claim that transport, booking or realtime have migrated.
+
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, passenger/admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, passenger non-auth HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 
