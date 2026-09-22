@@ -77,7 +77,9 @@ export const buses = pgTable('buses', {
   id: uuid('id').defaultRandom().primaryKey(),
   plateNumber: text('plate_number').notNull().unique(),
   model: text('model'),
-  seatLayout: jsonb('seat_layout').notNull(), // 2+1, 2+2, etc. definition
+  seatLayout: jsonb('seat_layout')
+    .$type<{ layout?: string; rows?: number; columns?: number; items?: unknown[] }>()
+    .notNull(), // 2+1, 2+2, etc. definition
   totalSeats: integer('total_seats').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });

@@ -4,12 +4,24 @@ import { serverDatabase } from './database.js';
 import { ServerError } from './errors.js';
 
 type Database = ReturnType<typeof serverDatabase>;
+type JsonValue<T> = T extends Date
+  ? string
+  : T extends Array<infer Item>
+    ? Array<JsonValue<Item>>
+    : T extends object
+      ? { [Key in keyof T]: JsonValue<T[Key]> }
+      : T;
 
 export type TripSearch = {
   date?: string;
   originId?: string;
   destinationId?: string;
 };
+
+/** Keep direct server consumers identical to the JSON HTTP contract. */
+function jsonValue<T>(value: T): JsonValue<T> {
+  return JSON.parse(JSON.stringify(value)) as JsonValue<T>;
+}
 
 function optionalUuid(value: string | undefined, field: string) {
   if (!value) return undefined;
@@ -44,14 +56,18 @@ export function validateTripSearch(input: TripSearch): TripSearch {
 
 export function createTransportService(database: () => Database = serverDatabase) {
   return {
-    getLocations() {
-      return database().query.locations.findMany({
+    async getLocations() {
+      const rows = await database().query.locations.findMany({
         orderBy: (locations, { asc }) => [asc(locations.name)],
       });
+      return jsonValue(rows);
     },
 
-    getRoutes() {
-      return database().query.routes.findMany({ orderBy: (routes, { asc }) => [asc(routes.name)] });
+    async getRoutes() {
+      const rows = await database().query.routes.findMany({
+        orderBy: (routes, { asc }) => [asc(routes.name)],
+      });
+      return jsonValue(rows);
     },
 
     async getTrips(input: TripSearch = {}) {
@@ -66,13 +82,14 @@ export function createTransportService(database: () => Database = serverDatabase
         conditions.push(lt(schema.trips.departureTime, range.end));
       }
 
-      return database()
+      const rows = await database()
         .select({ trip: schema.trips, route: schema.routes, bus: schema.buses })
         .from(schema.trips)
         .innerJoin(schema.routes, eq(schema.trips.routeId, schema.routes.id))
         .innerJoin(schema.buses, eq(schema.trips.busId, schema.buses.id))
         .where(conditions.length ? and(...conditions) : undefined)
         .orderBy(schema.trips.departureTime);
+      return jsonValue(rows);
     },
 
     async getTripDetails(tripId: string) {
@@ -94,7 +111,7 @@ export function createTransportService(database: () => Database = serverDatabase
         },
       });
       if (!trip) throw new ServerError(404, 'Sefer bulunamadı.');
-      return trip;
+      return jsonValue(trip);
     },
   };
 }

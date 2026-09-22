@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { ArrowLeft, BusFront, SlidersHorizontal, Sunrise, Sunset, Sun } from 'lucide-react';
 import { API_BASE_URL } from '@/lib/server-api';
+import { getLocations, getTrips } from '@/lib/server-transport';
 import type { SearchLocation } from '@/components/SearchPanel';
 import { JourneySearchBar } from '@/components/JourneySearchBar';
 import { JourneyCard } from '@/components/JourneyCard';
@@ -17,7 +18,12 @@ type SearchResult = {
     status: string;
   };
   route: { name: string; originId: string; destinationId: string };
-  bus: { model: string; plateNumber: string; seatLayout: { layout?: string }; totalSeats?: number };
+  bus: {
+    model: string | null;
+    plateNumber: string;
+    seatLayout: { layout?: string };
+    totalSeats?: number;
+  };
 };
 
 type Availability = { available: number; total: number } | null;
@@ -74,22 +80,18 @@ export default async function SearchPage({
   }>;
 }) {
   const query = await searchParams;
-  const params = new URLSearchParams();
-  if (query.originId) params.set('originId', query.originId);
-  if (query.destinationId) params.set('destinationId', query.destinationId);
-  if (query.date) params.set('date', query.date);
-
   let results: SearchResult[] = [];
   let locations: SearchLocation[] = [];
   let error: string | null = null;
   try {
-    const [trips, points] = await Promise.all([
-      fetch(`${API_BASE_URL}/transport/trips?${params}`, { cache: 'no-store' }),
-      fetch(`${API_BASE_URL}/transport/locations`, { cache: 'no-store' }),
+    [results, locations] = await Promise.all([
+      getTrips({
+        originId: query.originId,
+        destinationId: query.destinationId,
+        date: query.date,
+      }),
+      getLocations(),
     ]);
-    if (!trips.ok || !points.ok) throw new Error('Seferler yüklenemedi.');
-    results = await trips.json();
-    locations = await points.json();
   } catch (caught) {
     error = caught instanceof Error ? caught.message : 'Seferler yüklenemedi.';
   }

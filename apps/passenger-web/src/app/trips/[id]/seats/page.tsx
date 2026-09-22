@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import SeatSelector from './SeatSelector';
 import { API_BASE_URL } from '@/lib/server-api';
+import { getTripDetails } from '@/lib/server-transport';
 import { BookingSteps } from '@/components/BookingSteps';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { formatLongDate, formatTime, placeShortName } from '@/lib/format';
@@ -15,12 +16,12 @@ export default async function SeatSelectionPage({ params }: { params: Promise<{ 
   try {
     const [seats, trip] = await Promise.all([
       fetch(`${API_BASE_URL}/seats/trip/${id}`, { cache: 'no-store' }),
-      fetch(`${API_BASE_URL}/transport/trips/${id}`, { cache: 'no-store' }),
+      getTripDetails(id),
     ]);
-    if (seats.status === 404 || trip.status === 404) notFound();
-    if (!seats.ok || !trip.ok) throw new Error();
+    if (seats.status === 404) notFound();
+    if (!seats.ok) throw new Error();
     seatMapData = await seats.json();
-    tripData = await trip.json();
+    tripData = trip;
   } catch {
     return (
       <div className="canvas-cream min-h-[100dvh]">
