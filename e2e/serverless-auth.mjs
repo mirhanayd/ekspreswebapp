@@ -125,6 +125,53 @@ export async function runServerlessTransportJourney(baseURL) {
   }
 }
 
+export async function runServerlessSeatJourney(baseURL) {
+  const context = await request.newContext({ baseURL });
+  try {
+    const trips = await (await context.get('/api/transport/trips')).json();
+    const trip = trips.find((item) => item.trip.status === 'scheduled') ?? trips[0];
+    assert.ok(trip, 'seat journey requires a fixture trip');
+    const mapResponse = await context.get(`/api/seats/trip/${trip.trip.id}`);
+    assert.equal(mapResponse.status(), 200);
+    assert.equal(mapResponse.headers()['cache-control'], 'no-store');
+    const map = await mapResponse.json();
+    const seat = map.seats.find((item) => item.status === 'available');
+    assert.ok(seat, 'seat journey requires an available seat');
+    const holdInput = { tripId: trip.trip.id, seatNo: seat.seatNo };
+    assert.equal((await context.post('/api/seats/hold', { data: holdInput })).status(), 401);
+    assert.equal(
+      (
+        await context.post('/api/auth/login', {
+          data: { email: 'yolcu@siirtkurtalan.demo', password: 'Demo123!' },
+        })
+      ).status(),
+      200,
+    );
+    const first = await context.post('/api/seats/hold', { data: holdInput });
+    assert.equal(first.status(), 200);
+    const hold = await first.json();
+    const retry = await context.post('/api/seats/hold', { data: holdInput });
+    assert.equal(retry.status(), 200);
+    assert.equal((await retry.json()).holdId, hold.holdId, 'same passenger retry is idempotent');
+    const heldMap = await (await context.get(`/api/seats/trip/${trip.trip.id}`)).json();
+    assert.equal(heldMap.seats.find((item) => item.seatNo === seat.seatNo).status, 'held');
+    assert.equal((await context.delete(`/api/seats/hold/${randomUUID()}`)).status(), 404);
+    assert.equal((await context.delete(`/api/seats/hold/${hold.holdId}`)).status(), 200);
+    assert.equal(
+      (await context.delete(`/api/seats/hold/${hold.holdId}`)).status(),
+      200,
+      'release retry is idempotent',
+    );
+    const releasedMap = await (await context.get(`/api/seats/trip/${trip.trip.id}`)).json();
+    assert.equal(releasedMap.seats.find((item) => item.seatNo === seat.seatNo).status, 'available');
+    process.stdout.write(
+      'PASS serverless seats: inventory → auth hold → idempotent retry → release; legacy backend unavailable\n',
+    );
+  } finally {
+    await context.dispose();
+  }
+}
+
 export async function runServerlessDriverRegression(baseURL) {
   const context = await request.newContext({ baseURL });
   try {
