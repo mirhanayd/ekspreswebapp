@@ -23,3 +23,4 @@ export {
   createTicketService,
   createTicketQrPayload,
 } from './server/ticket-service.js';
+export { adminService, createAdminService, adminFleetFreshness } from './server/admin-service.js';
