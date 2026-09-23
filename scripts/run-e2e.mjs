@@ -99,6 +99,7 @@ try {
     NODE_ENV: 'production',
     API_URL: 'http://127.0.0.1:3001/api/v1',
     NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3001/api/v1',
+    ABLY_API_KEY: 'app.key:local-e2e-secret',
   };
   startService('api', ['apps/api/dist/main.js'], {
     NODE_ENV: 'production',
@@ -188,8 +189,10 @@ try {
   await waitFor('driver-isolated', 'http://127.0.0.1:3011/login');
   const { runServerlessDriverRegression } = await import('../e2e/serverless-auth.mjs');
   await runServerlessDriverRegression('http://127.0.0.1:3011');
+  const { runServerlessTrackingJourney } = await import('../e2e/serverless-auth.mjs');
+  await runServerlessTrackingJourney('http://127.0.0.1:3010');
   if (rejectedLegacyRequests !== 0)
-    throw new Error('Driver regression attempted a legacy API request.');
+    throw new Error('Driver/tracking regression attempted a legacy API request.');
   exitCode = 0;
 } catch (error) {
   process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
