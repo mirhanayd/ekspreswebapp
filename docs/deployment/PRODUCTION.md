@@ -150,18 +150,40 @@ The admin browser E2E runs with `API_URL` pointed at a rejecting legacy endpoint
 passenger-role denial, admin login, dashboard, tickets and fleet. PostgreSQL integration
 also covers overview, transport, ticket detail, reports and the no-position fleet state.
 
-## Temporary passenger/admin path
+## Passenger managed realtime checkpoint (#88)
 
-Until issue #73 is complete, passenger Socket.IO requests may still target the Render NestJS API. Keep its current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Passenger tracking bootstrap now runs in the passenger Vercel project through
+`GET /api/tracking/tickets/:ticketId/bootstrap`. It validates the signed passenger
+principal, ticket ownership, active ticket state and the trip's `boarding`/`in_transit`
+state before returning route geometry and the newest durable PostGIS position.
+
+The browser obtains a five-minute signed Ably TokenRequest from
+`POST /api/tracking/tickets/:ticketId/token`. Its capability grants only `subscribe`
+on `trip:<tripId>:location`. The API key never reaches the browser, and the Ably SDK
+uses the same-origin token endpoint for renewal. Driver GPS ingestion publishes the
+same accepted position after durable PostGIS handling; a managed publish failure does
+not discard the durable GPS write.
+
+Configure the same server-only `ABLY_API_KEY` in both passenger and driver Vercel
+Preview and Production scopes. No `NEXT_PUBLIC_ABLY_*` variable is used. Redis is not
+the latest-position source: bootstrap/admin reads use `tracking_positions`. The legacy
+Redis/Socket.IO services remain available only as rollback until final #73 E2E and the
+explicit Render deletion approval.
+
+## Temporary compatibility path
+
+The migrated passenger, admin and driver critical handlers no longer require
+`API_URL` / `NEXT_PUBLIC_API_URL`. The remaining compatibility catch-all and legacy
+simulator stay in the repository until the final cleanup milestone.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 
 ## Tracking data policy
 
 - PostgreSQL/PostGIS remains authoritative for durable sampled GPS history.
-- Live fan-out is moving from Render Redis pub/sub + Socket.IO to managed realtime.
+- Live fan-out uses ticket-scoped managed realtime; Render Redis pub/sub + Socket.IO is rollback-only.
 - The managed realtime channel is ephemeral transport, not the durable source of truth.
-- Passenger authorization must be checked before issuing any realtime subscription capability in the final cutover.
+- Passenger authorization is checked before every realtime TokenRequest; capability is subscribe-only and trip-scoped.
 - Default durable history interval remains 30 seconds per trip.
 
 ## Migration order
@@ -170,8 +192,8 @@ Do not delete or disable Render yet. It remains the rollback path while passenge
 2. Verify driver login/dashboard while Render is sleeping.
 3. #73: migrate passenger auth/transport/seats/checkout/tickets.
 4. Migrate admin APIs.
-5. Replace passenger Socket.IO subscription with managed realtime token auth.
-6. Move any remaining seat-hold/latest-location ephemeral requirements to a serverless-compatible store.
+5. Replace passenger Socket.IO subscription with managed realtime token auth (#88).
+6. Confirm no remaining seat-hold/latest-location requirement needs Redis/KV.
 7. Run full passenger + driver + admin E2E.
 8. Remove Render API/Key Value only after the replacement paths are verified.
 
