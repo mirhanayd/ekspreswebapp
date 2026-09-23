@@ -1,7 +1,9 @@
 import { ArrowRight, Check } from 'lucide-react';
+import { checkoutService, ServerError } from '@ekspres/database';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { authenticatedApiFetch } from '@/lib/server-api';
+import { getAccessToken } from '@/lib/server-api';
+import { requirePassengerToken } from '@/lib/server-auth';
 import { BookingSteps } from '@/components/BookingSteps';
 import { RoutePanel } from '@/components/RoutePanel';
 import { formatLongDate, formatMinorPrice, formatTime } from '@/lib/format';
@@ -13,11 +15,11 @@ type OrderSummary = {
   totalMinor: number;
   passengerFirstName: string;
   passengerLastName: string;
-  ticket?: { id: string; ticketNo: string };
+  ticket?: { id: string; ticketNo: string } | null;
   tripSeat?: { seatNo: string };
   trip?: {
-    departureTime: string;
-    arrivalTime: string;
+    departureTime: string | Date;
+    arrivalTime: string | Date;
     bus?: { plateNumber?: string };
     route?: { origin?: { name: string }; destination?: { name: string } };
   };
@@ -38,14 +40,26 @@ export default async function CheckoutSuccessPage({
   const { orderId } = await searchParams;
   let order: OrderSummary | null = null;
 
-  const response = orderId ? await authenticatedApiFetch(`/checkout/order/${orderId}`) : null;
-  if (!response || response.status === 401)
+  const token = await getAccessToken();
+  if (!token)
     redirect(
       `/login?returnTo=${encodeURIComponent(`/trips/${id}/checkout/success?orderId=${orderId || ''}`)}`,
     );
+  let principal;
   try {
-    if (response.ok) order = await response.json();
-  } catch {
+    principal = await requirePassengerToken(token);
+  } catch (error) {
+    if (error instanceof ServerError && [401, 403].includes(error.status)) {
+      redirect(
+        `/login?returnTo=${encodeURIComponent(`/trips/${id}/checkout/success?orderId=${orderId || ''}`)}`,
+      );
+    }
+    throw error;
+  }
+  try {
+    if (orderId) order = await checkoutService.getOrder(orderId, principal.id);
+  } catch (error) {
+    if (!(error instanceof ServerError) || error.status >= 500) throw error;
     // The confirmation shell remains available while order details are unavailable.
   }
 

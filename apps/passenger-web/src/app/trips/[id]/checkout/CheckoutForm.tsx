@@ -44,7 +44,7 @@ export default function CheckoutForm({
     setLoading(true);
     setError(null);
     try {
-      const orderResponse = await fetch('/api/passenger/checkout/order', {
+      const orderResponse = await fetch('/api/checkout/order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -65,7 +65,7 @@ export default function CheckoutForm({
       const order = await orderResponse.json();
       if (!orderResponse.ok) throw new Error(order.message || 'Sipariş oluşturulamadı.');
       setStep('paying');
-      const paymentResponse = await fetch(`/api/passenger/checkout/order/${order.id}/pay`, {
+      const paymentResponse = await fetch(`/api/checkout/order/${order.id}/pay`, {
         method: 'POST',
       });
       const payment = await paymentResponse.json();

@@ -96,9 +96,30 @@ inventory, unauthenticated denial, authenticated hold, idempotent retry and rele
 PostgreSQL integration tests additionally race two passengers, reclaim expired holds and
 reject purchased/blocked seats.
 
+## Passenger checkout checkpoint (#82)
+
+Authenticated order creation, owner-only order detail and demo payment use the shared
+checkout service in `packages/database/src/server` through Node.js Route Handlers at
+`/api/checkout/order*`. The confirmation Server Component calls the same service
+directly, so none of these paths proxy to Render.
+
+The signed JWT principal is the only source of passenger identity. Order creation locks
+the held seat, validates an active unexpired owner hold and derives `totalMinor` from the
+database seat price. PostgreSQL transaction advisory locks serialize simultaneous uses
+of one idempotency key, while the existing unique key remains the final constraint.
+Payment locks the order and seat and atomically marks the order paid, consumes the hold,
+purchases the seat, and creates exactly one payment and ticket. Retried order and payment
+requests return the durable existing result. This checkpoint adds no payment provider or
+new environment variable; the current payment remains an explicitly labelled demo.
+
+The checkout E2E gate runs with the legacy API pointed at a rejecting endpoint and covers
+hold, authoritative total, idempotent order creation, concurrent payment retries, ticket
+creation and owner-only detail. PostgreSQL integration tests independently verify the
+same concurrency and identity invariants.
+
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, passenger checkout/ticket HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, passenger ticket list/detail/QR, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 
