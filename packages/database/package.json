@@ -16,7 +16,7 @@
     "demo:journey": "node --import tsx src/scripts/demo-journey.ts",
     "staging:seed": "node --import tsx src/scripts/staging-seed.ts",
     "test:integration": "vitest run test/database.integration.test.ts test/auth-service.integration.test.ts test/transport-service.integration.test.ts test/seat-service.integration.test.ts test/checkout-service.integration.test.ts",
-    "test": "vitest run test/config.test.ts test/server-auth.test.ts test/auth-service.test.ts test/transport-service.test.ts test/seat-service.test.ts test/checkout-service.test.ts",
+    "test": "vitest run test/config.test.ts test/server-auth.test.ts test/auth-service.test.ts test/transport-service.test.ts test/seat-service.test.ts test/checkout-service.test.ts test/ticket-service.test.ts",
     "lint": "eslint src/ --ext .ts",
     "typecheck": "tsc --noEmit"
   },

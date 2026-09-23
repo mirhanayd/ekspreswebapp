@@ -18,3 +18,8 @@ export {
   validateCheckoutOrderInput,
   type CheckoutOrderInput,
 } from './server/checkout-service.js';
+export {
+  ticketService,
+  createTicketService,
+  createTicketQrPayload,
+} from './server/ticket-service.js';
