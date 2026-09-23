@@ -154,13 +154,18 @@ try {
     },
   );
   await waitFor('passenger-auth-isolated', 'http://127.0.0.1:3010/login');
-  const { runServerlessAuthJourney, runServerlessTransportJourney, runServerlessSeatJourney } =
-    await import('../e2e/serverless-auth.mjs');
+  const {
+    runServerlessAuthJourney,
+    runServerlessTransportJourney,
+    runServerlessSeatJourney,
+    runServerlessCheckoutJourney,
+  } = await import('../e2e/serverless-auth.mjs');
   await runServerlessAuthJourney('http://127.0.0.1:3010');
   await runServerlessTransportJourney('http://127.0.0.1:3010');
   await runServerlessSeatJourney('http://127.0.0.1:3010');
+  await runServerlessCheckoutJourney('http://127.0.0.1:3010');
   if (rejectedLegacyRequests !== 0)
-    throw new Error('Serverless auth/transport/seats attempted a legacy API request.');
+    throw new Error('Serverless auth/transport/seats/checkout attempted a legacy API request.');
 
   const { runCriticalJourneys } = await import('../e2e/critical-journeys.mjs');
   await runCriticalJourneys({ headed: process.argv.includes('--headed') });

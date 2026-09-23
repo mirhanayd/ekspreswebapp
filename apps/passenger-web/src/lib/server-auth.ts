@@ -8,7 +8,11 @@ import {
 import { ACCESS_TOKEN_COOKIE } from './auth';
 
 export async function requirePassenger(request: NextRequest) {
-  const principal = await authService.session(request.cookies.get(ACCESS_TOKEN_COOKIE)?.value);
+  return requirePassengerToken(request.cookies.get(ACCESS_TOKEN_COOKIE)?.value);
+}
+
+export async function requirePassengerToken(token: string | undefined) {
+  const principal = await authService.session(token);
   if (principal.role !== 'passenger') throw new ServerError(403, 'Bu işlem yolcular içindir.');
   return principal;
 }

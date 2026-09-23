@@ -172,6 +172,70 @@ export async function runServerlessSeatJourney(baseURL) {
   }
 }
 
+export async function runServerlessCheckoutJourney(baseURL) {
+  const context = await request.newContext({ baseURL });
+  try {
+    const trips = await (await context.get('/api/transport/trips')).json();
+    const trip = trips.find((item) => item.trip.status === 'scheduled') ?? trips[0];
+    assert.ok(trip, 'checkout journey requires a fixture trip');
+    const map = await (await context.get(`/api/seats/trip/${trip.trip.id}`)).json();
+    const seat = map.seats.find((item) => item.status === 'available');
+    assert.ok(seat, 'checkout journey requires an available seat');
+    const unauthorized = await context.post('/api/checkout/order', { data: {} });
+    assert.equal(unauthorized.status(), 401);
+    assert.equal(
+      (
+        await context.post('/api/auth/login', {
+          data: { email: 'yolcu@siirtkurtalan.demo', password: 'Demo123!' },
+        })
+      ).status(),
+      200,
+    );
+    const holdResponse = await context.post('/api/seats/hold', {
+      data: { tripId: trip.trip.id, seatNo: seat.seatNo },
+    });
+    assert.equal(holdResponse.status(), 200);
+    const hold = await holdResponse.json();
+    const input = {
+      tripId: trip.trip.id,
+      seatNo: seat.seatNo,
+      holdId: hold.holdId,
+      passengerFirstName: 'E2E',
+      passengerLastName: 'Checkout',
+      idempotencyKey: randomUUID(),
+      totalMinor: 1,
+    };
+    const created = await context.post('/api/checkout/order', { data: input });
+    assert.equal(created.status(), 200);
+    const order = await created.json();
+    assert.equal(order.totalMinor, seat.priceMinor, 'server price must override submitted totals');
+    const retry = await context.post('/api/checkout/order', { data: input });
+    assert.equal(retry.status(), 200);
+    assert.equal((await retry.json()).id, order.id);
+    const [firstPayment, paymentRetry] = await Promise.all([
+      context.post(`/api/checkout/order/${order.id}/pay`),
+      context.post(`/api/checkout/order/${order.id}/pay`),
+    ]);
+    assert.equal(firstPayment.status(), 200);
+    assert.equal(paymentRetry.status(), 200);
+    const payments = [await firstPayment.json(), await paymentRetry.json()];
+    assert.deepEqual(payments.map((item) => item.alreadyPaid).sort(), [false, true]);
+    assert.equal(payments[0].ticket.id, payments[1].ticket.id);
+    const detailResponse = await context.get(`/api/checkout/order/${order.id}`);
+    assert.equal(detailResponse.status(), 200);
+    const detail = await detailResponse.json();
+    assert.equal(detail.status, 'paid');
+    assert.equal(detail.tripSeat.status, 'purchased');
+    assert.equal(detail.payments.length, 1);
+    assert.equal(detail.ticket.id, payments[0].ticket.id);
+    process.stdout.write(
+      'PASS serverless checkout: hold → idempotent order → concurrent payment → ticket; legacy backend unavailable\n',
+    );
+  } finally {
+    await context.dispose();
+  }
+}
+
 export async function runServerlessDriverRegression(baseURL) {
   const context = await request.newContext({ baseURL });
   try {
