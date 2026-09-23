@@ -92,6 +92,7 @@ async function passengerJourney(browser) {
     await page.getByRole('link', { name: /TKT-DEMO-AKTIF/ }).click();
     await page.getByRole('link', { name: 'Otobüsü canlı izle' }).click();
     await visible(page.getByText('56 SKE 01'), 'live vehicle plate');
+    await visible(page.locator('canvas'), 'MapLibre canvas');
     assert.equal(await page.locator('canvas').count(), 1, 'MapLibre should render one canvas');
     await noPageOverflow(page);
     process.stdout.write('PASS passenger: search → seat → payment → QR → tracking bootstrap\n');
