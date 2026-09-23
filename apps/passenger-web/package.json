@@ -14,6 +14,7 @@
     "@ekspres/contracts": "workspace:*",
     "@ekspres/database": "workspace:*",
     "@ekspres/ui": "workspace:*",
+    "ably": "^1.2.50",
     "date-fns": "^4.4.0",
     "lucide-react": "^1.30.0",
     "maplibre-gl": "^6.2.0",
@@ -21,8 +22,7 @@
     "qrcode": "1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-map-gl": "^8.1.2",
-    "socket.io-client": "^4.8.3"
+    "react-map-gl": "^8.1.2"
   },
   "devDependencies": {
     "@ekspres/eslint-config": "workspace:*",

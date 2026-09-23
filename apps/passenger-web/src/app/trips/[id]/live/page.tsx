@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Radio } from 'lucide-react';
+import { ServerError, trackingService } from '@ekspres/database';
 import LiveMapView from './LiveMapView';
 import { ScreenHeader } from '@/components/ScreenHeader';
-import { API_BASE_URL, authenticatedApiFetch } from '@/lib/server-api';
+import { getAccessToken } from '@/lib/server-api';
+import { requirePassengerToken } from '@/lib/server-auth';
 
 export const metadata = { title: 'Canlı takip' };
 
@@ -16,12 +18,15 @@ export default async function LiveTrackingPage({
   const { ticketId } = await searchParams;
   if (!ticketId) redirect('/tickets');
 
-  const response = await authenticatedApiFetch(`/tracking/tickets/${ticketId}/bootstrap`);
-  if (!response || response.status === 401)
-    redirect(`/login?returnTo=${encodeURIComponent(`/tickets/${ticketId}`)}`);
-
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}));
+  let bootstrap;
+  try {
+    const principal = await requirePassengerToken(await getAccessToken());
+    bootstrap = await trackingService.getBootstrap(ticketId, principal.id);
+  } catch (error) {
+    if (error instanceof ServerError && error.status === 401) {
+      redirect(`/login?returnTo=${encodeURIComponent(`/tickets/${ticketId}`)}`);
+    }
+    const message = error instanceof ServerError ? error.message : undefined;
     return (
       <div className="canvas-sage min-h-[100dvh]">
         <div className="screen screen-pad">
@@ -32,7 +37,7 @@ export default async function LiveTrackingPage({
             </span>
             <h1 className="title-md mt-4">Canlı takip kullanılamıyor</h1>
             <p className="subtle mt-2 max-w-xs">
-              {payload.message || 'Bu bilet şu anda canlı takip için uygun değil.'}
+              {message || 'Bu bilet şu anda canlı takip için uygun değil.'}
             </p>
             <p className="caption mt-3 max-w-xs leading-5">
               Canlı takip yalnızca aktif biletlerde ve sefer biniş aşamasına geçtiğinde açılır.
@@ -48,7 +53,7 @@ export default async function LiveTrackingPage({
 
   return (
     <div className="h-[100dvh] w-full overflow-hidden bg-sage-200">
-      <LiveMapView bootstrap={await response.json()} socketOrigin={new URL(API_BASE_URL).origin} />
+      <LiveMapView bootstrap={bootstrap} />
     </div>
   );
 }

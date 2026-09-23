@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import * as Ably from 'ably/promises';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { io, Socket } from 'socket.io-client';
 import { BusFront, Gauge, LocateFixed, MapPin, Ticket, X, ZoomIn, ZoomOut } from 'lucide-react';
 import Link from 'next/link';
 import { toLngLat } from '@/lib/geo';
@@ -31,7 +31,7 @@ type BootstrapStop = {
 
 type Bootstrap = {
   ticketId: string;
-  accessToken: string;
+  realtime: { channel: string; authUrl: string };
   routeGeometry: { type: 'LineString'; coordinates: Array<[number, number]> };
   latestPosition: TrackingPosition | null;
   trip: {
@@ -39,7 +39,7 @@ type Bootstrap = {
     departureTime: string;
     arrivalTime: string;
     status?: string;
-    bus: { plateNumber: string; model?: string };
+    bus: { plateNumber: string; model?: string | null };
     route: {
       origin: { name: string };
       destination: { name: string };
@@ -97,16 +97,10 @@ function dayLabel(value: string) {
  * times either side of an amber duration pill, the two dates, a dashed amber
  * progress track, and a row of three dark status pills beneath it.
  */
-export default function LiveMapView({
-  bootstrap,
-  socketOrigin,
-}: {
-  bootstrap: Bootstrap;
-  socketOrigin: string;
-}) {
+export default function LiveMapView({ bootstrap }: { bootstrap: Bootstrap }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const socketRef = useRef<Socket | null>(null);
+  const realtimeRef = useRef<Ably.Realtime | null>(null);
   const markerRef = useRef<maplibregl.Marker | null>(null);
   const markerIconRef = useRef<HTMLSpanElement | null>(null);
   const [position, setPosition] = useState<TrackingPosition | null>(bootstrap.latestPosition);
@@ -253,18 +247,24 @@ export default function LiveMapView({
         .addTo(instance);
     });
 
-    socketRef.current = io(socketOrigin, {
-      path: '/api/tracking',
-      transports: ['websocket'],
-      auth: { token: bootstrap.accessToken },
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 15000,
+    const realtime = new Ably.Realtime({
+      authUrl: bootstrap.realtime.authUrl,
+      authMethod: 'POST',
+      echoMessages: false,
     });
-    socketRef.current.on('tracking:ready', () => setConnected(true));
-    socketRef.current.on('disconnect', () => setConnected(false));
-    socketRef.current.on('connect_error', () => setConnected(false));
-    socketRef.current.on('tracking:error', () => setTrackingState('forbidden'));
-    socketRef.current.on('tracking:position', (next: TrackingPosition) => {
+    realtimeRef.current = realtime;
+    const channel = realtime.channels.get(bootstrap.realtime.channel);
+    const onConnected = () => setConnected(true);
+    const onDisconnected = () => setConnected(false);
+    const onFailed = () => {
+      setConnected(false);
+      setTrackingState('forbidden');
+    };
+    const onPosition = (message: Ably.Types.Message) => {
+      const next =
+        typeof message.data === 'string'
+          ? (JSON.parse(message.data) as TrackingPosition)
+          : (message.data as TrackingPosition);
       if (next.tripId !== bootstrap.trip.id) return;
       setPosition(next);
       setTrackingState('live');
@@ -272,14 +272,25 @@ export default function LiveMapView({
       if (markerIconRef.current) {
         markerIconRef.current.style.transform = `rotate(${next.headingDeg}deg)`;
       }
-    });
+    };
+    realtime.connection.on('connected', onConnected);
+    realtime.connection.on('disconnected', onDisconnected);
+    realtime.connection.on('suspended', onDisconnected);
+    realtime.connection.on('failed', onFailed);
+    void channel.subscribe('location', onPosition).catch(onFailed);
 
     return () => {
-      socketRef.current?.disconnect();
+      channel.unsubscribe('location', onPosition);
+      realtime.connection.off('connected', onConnected);
+      realtime.connection.off('disconnected', onDisconnected);
+      realtime.connection.off('suspended', onDisconnected);
+      realtime.connection.off('failed', onFailed);
+      realtime.close();
+      realtimeRef.current = null;
       map.current?.remove();
       map.current = null;
     };
-  }, [bootstrap, socketOrigin, coordinates]);
+  }, [bootstrap, coordinates]);
 
   /** Paint the covered part of the route as the vehicle advances. */
   useEffect(() => {
