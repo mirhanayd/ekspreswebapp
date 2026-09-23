@@ -117,9 +117,26 @@ hold, authoritative total, idempotent order creation, concurrent payment retries
 creation and owner-only detail. PostgreSQL integration tests independently verify the
 same concurrency and identity invariants.
 
+## Passenger ticket checkpoint (#84)
+
+Passenger ticket wallet, detail and QR reads use the shared ticket service in
+`packages/database/src/server`. Authenticated Node.js Route Handlers expose
+`/api/tickets*`; the ticket Server Components call the same service directly. Ownership
+is derived from the signed JWT principal, and another passenger cannot read a ticket or
+mint its QR payload.
+
+QR values preserve the existing five-minute HS256 JWT contract (`purpose`, ticket ID,
+ticket number and trip ID). `JWT_SECRET` stays server-side. Neither list nor detail
+responses expose the durable `qrTokenHash`. No additional provider or environment
+variable is required.
+
+The legacy-unavailable E2E extends the booking journey through wallet, ticket detail and
+QR claims. PostgreSQL integration tests cover ownership, response sanitization and
+cancelled-ticket QR denial.
+
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, passenger ticket list/detail/QR, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 

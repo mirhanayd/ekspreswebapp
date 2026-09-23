@@ -228,8 +228,26 @@ export async function runServerlessCheckoutJourney(baseURL) {
     assert.equal(detail.tripSeat.status, 'purchased');
     assert.equal(detail.payments.length, 1);
     assert.equal(detail.ticket.id, payments[0].ticket.id);
+    const walletResponse = await context.get('/api/tickets');
+    assert.equal(walletResponse.status(), 200);
+    const wallet = await walletResponse.json();
+    const walletTicket = [...wallet.active, ...wallet.past, ...wallet.cancelled].find(
+      (item) => item.id === detail.ticket.id,
+    );
+    assert.ok(walletTicket, 'new ticket must appear in the passenger wallet');
+    assert.equal('qrTokenHash' in walletTicket, false);
+    const ticketResponse = await context.get(`/api/tickets/${detail.ticket.id}`);
+    assert.equal(ticketResponse.status(), 200);
+    assert.equal('qrTokenHash' in (await ticketResponse.json()), false);
+    const qrResponse = await context.get(`/api/tickets/${detail.ticket.id}/qr`);
+    assert.equal(qrResponse.status(), 200);
+    const qr = await qrResponse.json();
+    const claims = JSON.parse(Buffer.from(qr.payload.split('.')[1], 'base64url').toString('utf8'));
+    assert.equal(claims.purpose, 'ticket-qr');
+    assert.equal(claims.sub, detail.ticket.id);
+    assert.equal(claims.tripId, trip.trip.id);
     process.stdout.write(
-      'PASS serverless checkout: hold → idempotent order → concurrent payment → ticket; legacy backend unavailable\n',
+      'PASS serverless checkout/tickets: hold → idempotent order → concurrent payment → wallet/detail/QR; legacy backend unavailable\n',
     );
   } finally {
     await context.dispose();

@@ -1,7 +1,9 @@
 import { ArrowRight, BusFront, Radio, Ticket, UserRound } from 'lucide-react';
+import { ServerError, ticketService } from '@ekspres/database';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { authenticatedApiFetch } from '@/lib/server-api';
+import { getAccessToken } from '@/lib/server-api';
+import { requirePassengerToken } from '@/lib/server-auth';
 import {
   formatDayMonth,
   formatTime,
@@ -20,8 +22,8 @@ type PassengerTicket = {
   trip: {
     id: string;
     status: string;
-    departureTime: string;
-    arrivalTime: string;
+    departureTime: string | Date;
+    arrivalTime: string | Date;
     bus?: { plateNumber?: string };
     route: { origin: { name: string }; destination: { name: string } };
   };
@@ -38,17 +40,24 @@ export default async function MyTicketsPage() {
   let past: PassengerTicket[] = [];
   let cancelled: PassengerTicket[] = [];
 
-  const response = await authenticatedApiFetch('/tickets');
-  if (!response || response.status === 401) redirect('/login?returnTo=/tickets');
+  const token = await getAccessToken();
+  if (!token) redirect('/login?returnTo=/tickets');
+  let principal: Awaited<ReturnType<typeof requirePassengerToken>>;
   try {
-    if (response.ok) {
-      const data = await response.json();
-      active = data.active || [];
-      past = data.past || [];
-      cancelled = data.cancelled || [];
+    principal = await requirePassengerToken(token);
+  } catch (error) {
+    if (error instanceof ServerError && [401, 403].includes(error.status)) {
+      redirect('/login?returnTo=/tickets');
     }
+    throw error;
+  }
+  try {
+    const data = await ticketService.getMyTickets(principal.id);
+    active = data.active;
+    past = data.past;
+    cancelled = data.cancelled;
   } catch {
-    // Render the safe empty state if the ticket response cannot be decoded.
+    // Render the safe empty state if ticket data is temporarily unavailable.
   }
 
   const groups = [
