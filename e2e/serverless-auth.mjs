@@ -339,11 +339,20 @@ export async function runServerlessDriverRegression(baseURL) {
     assert.equal(response.status(), 200);
     const trips = await response.json();
     assert.ok(trips.length > 0, 'driver sees assigned trips');
-    const trip = trips.find((item) => item.passengerSummary.total > 0);
-    assert.ok(trip, 'fixture must include assigned passengers');
-    const detailResponse = await context.get(`/api/driver/trips/${trip.id}`);
-    assert.equal(detailResponse.status(), 200);
-    const detail = await detailResponse.json();
+    let trip;
+    let detail;
+    for (const candidate of trips) {
+      if (candidate.passengerSummary.total === 0) continue;
+      const detailResponse = await context.get(`/api/driver/trips/${candidate.id}`);
+      assert.equal(detailResponse.status(), 200);
+      const candidateDetail = await detailResponse.json();
+      if (candidateDetail.manifest.some((item) => item.ticketNo === 'TKT-DEMO-AKTIF')) {
+        trip = candidate;
+        detail = candidateDetail;
+        break;
+      }
+    }
+    assert.ok(trip && detail, 'fixture must assign the active tracking ticket to this driver');
     assert.ok(detail.route.stops.length > 0);
     assert.ok(detail.manifest.length > 0);
     const passenger = detail.manifest[0];
