@@ -125,7 +125,7 @@ async function adminJourney(browser) {
     await page.getByRole('button', { name: 'Yönetim paneline giriş' }).click();
     await urlMatches(page, /:3002\/dashboard/);
     await visible(page.getByRole('heading', { name: 'Operasyon özeti' }), 'admin dashboard');
-    await visible(page.getByText('1 canlı araç'), 'live fleet summary');
+    await visible(page.getByText('0 canlı araç'), 'durable fleet summary before GPS ingestion');
     await noPageOverflow(page);
 
     await page.goto('http://127.0.0.1:3002/tickets');
@@ -139,7 +139,9 @@ async function adminJourney(browser) {
     await visible(page.getByRole('heading', { name: 'Aktif araçlar' }), 'admin live fleet');
     await visible(page.getByText('56 SKE 01'), 'admin fleet vehicle');
     await noPageOverflow(page);
-    process.stdout.write('PASS admin: role denial → login → dashboard → tickets → fleet\n');
+    process.stdout.write(
+      'PASS serverless admin: role denial → login → dashboard → tickets → fleet; legacy backend unavailable\n',
+    );
   } catch (error) {
     await mkdir('test-results', { recursive: true });
     await page

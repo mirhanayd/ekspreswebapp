@@ -120,7 +120,11 @@ try {
   startService(
     'admin',
     ['apps/admin-web/node_modules/next/dist/bin/next', 'start', 'apps/admin-web', '-p', '3002'],
-    sharedWebEnv,
+    {
+      ...sharedWebEnv,
+      API_URL: 'http://127.0.0.1:3099/api/v1',
+      NEXT_PUBLIC_API_URL: 'http://127.0.0.1:3099/api/v1',
+    },
   );
   startService('tracking', ['apps/tracking-simulator/dist/index.js'], {
     NODE_ENV: 'production',
@@ -169,6 +173,8 @@ try {
 
   const { runCriticalJourneys } = await import('../e2e/critical-journeys.mjs');
   await runCriticalJourneys({ headed: process.argv.includes('--headed') });
+  if (rejectedLegacyRequests !== 0)
+    throw new Error('Serverless passenger/admin paths attempted a legacy API request.');
   startService(
     'driver-isolated',
     ['apps/driver-web/node_modules/next/dist/bin/next', 'start', 'apps/driver-web', '-p', '3011'],

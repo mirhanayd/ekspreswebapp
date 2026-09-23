@@ -4,6 +4,7 @@ import { createDatabaseClient } from '../src/client.js';
 import { createCheckoutService } from '../src/server/checkout-service.js';
 import { createSeatService } from '../src/server/seat-service.js';
 import { createTicketService } from '../src/server/ticket-service.js';
+import { createAdminService } from '../src/server/admin-service.js';
 
 type Fixture = {
   userId: string;
@@ -22,6 +23,7 @@ describe('serverless checkout against PostgreSQL', () => {
   let checkout: ReturnType<typeof createCheckoutService>;
   let seats: ReturnType<typeof createSeatService>;
   let tickets: ReturnType<typeof createTicketService>;
+  let admin: ReturnType<typeof createAdminService>;
   let fixture: Fixture | undefined;
 
   beforeAll(() => {
@@ -35,6 +37,7 @@ describe('serverless checkout against PostgreSQL', () => {
     checkout = createCheckoutService(() => client.db);
     seats = createSeatService(() => client.db);
     tickets = createTicketService(() => client.db);
+    admin = createAdminService(() => client.db);
   });
 
   afterEach(async () => {
@@ -198,6 +201,19 @@ describe('serverless checkout against PostgreSQL', () => {
     const qr = await tickets.getTicketQr(results[0].ticket.id, item.userId);
     expect(qr.payload.split('.')).toHaveLength(3);
     expect(qr.payload).not.toContain(results[0].ticket.qrTokenHash);
+    const adminTickets = await admin.getTickets();
+    expect(adminTickets.map((value: { id: string }) => value.id)).toContain(results[0].ticket.id);
+    expect(await admin.getTicket(results[0].ticket.id)).toMatchObject({
+      id: results[0].ticket.id,
+      amountMinor: 12345,
+    });
+    await expect(admin.getTicket(randomUUID())).rejects.toMatchObject({ status: 404 });
+    expect((await admin.getTransport()).trips.map((trip: { id: string }) => trip.id)).toContain(
+      item.tripId,
+    );
+    expect((await admin.getOverview()).paidOrders).toBeGreaterThan(0);
+    expect((await admin.getReports()).occupancy.sold).toBeGreaterThan(0);
+    expect(await admin.getFleet()).toEqual([]);
     await client.pool.query("UPDATE tickets SET status = 'cancelled' WHERE id = $1", [
       results[0].ticket.id,
     ]);

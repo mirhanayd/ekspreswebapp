@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ekspres/contracts": "workspace:*",
+    "@ekspres/database": "workspace:*",
     "@ekspres/ui": "workspace:*",
     "lucide-react": "^0.475.0",
     "maplibre-gl": "^6.2.0",
