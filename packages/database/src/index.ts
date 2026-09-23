@@ -11,3 +11,4 @@ export {
   validateTripSearch,
   type TripSearch,
 } from './server/transport-service.js';
+export { seatService, createSeatService, validateSeatHoldInput } from './server/seat-service.js';

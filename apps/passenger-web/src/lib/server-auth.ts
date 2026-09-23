@@ -7,6 +7,12 @@ import {
 } from '@ekspres/database';
 import { ACCESS_TOKEN_COOKIE } from './auth';
 
+export async function requirePassenger(request: NextRequest) {
+  const principal = await authService.session(request.cookies.get(ACCESS_TOKEN_COOKIE)?.value);
+  if (principal.role !== 'passenger') throw new ServerError(403, 'Bu işlem yolcular içindir.');
+  return principal;
+}
+
 function authFailureKind(error: unknown) {
   if (!(error instanceof Error)) return 'unknown';
   if (error.message === 'DATABASE_URL is missing in environment variables or configuration.') {

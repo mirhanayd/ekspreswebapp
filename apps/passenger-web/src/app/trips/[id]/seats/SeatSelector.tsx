@@ -96,7 +96,7 @@ export default function SeatSelector({
 
   const refresh = useCallback(async () => {
     try {
-      const response = await fetch(`/api/passenger/seats/trip/${tripId}`);
+      const response = await fetch(`/api/seats/trip/${tripId}`);
       if (response.ok) setSeatMap(await response.json());
     } catch {
       // Retain the last authoritative seat snapshot when refresh is unavailable.
@@ -125,7 +125,7 @@ export default function SeatSelector({
   const release = useCallback(async () => {
     if (!holdInfo) return;
     try {
-      await fetch(`/api/passenger/seats/hold/${holdInfo.holdId}`, { method: 'DELETE' });
+      await fetch(`/api/seats/hold/${holdInfo.holdId}`, { method: 'DELETE' });
     } catch {
       // Releasing is best effort; the server expires abandoned holds safely.
     }
@@ -140,7 +140,7 @@ export default function SeatSelector({
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/passenger/seats/hold', {
+      const response = await fetch('/api/seats/hold', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tripId, seatNo: seat.seatNo }),

@@ -57,8 +57,8 @@ and Route Handler responses clear the invalid cookie. Session responses never in
 password hashes and have `Cache-Control: no-store`.
 
 The auth HTTP E2E test runs against a separate passenger process whose legacy API URL
-points to a rejecting local endpoint. This gate proves auth independence; it does not
-claim that transport, booking or realtime have migrated.
+points to a rejecting local endpoint. This gate proves auth independence; transport and
+seats have their own legacy-unavailable gates below.
 
 ## Passenger transport checkpoint (#78)
 
@@ -75,12 +75,30 @@ project's existing pooled `DATABASE_URL`; no Redis/KV or additional provider is 
 
 The transport E2E gate starts the passenger application with its legacy API URL pointed
 to a rejecting endpoint, then verifies locations, routes, filtered trips, trip detail,
-invalid-input handling and the home server render. Seat availability/holds are a
-separate migration checkpoint and remain on the compatibility backend for now.
+invalid-input handling and the home server render. Seat availability/holds are covered
+by the separate #80 checkpoint below.
+
+## Passenger seat checkpoint (#80)
+
+Passenger seat inventory, hold creation and hold release use the shared seat service in
+`packages/database/src/server`. Public inventory is exposed at
+`GET /api/seats/trip/:tripId`; authenticated hold/release handlers derive the passenger
+identity only from the signed HTTP-only JWT cookie.
+
+PostgreSQL row locks serialize competing requests for one seat. The partial unique index
+on active holds remains a second database-level guard. Expired holds are marked durable
+and stale `held` seat rows are repaired to `available`. Same-passenger retries return the
+existing hold, and repeated owner release is idempotent. Purchased and blocked seats are
+never changed by the hold service. No Redis/KV is used for this lifecycle.
+
+The seat E2E gate runs against the legacy-unavailable passenger process and verifies
+inventory, unauthenticated denial, authenticated hold, idempotent retry and release.
+PostgreSQL integration tests additionally race two passengers, reclaim expired holds and
+reject purchased/blocked seats.
 
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, passenger seat/checkout/ticket HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, passenger checkout/ticket HTTP, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 
