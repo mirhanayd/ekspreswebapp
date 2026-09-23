@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_ACCESS_TOKEN_COOKIE } from '@/lib/auth';
-import { API_BASE_URL } from '@/lib/server-api';
+import { NextRequest } from 'next/server';
+import { adminData, adminErrorResponse, requireAdmin } from '@/lib/server-auth';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
-  const token = _request.cookies.get(ADMIN_ACCESS_TOKEN_COOKIE)?.value;
-  if (!token) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  const { path } = await context.params;
-  const response = await fetch(`${API_BASE_URL}/admin/${path.join('/')}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  const payload = await response.json().catch(() => ({}));
-  return NextResponse.json(payload, { status: response.status });
+  try {
+    const [, { path }] = await Promise.all([requireAdmin(_request), context.params]);
+    return Response.json(await adminData(`/admin/${path.join('/')}`), {
+      headers: { 'Cache-Control': 'no-store' },
+    });
+  } catch (error) {
+    return adminErrorResponse(error);
+  }
 }

@@ -134,9 +134,25 @@ The legacy-unavailable E2E extends the booking journey through wallet, ticket de
 QR claims. PostgreSQL integration tests cover ownership, response sanitization and
 cancelled-ticket QR denial.
 
+## Admin serverless checkpoint (#86)
+
+Admin login verifies credentials and the admin role through the shared auth service, then
+sets the admin application's HTTP-only JWT cookie. Overview, metrics, transport, ticket,
+fleet and report reads use the framework-neutral admin service and same-origin Node.js
+Route Handler. Every request revalidates the signed principal and admin role server-side.
+
+Fleet reads no longer depend on the Redis latest-location snapshot. Active trip metadata,
+route geometry and the newest durable position are queried from Neon/PostGIS; freshness is
+derived from that persisted timestamp. Managed realtime remains responsible only for
+ephemeral passenger fan-out after its own cutover.
+
+The admin browser E2E runs with `API_URL` pointed at a rejecting legacy endpoint and covers
+passenger-role denial, admin login, dashboard, tickets and fleet. PostgreSQL integration
+also covers overview, transport, ticket detail, reports and the no-position fleet state.
+
 ## Temporary passenger/admin path
 
-Until issue #73 is complete, admin HTTP and Socket.IO requests may still target the Render NestJS API. Keep their current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
+Until issue #73 is complete, passenger Socket.IO requests may still target the Render NestJS API. Keep its current `API_URL` / `NEXT_PUBLIC_API_URL` values during the transition.
 
 Do not delete or disable Render yet. It remains the rollback path while passenger booking, ticketing, admin operations and realtime subscription are migrated and tested.
 

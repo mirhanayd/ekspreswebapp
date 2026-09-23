@@ -155,7 +155,7 @@ export default function FleetMapView({ initialTrips }: { initialTrips: FleetTrip
       <PageHeader
         eyebrow="Canlı Filo"
         title="Aktif araçlar"
-        description="Konum anlık görüntüsü Redis üzerinden 5 saniyede bir yenilenir."
+        description="Son kalıcı konum Neon/PostGIS üzerinden 5 saniyede bir yenilenir."
         actions={
           <>
             <span className="chip-status chip-live">
