@@ -1,8 +1,10 @@
 import { ArrowRight, BusFront, Clock3, QrCode, Radio, ShieldCheck } from 'lucide-react';
+import { ServerError, ticketService } from '@ekspres/database';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import QRCode from 'qrcode';
-import { authenticatedApiFetch } from '@/lib/server-api';
+import { getAccessToken } from '@/lib/server-api';
+import { requirePassengerToken } from '@/lib/server-auth';
 import { BrandMark } from '@/components/BrandLogo';
 import { PrintButton } from '@/components/PrintButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
@@ -24,13 +26,13 @@ type TicketDetail = {
   id: string;
   ticketNo: string;
   status: string;
-  issuedAt: string;
+  issuedAt: string | Date;
   trip: {
     id: string;
     status: string;
-    departureTime: string;
-    arrivalTime: string;
-    bus: { plateNumber: string; model?: string };
+    departureTime: string | Date;
+    arrivalTime: string | Date;
+    bus: { plateNumber: string; model?: string | null };
     route: { name?: string; origin: { name: string }; destination: { name: string } };
   };
   tripSeat: { seatNo: string };
@@ -53,24 +55,34 @@ export default async function TicketDetailPage({
   let qrExpiresAt: string | null = null;
   let error: string | null = null;
 
-  const response = await authenticatedApiFetch(`/tickets/${ticketId}`);
-  if (!response || response.status === 401) redirect(`/login?returnTo=/tickets/${ticketId}`);
+  const token = await getAccessToken();
+  if (!token) redirect(`/login?returnTo=/tickets/${ticketId}`);
+  let principal: Awaited<ReturnType<typeof requirePassengerToken>>;
   try {
-    if (!response.ok) throw new Error('Bilet bulunamadı veya erişim yetkiniz yok.');
-    ticket = await response.json();
-    const qrResponse = await authenticatedApiFetch(`/tickets/${ticketId}/qr`);
-    if (qrResponse?.ok) {
-      const qr = await qrResponse.json();
-      qrImage = await QRCode.toDataURL(qr.payload, {
-        errorCorrectionLevel: 'M',
-        margin: 1,
-        width: 320,
-        color: { dark: '#051A09', light: '#FFFFFF' },
-      });
-      qrExpiresAt = qr.expiresAt;
+    principal = await requirePassengerToken(token);
+  } catch (authError) {
+    if (authError instanceof ServerError && [401, 403].includes(authError.status)) {
+      redirect(`/login?returnTo=/tickets/${ticketId}`);
     }
+    throw authError;
+  }
+  try {
+    ticket = await ticketService.getTicketDetail(ticketId, principal.id);
+    const qr = await ticketService.getTicketQr(ticketId, principal.id);
+    qrImage = await QRCode.toDataURL(qr.payload, {
+      errorCorrectionLevel: 'M',
+      margin: 1,
+      width: 320,
+      color: { dark: '#051A09', light: '#FFFFFF' },
+    });
+    qrExpiresAt = qr.expiresAt;
   } catch (caught) {
-    error = caught instanceof Error ? caught.message : 'Bilet yüklenemedi.';
+    error =
+      caught instanceof ServerError && [403, 404].includes(caught.status)
+        ? 'Bilet bulunamadı veya erişim yetkiniz yok.'
+        : caught instanceof Error
+          ? caught.message
+          : 'Bilet yüklenemedi.';
   }
 
   if (error || !ticket)

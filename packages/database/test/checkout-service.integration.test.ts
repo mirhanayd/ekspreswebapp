@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { createDatabaseClient } from '../src/client.js';
 import { createCheckoutService } from '../src/server/checkout-service.js';
 import { createSeatService } from '../src/server/seat-service.js';
+import { createTicketService } from '../src/server/ticket-service.js';
 
 type Fixture = {
   userId: string;
@@ -20,6 +21,7 @@ describe('serverless checkout against PostgreSQL', () => {
   let client: ReturnType<typeof createDatabaseClient>;
   let checkout: ReturnType<typeof createCheckoutService>;
   let seats: ReturnType<typeof createSeatService>;
+  let tickets: ReturnType<typeof createTicketService>;
   let fixture: Fixture | undefined;
 
   beforeAll(() => {
@@ -32,6 +34,7 @@ describe('serverless checkout against PostgreSQL', () => {
     client = createDatabaseClient({ url });
     checkout = createCheckoutService(() => client.db);
     seats = createSeatService(() => client.db);
+    tickets = createTicketService(() => client.db);
   });
 
   afterEach(async () => {
@@ -184,5 +187,22 @@ describe('serverless checkout against PostgreSQL', () => {
     expect(detail.status).toBe('paid');
     expect(detail.tripSeat.status).toBe('purchased');
     expect(detail.ticket?.id).toBe(results[0].ticket.id);
+    const wallet = await tickets.getMyTickets(item.userId);
+    expect(wallet.active.map((ticket) => ticket.id)).toContain(results[0].ticket.id);
+    expect(wallet.active[0]).not.toHaveProperty('qrTokenHash');
+    await expect(
+      tickets.getTicketDetail(results[0].ticket.id, item.otherUserId),
+    ).rejects.toMatchObject({ status: 403 });
+    const ticket = await tickets.getTicketDetail(results[0].ticket.id, item.userId);
+    expect(ticket).not.toHaveProperty('qrTokenHash');
+    const qr = await tickets.getTicketQr(results[0].ticket.id, item.userId);
+    expect(qr.payload.split('.')).toHaveLength(3);
+    expect(qr.payload).not.toContain(results[0].ticket.qrTokenHash);
+    await client.pool.query("UPDATE tickets SET status = 'cancelled' WHERE id = $1", [
+      results[0].ticket.id,
+    ]);
+    await expect(tickets.getTicketQr(results[0].ticket.id, item.userId)).rejects.toMatchObject({
+      status: 409,
+    });
   });
 });

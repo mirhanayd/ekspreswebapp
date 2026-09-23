@@ -22,13 +22,21 @@ function encode(value: object) {
 }
 
 export function signAccessToken(principal: { id: string; email: string; role: string }) {
+  return signJwtPayload(
+    { sub: principal.id, email: principal.email, role: principal.role },
+    ACCESS_TOKEN_TTL_SECONDS,
+  );
+}
+
+export function signJwtPayload(payload: Record<string, unknown>, expiresInSeconds: number) {
+  if (!Number.isSafeInteger(expiresInSeconds) || expiresInSeconds < 1) {
+    throw new Error('JWT expiry must be a positive integer.');
+  }
   const now = Math.floor(Date.now() / 1000);
   const input = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({
-    sub: principal.id,
-    email: principal.email,
-    role: principal.role,
+    ...payload,
     iat: now,
-    exp: now + ACCESS_TOKEN_TTL_SECONDS,
+    exp: now + expiresInSeconds,
   })}`;
   return `${input}.${signature(input)}`;
 }
