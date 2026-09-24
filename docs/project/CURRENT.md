@@ -32,7 +32,7 @@ Incremental serverless backend migration.
 - Driver login, trip reads, trip status, passenger boarding state and GPS ingestion are being moved into the driver Vercel project.
 - JWT role and driver-to-trip assignment checks remain server-side.
 - GPS history remains durable in PostGIS.
-- When `ABLY_API_KEY` is configured, serverless GPS ingestion can publish to a trip-scoped managed realtime channel.
+- `ABLY_API_KEY` is configured server-side for passenger and driver staging; the next Preview deployment verifies GPS publish and ticket-scoped receive before #88 merges.
 - Issue #73 tracks passenger/admin migration, realtime subscriber cutover and final Render/NestJS removal.
 
 ## Temporary Hybrid State
