@@ -7,7 +7,11 @@ import { useRouter } from 'next/navigation';
 
 const DriverRouteMap = dynamic(() => import('./DriverRouteMap'), {
   ssr: false,
-  loading: () => <div className="v2-map-fallback" role="status">Harita yükleniyor…</div>,
+  loading: () => (
+    <div className="v2-map-fallback" role="status">
+      Harita yükleniyor…
+    </div>
+  ),
 });
 
 type BoardingStatus = 'pending' | 'boarded' | 'no_show';
@@ -910,7 +914,10 @@ export function DriverDashboard() {
                 }))}
                 vehicle={lastPosition}
               />
-              <p>Duraklar arası çizgi şematiktir. Araç işareti yalnızca sunucunun onayladığı son konumdur.</p>
+              <p>
+                Duraklar arası çizgi şematiktir. Araç işareti yalnızca sunucunun onayladığı son
+                konumdur.
+              </p>
             </section>
             <section className="v2-route-schematic" aria-label="Güzergâh şeması">
               <div className="v2-schematic-head">
