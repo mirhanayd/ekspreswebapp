@@ -24,3 +24,12 @@ export {
   createTicketQrPayload,
 } from './server/ticket-service.js';
 export { adminService, createAdminService, adminFleetFreshness } from './server/admin-service.js';
+export {
+  trackingService,
+  createTrackingService,
+  createManagedRealtimeTokenRequest,
+  publishManagedTrackingPosition,
+  managedTrackingChannel,
+  type TrackingPosition,
+  type ManagedRealtimeTokenRequest,
+} from './server/tracking-service.js';

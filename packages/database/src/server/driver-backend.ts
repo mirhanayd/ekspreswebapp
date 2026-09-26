@@ -2,6 +2,7 @@ import { authService } from './auth-service.js';
 import { and, desc, eq, inArray, ne } from 'drizzle-orm';
 import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
+import { publishManagedTrackingPosition } from './tracking-service.js';
 
 export { ServerError as DriverBackendError } from './errors.js';
 import { ServerError as DriverBackendError } from './errors.js';
@@ -184,22 +185,6 @@ type DriverLocationInput = {
   recordedAt?: string;
 };
 
-async function publishManagedRealtime(channel: string, data: unknown) {
-  const apiKey = process.env.ABLY_API_KEY;
-  if (!apiKey) return;
-
-  const authorization = Buffer.from(apiKey).toString('base64');
-  await fetch(`https://main.realtime.ably.net/channels/${encodeURIComponent(channel)}/messages`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${authorization}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ name: 'location', data }),
-    signal: AbortSignal.timeout(2000),
-  }).catch(() => undefined);
-}
-
 export async function recordDriverLocation(
   driverId: string,
   tripId: string,
@@ -252,6 +237,6 @@ export async function recordDriverLocation(
       .onConflictDoNothing();
   }
 
-  await publishManagedRealtime(`trip:${tripId}:location`, position);
+  await publishManagedTrackingPosition(position);
   return position;
 }

@@ -22,8 +22,8 @@ Incremental serverless backend migration.
 - #80 / PR #81 migrated seat inventory, hold/release, expiration and concurrency to PostgreSQL-backed serverless handlers without Redis/KV.
 - #82 / PR #83 migrated authenticated order creation, demo payment and owner-only order reads to shared PostgreSQL transactions and same-origin handlers.
 - #84 / PR #85 migrated passenger-owned ticket list/detail and short-lived QR payloads to shared Neon-backed services and same-origin handlers.
-- #86 migrates admin login, overview, transport, tickets, fleet and reports to shared Neon/PostGIS services and same-origin handlers.
-- Passenger realtime remains legacy until its managed replacement passes tests.
+- #86 / PR #87 migrated admin login, overview, transport, tickets, fleet and reports to shared Neon/PostGIS services and same-origin handlers.
+- #88 migrates passenger tracking bootstrap and fan-out from Render/Redis/Socket.IO to ticket-scoped managed realtime with Neon/PostGIS snapshots.
 
 ## Previous Campaign
 
@@ -32,7 +32,7 @@ Incremental serverless backend migration.
 - Driver login, trip reads, trip status, passenger boarding state and GPS ingestion are being moved into the driver Vercel project.
 - JWT role and driver-to-trip assignment checks remain server-side.
 - GPS history remains durable in PostGIS.
-- When `ABLY_API_KEY` is configured, serverless GPS ingestion can publish to a trip-scoped managed realtime channel.
+- `ABLY_API_KEY` is configured server-side for passenger and driver staging; the next Preview deployment verifies GPS publish and ticket-scoped receive before #88 merges.
 - Issue #73 tracks passenger/admin migration, realtime subscriber cutover and final Render/NestJS removal.
 
 ## Temporary Hybrid State
@@ -43,8 +43,8 @@ Incremental serverless backend migration.
 - Passenger seat inventory/holds: Vercel Route Handlers/shared PostgreSQL transactions -> Neon.
 - Passenger checkout/payment/order detail: Vercel Route Handlers/shared PostgreSQL transactions -> Neon.
 - Passenger ticket list/detail/QR: Vercel Route Handlers/shared server services -> Neon.
-- Admin HTTP operations: Vercel Route Handlers/shared Neon/PostGIS services while #86 is in review.
-- Passenger live tracking: existing Socket.IO path until managed realtime subscription replaces it.
+- Admin HTTP operations: Vercel Route Handlers/shared Neon/PostGIS services.
+- Passenger live tracking: Vercel bootstrap/token handlers -> Neon/PostGIS + ticket-scoped Ably subscription while #88 is in review.
 - Render resources must not be deleted until passenger booking, tickets, admin and live tracking pass E2E on the replacement path.
 
 ## Driver Capability Set
@@ -59,6 +59,6 @@ Incremental serverless backend migration.
 
 ## Next Gate
 
-- Complete #86 CI and HTTPS Preview admin smoke with the legacy API unavailable.
-- Continue #73 with managed passenger realtime subscription.
+- Complete #88 CI and HTTPS Preview managed-realtime smoke with the legacy API unavailable.
+- Configure the same server-only `ABLY_API_KEY` in passenger and driver Vercel Preview/Production scopes if it is not already present.
 - Keep Render available as rollback until the passenger/admin/realtime replacement paths pass final E2E.

@@ -86,6 +86,8 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.
 - PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants.
 - Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
+- Managed realtime tokens must be short-lived, subscribe-only and scoped to the authenticated passenger's entitled trip channel.
+- Managed realtime API keys are server-only and must never use a `NEXT_PUBLIC_*` name.
 - Production secrets belong in the hosting provider's secret store, never in Git.
 
 ## 11. Migration Rules

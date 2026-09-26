@@ -5,6 +5,7 @@ import { createCheckoutService } from '../src/server/checkout-service.js';
 import { createSeatService } from '../src/server/seat-service.js';
 import { createTicketService } from '../src/server/ticket-service.js';
 import { createAdminService } from '../src/server/admin-service.js';
+import { createTrackingService } from '../src/server/tracking-service.js';
 
 type Fixture = {
   userId: string;
@@ -24,6 +25,7 @@ describe('serverless checkout against PostgreSQL', () => {
   let seats: ReturnType<typeof createSeatService>;
   let tickets: ReturnType<typeof createTicketService>;
   let admin: ReturnType<typeof createAdminService>;
+  let tracking: ReturnType<typeof createTrackingService>;
   let fixture: Fixture | undefined;
 
   beforeAll(() => {
@@ -38,6 +40,7 @@ describe('serverless checkout against PostgreSQL', () => {
     seats = createSeatService(() => client.db);
     tickets = createTicketService(() => client.db);
     admin = createAdminService(() => client.db);
+    tracking = createTrackingService(() => client.db);
   });
 
   afterEach(async () => {
@@ -214,11 +217,51 @@ describe('serverless checkout against PostgreSQL', () => {
     expect((await admin.getOverview()).paidOrders).toBeGreaterThan(0);
     expect((await admin.getReports()).occupancy.sold).toBeGreaterThan(0);
     expect(await admin.getFleet()).toEqual([]);
+    await client.pool.query(
+      `UPDATE routes
+       SET geometry = ST_GeomFromText('LINESTRING(41.94 37.93, 41.50 38.10)', 4326)
+       WHERE id = $1`,
+      [item.routeId],
+    );
+    await client.pool.query("UPDATE trips SET status = 'in_transit' WHERE id = $1", [item.tripId]);
+    await client.pool.query(
+      `INSERT INTO tracking_positions
+         (trip_id, bus_id, position, speed_kph, heading_deg, recorded_at, sequence, source)
+       VALUES ($1, $2, ST_SetSRID(ST_MakePoint(41.75, 38.01), 4326), 72, 120, now(), 1, 'MOBILE_APP')`,
+      [item.tripId, item.busId],
+    );
+    const bootstrap = await tracking.getBootstrap(results[0].ticket.id, item.userId);
+    expect(bootstrap).toMatchObject({
+      ticketId: results[0].ticket.id,
+      routeGeometry: { type: 'LineString' },
+      latestPosition: {
+        tripId: item.tripId,
+        busId: item.busId,
+        longitude: 41.75,
+        latitude: 38.01,
+        speedKph: 72,
+      },
+      realtime: { channel: `trip:${item.tripId}:location` },
+    });
+    const token = await tracking.createRealtimeToken(
+      results[0].ticket.id,
+      item.userId,
+      'app.key:test-secret',
+    );
+    expect(JSON.parse(token.capability)).toEqual({
+      [`trip:${item.tripId}:location`]: ['subscribe'],
+    });
+    await expect(
+      tracking.getBootstrap(results[0].ticket.id, item.otherUserId),
+    ).rejects.toMatchObject({ status: 404 });
     await client.pool.query("UPDATE tickets SET status = 'cancelled' WHERE id = $1", [
       results[0].ticket.id,
     ]);
     await expect(tickets.getTicketQr(results[0].ticket.id, item.userId)).rejects.toMatchObject({
       status: 409,
     });
+    await expect(
+      tracking.createRealtimeToken(results[0].ticket.id, item.userId, 'app.key:test-secret'),
+    ).rejects.toMatchObject({ status: 409 });
   });
 });

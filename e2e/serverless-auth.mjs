@@ -254,6 +254,67 @@ export async function runServerlessCheckoutJourney(baseURL) {
   }
 }
 
+export async function runServerlessTrackingJourney(baseURL) {
+  const context = await request.newContext({ baseURL });
+  const outsider = await request.newContext({ baseURL });
+  try {
+    const walletUnauthorized = await context.get('/api/tickets');
+    assert.equal(walletUnauthorized.status(), 401);
+    assert.equal(
+      (
+        await context.post('/api/auth/login', {
+          data: { email: 'yolcu@siirtkurtalan.demo', password: 'Demo123!' },
+        })
+      ).status(),
+      200,
+    );
+    const wallet = await (await context.get('/api/tickets')).json();
+    const ticket = wallet.active.find((item) => item.ticketNo === 'TKT-DEMO-AKTIF');
+    assert.ok(ticket, 'tracking journey requires the active seeded ticket');
+
+    const bootstrapResponse = await context.get(`/api/tracking/tickets/${ticket.id}/bootstrap`);
+    assert.equal(bootstrapResponse.status(), 200);
+    const bootstrap = await bootstrapResponse.json();
+    assert.equal(bootstrap.ticketId, ticket.id);
+    assert.equal(bootstrap.routeGeometry.type, 'LineString');
+    assert.equal(bootstrap.realtime.channel, `trip:${ticket.tripId}:location`);
+    assert.equal(bootstrap.latestPosition.tripId, ticket.tripId);
+    assert.equal(bootstrap.latestPosition.longitude, 41.97);
+    assert.equal(bootstrap.latestPosition.latitude, 37.93);
+
+    const tokenResponse = await context.post(`/api/tracking/tickets/${ticket.id}/token`);
+    assert.equal(tokenResponse.status(), 200);
+    const token = await tokenResponse.json();
+    assert.equal(token.clientId.startsWith('passenger:'), true);
+    assert.equal(token.ttl, 300_000);
+    assert.deepEqual(JSON.parse(token.capability), {
+      [`trip:${ticket.tripId}:location`]: ['subscribe'],
+    });
+    assert.equal('apiKey' in token, false);
+
+    const outsiderCredentials = {
+      email: `e2e-tracking-${randomUUID()}@example.test`,
+      password: 'Local-test-pass123!',
+      firstName: 'Tracking',
+      lastName: 'Outsider',
+    };
+    assert.equal(
+      (await outsider.post('/api/auth/register', { data: outsiderCredentials })).status(),
+      200,
+    );
+    assert.equal(
+      (await outsider.get(`/api/tracking/tickets/${ticket.id}/bootstrap`)).status(),
+      404,
+    );
+    assert.equal((await outsider.post(`/api/tracking/tickets/${ticket.id}/token`)).status(), 404);
+    process.stdout.write(
+      'PASS serverless tracking: entitlement → PostGIS latest snapshot → scoped managed token; legacy backend unavailable\n',
+    );
+  } finally {
+    await Promise.all([context.dispose(), outsider.dispose()]);
+  }
+}
+
 export async function runServerlessDriverRegression(baseURL) {
   const context = await request.newContext({ baseURL });
   try {
@@ -278,11 +339,20 @@ export async function runServerlessDriverRegression(baseURL) {
     assert.equal(response.status(), 200);
     const trips = await response.json();
     assert.ok(trips.length > 0, 'driver sees assigned trips');
-    const trip = trips.find((item) => item.passengerSummary.total > 0);
-    assert.ok(trip, 'fixture must include assigned passengers');
-    const detailResponse = await context.get(`/api/driver/trips/${trip.id}`);
-    assert.equal(detailResponse.status(), 200);
-    const detail = await detailResponse.json();
+    let trip;
+    let detail;
+    for (const candidate of trips) {
+      if (candidate.passengerSummary.total === 0) continue;
+      const detailResponse = await context.get(`/api/driver/trips/${candidate.id}`);
+      assert.equal(detailResponse.status(), 200);
+      const candidateDetail = await detailResponse.json();
+      if (candidateDetail.manifest.some((item) => item.ticketNo === 'TKT-DEMO-AKTIF')) {
+        trip = candidate;
+        detail = candidateDetail;
+        break;
+      }
+    }
+    assert.ok(trip && detail, 'fixture must assign the active tracking ticket to this driver');
     assert.ok(detail.route.stops.length > 0);
     assert.ok(detail.manifest.length > 0);
     const passenger = detail.manifest[0];
