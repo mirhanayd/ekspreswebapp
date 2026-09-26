@@ -1,8 +1,14 @@
 'use client';
 
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+
+const DriverRouteMap = dynamic(() => import('./DriverRouteMap'), {
+  ssr: false,
+  loading: () => <div className="v2-map-fallback" role="status">Harita yükleniyor…</div>,
+});
 
 type BoardingStatus = 'pending' | 'boarded' | 'no_show';
 type DriverTab = 'today' | 'route' | 'passengers' | 'location' | 'profile';
@@ -26,7 +32,7 @@ type Stop = {
   locationId: string;
   stopOrder: number;
   estimatedMinutesFromStart: number;
-  location: { id: string; name: string; type: string };
+  location: { id: string; name: string; type: string; coordinates?: unknown };
   passengers: Passenger[];
 };
 
@@ -894,6 +900,17 @@ export function DriverDashboard() {
               >
                 {sharing ? 'Konum paylaşımını durdur' : 'Canlı konum paylaşımını başlat'}
               </button>
+            </section>
+            <section className="v2-live-map" aria-label="Güzergâh haritası">
+              <DriverRouteMap
+                stops={trip.route.stops.map((stop) => ({
+                  id: stop.id,
+                  name: stop.location.name,
+                  coordinates: stop.location.coordinates,
+                }))}
+                vehicle={lastPosition}
+              />
+              <p>Duraklar arası çizgi şematiktir. Araç işareti yalnızca sunucunun onayladığı son konumdur.</p>
             </section>
             <section className="v2-route-schematic" aria-label="Güzergâh şeması">
               <div className="v2-schematic-head">

@@ -23,7 +23,7 @@ jobs:
         with:
           version: '9.15.4'
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec prettier --write "apps/driver-web/src/app/login/page.tsx" "apps/driver-web/src/components/DriverDashboard.tsx"
+      - run: pnpm exec prettier --write "apps/driver-web/src/app/login/page.tsx" "apps/driver-web/src/components/DriverDashboard.tsx" "apps/driver-web/src/components/DriverRouteMap.tsx"
       - name: Commit branch-only formatting
         run: |
           git config user.name "github-actions[bot]"

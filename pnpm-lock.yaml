@@ -244,6 +244,9 @@ importers:
       '@ekspres/database':
         specifier: workspace:*
         version: link:../../packages/database
+      maplibre-gl:
+        specifier: ^6.2.0
+        version: 6.2.0
       next:
         specifier: 15.5.25
         version: 15.5.25(@babel/core@7.29.7)(@playwright/test@1.62.1)(@types/node@20.19.43)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -253,6 +256,9 @@ importers:
       react-dom:
         specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
+      react-map-gl:
+        specifier: ^8.1.2
+        version: 8.1.2(maplibre-gl@6.2.0)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@ekspres/eslint-config':
         specifier: workspace:*
