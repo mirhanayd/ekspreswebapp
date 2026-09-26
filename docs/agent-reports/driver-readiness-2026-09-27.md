@@ -8,8 +8,14 @@ Tracking epic: #90. Initial UI implementation: #91 / PR #92. Historical visual r
 - Vercel account contains `ekspres-driver-staging`, `ekspres-passenger-staging`, and `ekspres-admin-staging`; latest production-scoped deployments for the inspected main SHA were all READY.
 - Driver deployed `/login` GET returned HTTP 200; unauthenticated `/api/driver/trips` GET returned 401. These do **not** validate a full authenticated driver-to-passenger tracking journey.
 - Vercel seven-day grouped driver errors contain Sept 25 missing `DATABASE_URL` on a **prior** deployment; passenger logs contain a prior missing `JWT_SECRET` occurrence; SSL-mode deprecation/security warnings appear in driver/passenger logs. The current secret names/scopes and the latest successful runtime route must be independently checked.
-- Live Neon inspection was blocked because the linked Neon tool requires the exact nonsecret project ID, which is not available in the connector or repository. Known identifying context: project name `ekspres-staging`, main branch, database `ekspres_staging`, Frankfurt/PostgreSQL16/PostGIS. Do not infer current migrations/indexes or readiness from code.
+- Neon project was confirmed by the operator, and read-only live inspection on 2026-09-27 verified Frankfurt/PostgreSQL 16, the `ekspres_staging` database, PostGIS 3.3.10, all 11 recorded Drizzle migration entries and the driver assignment, per-ticket boarding and GPS tracking tables. GPS sequence, time and spatial indexes and booking-state constraints are present. Live user/booking counts, access controls and connection identifiers are deliberately omitted from this public document.
 - Ably `ABLY_API_KEY` is consumed server-side and the passenger receives a five-minute subscribe-only TokenRequest bound to the ticket's trip. Actual Ably delivery, quota, and deployed configuration are not yet verified.
+
+## Live staging follow-ups
+
+- Validate staging fixtures and trip recency before a physical-driver smoke test; never force-reset a remote database or override genuine customer records.
+- Review Neon branch protection, network restriction and restore-window requirements with the operator. No project setting or row was changed during the read-only audit.
+- Implement same-origin Vercel admin driver management and trip assignment (#96); the current admin backend exposes only GET operations and cannot provision independent OBUS-free driver operations.
 
 ## Immediate product defects found in main
 
@@ -28,7 +34,7 @@ Tracking epic: #90. Initial UI implementation: #91 / PR #92. Historical visual r
 2. **Visual restoration.** Issue #91 / draft PR #92 restores the original mobile product hierarchy, an authentic MapLibre map, stop detail, filterable manifest and live GPS diagnostics using actual assigned-driver APIs.
 3. **Domain integrity.** Assignment guard exists; add explicit legal trip transitions, current stop progression, authenticated session revalidation, rate limits and audited passenger contact access.
 4. **GPS + Ably.** Verify real-phone foreground GPS, accuracy, offline recovery, server persistence and pub/sub acknowledgment, entitled passenger receipt, stale detection and a locked-screen/background strategy.
-5. **Operations.** Validate safe staging seed, driver assignment, stop/manifests, boarding updates, PostGIS indexes, monitoring and protected rollback.
+5. **Operations.** Implement Vercel admin driver assignment (#96), validate safe staging seed, driver assignment, stop/manifests, boarding updates, PostGIS indexes, monitoring and protected rollback.
 6. **Release tests.** Pass CI and Playwright visual checks, then test real HTTPS login, boarding, GPS, Ably, entitled passenger map and cross-trip denials on a physical phone.
 7. **Rollout.** Obtain operator acceptance, disable public demo credentials, verify deployed Preview/Production environments, set alerting and rehearse rollback; retire legacy only after parity.
 8. **OBUS — last.** Obtain official operator-issued API contracts and credentials, then build trip/manifest sync, conflict handling, reconciliation and permitted boarding write-back.
