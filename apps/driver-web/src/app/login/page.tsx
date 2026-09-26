@@ -33,7 +33,16 @@ export default function DriverLoginPage() {
   return (
     <main className="login-shell">
       <section className="login-card">
-        <div className="brand-mark"><Image src="/brand/logo.png" alt="Siirt Kurtalan Ekspres" width={106} height={54} style={{ width: "100%", height: "auto", objectFit: "contain" }} priority /></div>
+        <div className="brand-mark">
+          <Image
+            src="/brand/logo.png"
+            alt="Siirt Kurtalan Ekspres"
+            width={106}
+            height={54}
+            style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+            priority
+          />
+        </div>
         <p className="eyebrow">SÜRÜCÜ OPERASYON</p>
         <h1>Günün seferi burada.</h1>
         <p className="muted">
