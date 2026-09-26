@@ -24,15 +24,13 @@ Tracking epic: #90. Initial UI implementation: #91 / PR #92. Historical visual r
 
 ## Sequential release gates before OBUS
 
-| Gate | Acceptance evidence | Current state |
-| --- | --- | --- |
-| Source/environment audit | GitHub SHA, three Vercel settings, Neon ID/branch/database, PostGIS migrations, shared JWT/Ably key **presence by scope**, backup/rollback | GitHub/Vercel deployment checks partial; Neon ID and current env scopes not verified |
-| Visual restoration | Passenger-style mobile home, route, stop detail, searchable manifesto, MapLibre, location diagnostics, account; genuine API data; mobile responsive visual approval | #91 / PR #92 in progress |
-| Domain integrity | Assigned-driver role/session, current trip state, legal transitions, boarding stop integrity, rate limits, passenger PII and audit | Assignment guard exists; full hardening pending |
-| GPS + Ably | Real-phone foreground updates, accurate timestamps, offline recovery, publish acknowledgment, entitled passenger live receipt, stale indicator, battery/background decision | Integration code present, end-to-end evidence pending |
-| Operations | Safe seed, user/driver assignment, terminal sequencing, accurate manifest and boarding updates, rollback, PostGIS indexes | Staging script exists, production verification pending |
-| Release tests | CI + Playwright mobile; real HTTPS route, driver login, boarding, GPS, Ably, entitled passenger, cross-trip denials; logs/monitoring | CI baseline exists for old flow, fresh integrated field test pending |
-| Rollout | Operator-approved phone test, protected production credentials, deploy scopes, monitoring, rehearsed rollback; retire legacy only after parity | Pending |
-| OBUS — **last** | Operator-provided API docs/credentials, trip+manifest sync, reconciliation and permitted boarding write-back | Deliberately deferred |
+1. **Source/environment audit.** GitHub/Vercel deployment checks are partial. Verify three Vercel runtime variable scopes, Neon project ID/branch/database, PostGIS migrations, JWT/Ably configuration presence and rollback.
+2. **Visual restoration.** Issue #91 / draft PR #92 restores the original mobile product hierarchy, an authentic MapLibre map, stop detail, filterable manifest and live GPS diagnostics using actual assigned-driver APIs.
+3. **Domain integrity.** Assignment guard exists; add explicit legal trip transitions, current stop progression, authenticated session revalidation, rate limits and audited passenger contact access.
+4. **GPS + Ably.** Verify real-phone foreground GPS, accuracy, offline recovery, server persistence and pub/sub acknowledgment, entitled passenger receipt, stale detection and a locked-screen/background strategy.
+5. **Operations.** Validate safe staging seed, driver assignment, stop/manifests, boarding updates, PostGIS indexes, monitoring and protected rollback.
+6. **Release tests.** Pass CI and Playwright visual checks, then test real HTTPS login, boarding, GPS, Ably, entitled passenger map and cross-trip denials on a physical phone.
+7. **Rollout.** Obtain operator acceptance, disable public demo credentials, verify deployed Preview/Production environments, set alerting and rehearse rollback; retire legacy only after parity.
+8. **OBUS — last.** Obtain official operator-issued API contracts and credentials, then build trip/manifest sync, conflict handling, reconciliation and permitted boarding write-back.
 
 This report is **not** a production sign-off. No live production table or secret was mutated during the audit.
