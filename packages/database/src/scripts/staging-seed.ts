@@ -2,18 +2,19 @@ import * as dotenv from 'dotenv';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { Pool, PoolClient } from 'pg';
-import { DEMO_CREDENTIALS, DEMO_IDS, demoUuid } from '../demo-constants.js';
+import { DEMO_CREDENTIALS } from '../demo-constants.js';
+import { STAGING_IDS, stagingUuid } from '../staging-fixture-ids.js';
 
 dotenv.config({ path: join(process.cwd(), '../../.env') });
 
 const STAGING_CONFIRMATION = 'ekspres-staging';
 
 const locations = [
-  { id: DEMO_IDS.siirt, name: 'Siirt Terminali', longitude: 41.9419, latitude: 37.9274 },
-  { id: DEMO_IDS.kurtalan, name: 'Kurtalan Otogarı', longitude: 41.7058, latitude: 37.9261 },
-  { id: DEMO_IDS.batman, name: 'Batman Otogarı', longitude: 41.1322, latitude: 37.8812 },
+  { id: STAGING_IDS.siirt, name: 'Siirt Terminali', longitude: 41.9419, latitude: 37.9274 },
+  { id: STAGING_IDS.kurtalan, name: 'Kurtalan Otogarı', longitude: 41.7058, latitude: 37.9261 },
+  { id: STAGING_IDS.batman, name: 'Batman Otogarı', longitude: 41.1322, latitude: 37.8812 },
   {
-    id: DEMO_IDS.diyarbakir,
+    id: STAGING_IDS.diyarbakir,
     name: 'Diyarbakır Şehirlerarası Terminali',
     longitude: 40.2189,
     latitude: 37.9144,
@@ -21,10 +22,10 @@ const locations = [
 ];
 
 const stops = [
-  { locationId: DEMO_IDS.siirt, order: 1, minutes: 0 },
-  { locationId: DEMO_IDS.kurtalan, order: 2, minutes: 30 },
-  { locationId: DEMO_IDS.batman, order: 3, minutes: 90 },
-  { locationId: DEMO_IDS.diyarbakir, order: 4, minutes: 180 },
+  { locationId: STAGING_IDS.siirt, order: 1, minutes: 0 },
+  { locationId: STAGING_IDS.kurtalan, order: 2, minutes: 30 },
+  { locationId: STAGING_IDS.batman, order: 3, minutes: 90 },
+  { locationId: STAGING_IDS.diyarbakir, order: 4, minutes: 180 },
 ];
 
 function assertStagingDatabase(connectionString: string) {
@@ -35,24 +36,89 @@ function assertStagingDatabase(connectionString: string) {
   }
 
   const url = new URL(connectionString);
-  const databaseName = url.pathname.replace(/^\//, '').toLowerCase();
+  const databaseName = decodeURIComponent(url.pathname.replace(/^\//, '')).toLowerCase();
   const hostname = url.hostname.toLowerCase();
   const localHosts = new Set(['localhost', '127.0.0.1', '::1']);
-  const looksLikeStaging = /staging|preview|test|dev/.test(`${databaseName} ${hostname}`);
 
-  if (!localHosts.has(hostname) && !looksLikeStaging) {
-    throw new Error(
-      'SAFETY GUARD: staging seed requires a local or clearly staging/preview/test/dev database.',
-    );
+  if (
+    databaseName !== 'ekspres_staging' ||
+    (!localHosts.has(hostname) && !hostname.endsWith('.neon.tech'))
+  ) {
+    throw new Error('SAFETY GUARD: staging seed requires ekspres_staging on localhost or Neon.');
   }
 }
 
 function dateAt(dayOffset: number, hour: number, minute = 0) {
-  const value = new Date();
-  value.setHours(0, 0, 0, 0);
-  value.setDate(value.getDate() + dayOffset);
-  value.setHours(hour, minute, 0, 0);
-  return value;
+  // Türkiye stays at UTC+03:00. Derive the calendar day in Istanbul even when
+  // the seed runs in a UTC container or a developer's different time zone.
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+  const part = (type: string) => Number(parts.find((item) => item.type === type)?.value);
+  const midnightUtc = Date.UTC(part('year'), part('month') - 1, part('day') + dayOffset);
+  return new Date(midnightUtc + (hour - 3) * 60 * 60 * 1000 + minute * 60 * 1000);
+}
+
+async function assertFixtureOwnership(client: PoolClient, driverId: string, passengerId: string) {
+  const tripIds = [
+    STAGING_IDS.liveTrip,
+    STAGING_IDS.morningTrip,
+    STAGING_IDS.afternoonTrip,
+    STAGING_IDS.followingTrip,
+  ];
+  const orderIds = [
+    STAGING_IDS.activeOrder,
+    stagingUuid('order:staging-kurtalan-passenger'),
+    stagingUuid('order:staging-batman-passenger'),
+  ];
+  const ticketIds = [
+    STAGING_IDS.activeTicket,
+    stagingUuid('ticket:staging-kurtalan-passenger'),
+    stagingUuid('ticket:staging-batman-passenger'),
+  ];
+  const seatIds = tripIds.flatMap((tripId) =>
+    Array.from({ length: 39 }, (_, index) => stagingUuid(`trip-seat:${tripId}:${index + 1}`)),
+  );
+  const result = await client.query<{
+    foreign_orders: string;
+    foreign_tickets: string;
+    foreign_assignments: string;
+    foreign_seats: string;
+    moved_orders: string;
+    moved_tickets: string;
+    moved_trips: string;
+    reassigned_orders: string;
+    reassigned_tickets: string;
+  }>(
+    `SELECT
+       (SELECT count(*) FROM orders WHERE trip_id = ANY($1::uuid[]) AND NOT (id = ANY($2::uuid[])))::text AS foreign_orders,
+       (SELECT count(*) FROM tickets WHERE trip_id = ANY($1::uuid[]) AND NOT (id = ANY($3::uuid[])))::text AS foreign_tickets,
+       (SELECT count(*) FROM trip_drivers WHERE trip_id = ANY($1::uuid[]) AND driver_id <> $4)::text AS foreign_assignments,
+       (SELECT count(*) FROM trip_seats WHERE trip_id = ANY($1::uuid[]) AND NOT (id = ANY($5::uuid[])))::text AS foreign_seats,
+       (SELECT count(*) FROM orders WHERE id = ANY($2::uuid[]) AND trip_id <> $6)::text AS moved_orders,
+       (SELECT count(*) FROM tickets WHERE id = ANY($3::uuid[]) AND trip_id <> $6)::text AS moved_tickets,
+       (SELECT count(*) FROM trips WHERE id = ANY($1::uuid[]) AND (route_id <> $7 OR bus_id <> $8))::text AS moved_trips,
+       (SELECT count(*) FROM orders WHERE id = ANY($2::uuid[]) AND user_id <> $9)::text AS reassigned_orders,
+       (SELECT count(*) FROM tickets WHERE id = ANY($3::uuid[]) AND user_id <> $9)::text AS reassigned_tickets`,
+    [
+      tripIds,
+      orderIds,
+      ticketIds,
+      driverId,
+      seatIds,
+      STAGING_IDS.liveTrip,
+      STAGING_IDS.route,
+      STAGING_IDS.bus,
+      passengerId,
+    ],
+  );
+  const row = result.rows[0];
+  if (!row || Object.values(row).some((count) => Number(count) !== 0)) {
+    throw new Error('SAFETY GUARD: staging fixture ownership changed; no records were updated.');
+  }
 }
 
 function createSeatLayout() {
@@ -104,10 +170,7 @@ async function upsertTransport(client: PoolClient, driverId: string) {
     await client.query(
       `INSERT INTO locations (id, name, type, coordinates)
        VALUES ($1, $2, 'terminal', ST_SetSRID(ST_MakePoint($3, $4), 4326))
-       ON CONFLICT (id) DO UPDATE SET
-         name = EXCLUDED.name,
-         type = EXCLUDED.type,
-         coordinates = EXCLUDED.coordinates`,
+       ON CONFLICT (id) DO NOTHING`,
       [location.id, location.name, location.longitude, location.latitude],
     );
   }
@@ -117,13 +180,13 @@ async function upsertTransport(client: PoolClient, driverId: string) {
     .join(', ')})`;
   await client.query(
     `INSERT INTO routes (id, name, origin_id, destination_id, geometry)
-     VALUES ($1, 'Siirt - Diyarbakır Ekspres', $2, $3, ST_GeomFromText($4, 4326))
+     VALUES ($1, 'Siirt - Diyarbakır Sürücü Test Seferi', $2, $3, ST_GeomFromText($4, 4326))
      ON CONFLICT (id) DO UPDATE SET
        name = EXCLUDED.name,
        origin_id = EXCLUDED.origin_id,
        destination_id = EXCLUDED.destination_id,
        geometry = EXCLUDED.geometry`,
-    [DEMO_IDS.route, DEMO_IDS.siirt, DEMO_IDS.diyarbakir, lineString],
+    [STAGING_IDS.route, STAGING_IDS.siirt, STAGING_IDS.diyarbakir, lineString],
   );
 
   for (const stop of stops) {
@@ -136,8 +199,8 @@ async function upsertTransport(client: PoolClient, driverId: string) {
          stop_order = EXCLUDED.stop_order,
          estimated_minutes_from_start = EXCLUDED.estimated_minutes_from_start`,
       [
-        demoUuid(`route-stop:${stop.order}`),
-        DEMO_IDS.route,
+        stagingUuid(`route-stop:${stop.order}`),
+        STAGING_IDS.route,
         stop.locationId,
         stop.order,
         stop.minutes,
@@ -147,37 +210,37 @@ async function upsertTransport(client: PoolClient, driverId: string) {
 
   await client.query(
     `INSERT INTO buses (id, plate_number, model, seat_layout, total_seats)
-     VALUES ($1, '56 SKE 01', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 39)
+     VALUES ($1, '56 SKE STG', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 39)
      ON CONFLICT (id) DO UPDATE SET
        plate_number = EXCLUDED.plate_number,
        model = EXCLUDED.model,
        seat_layout = EXCLUDED.seat_layout,
        total_seats = EXCLUDED.total_seats`,
-    [DEMO_IDS.bus, JSON.stringify(createSeatLayout())],
+    [STAGING_IDS.bus, JSON.stringify(createSeatLayout())],
   );
 
   const now = new Date();
   const trips = [
     {
-      id: DEMO_IDS.liveTrip,
+      id: STAGING_IDS.liveTrip,
       departure: new Date(now.getTime() - 20 * 60 * 1000),
       arrival: new Date(now.getTime() + 160 * 60 * 1000),
       status: 'in_transit',
     },
     {
-      id: DEMO_IDS.morningTrip,
+      id: STAGING_IDS.morningTrip,
       departure: dateAt(1, 9),
       arrival: dateAt(1, 12),
       status: 'scheduled',
     },
     {
-      id: DEMO_IDS.afternoonTrip,
+      id: STAGING_IDS.afternoonTrip,
       departure: dateAt(1, 14),
       arrival: dateAt(1, 17),
       status: 'scheduled',
     },
     {
-      id: DEMO_IDS.followingTrip,
+      id: STAGING_IDS.followingTrip,
       departure: dateAt(2, 9),
       arrival: dateAt(2, 12),
       status: 'scheduled',
@@ -195,7 +258,7 @@ async function upsertTransport(client: PoolClient, driverId: string) {
          arrival_time = EXCLUDED.arrival_time,
          status = EXCLUDED.status,
          base_price = EXCLUDED.base_price`,
-      [trip.id, DEMO_IDS.route, DEMO_IDS.bus, trip.departure, trip.arrival, trip.status],
+      [trip.id, STAGING_IDS.route, STAGING_IDS.bus, trip.departure, trip.arrival, trip.status],
     );
 
     await client.query(
@@ -204,11 +267,11 @@ async function upsertTransport(client: PoolClient, driverId: string) {
        ON CONFLICT (trip_id) DO UPDATE SET
          driver_id = EXCLUDED.driver_id,
          assigned_at = now()`,
-      [demoUuid(`trip-driver:${trip.id}`), trip.id, driverId],
+      [stagingUuid(`trip-driver:${trip.id}`), trip.id, driverId],
     );
 
     for (let seatNo = 1; seatNo <= 39; seatNo++) {
-      const purchased = trip.id === DEMO_IDS.liveTrip && seatNo <= 3;
+      const purchased = trip.id === STAGING_IDS.liveTrip && seatNo <= 3;
       await client.query(
         `INSERT INTO trip_seats (id, trip_id, seat_no, seat_type, price_minor, status, version)
          VALUES ($1, $2, $3, 'standard', 45000, $4, 1)
@@ -216,7 +279,7 @@ async function upsertTransport(client: PoolClient, driverId: string) {
            price_minor = EXCLUDED.price_minor,
            status = EXCLUDED.status`,
         [
-          demoUuid(`trip-seat:${trip.id}:${seatNo}`),
+          stagingUuid(`trip-seat:${trip.id}:${seatNo}`),
           trip.id,
           String(seatNo),
           purchased ? 'purchased' : 'available',
@@ -230,51 +293,54 @@ async function upsertPassengerScenario(client: PoolClient, passengerId: string) 
   const passengers = [
     {
       key: 'active-ticket',
-      orderId: DEMO_IDS.activeOrder,
-      paymentId: DEMO_IDS.activePayment,
-      ticketId: DEMO_IDS.activeTicket,
+      orderId: STAGING_IDS.activeOrder,
+      paymentId: STAGING_IDS.activePayment,
+      ticketId: STAGING_IDS.activeTicket,
       seatNo: '1',
-      orderNo: 'SKE-STAGE-001',
-      ticketNo: 'TKT-STAGE-001',
+      orderNo: 'SKE-DRV-001',
+      ticketNo: 'TKT-DRV-001',
       firstName: 'Demo',
       lastName: 'Yolcu',
       phone: '0555 000 56 56',
       email: DEMO_CREDENTIALS.passenger.email,
-      boardingLocationId: DEMO_IDS.siirt,
+      boardingLocationId: STAGING_IDS.siirt,
+      boardingStatus: 'pending',
     },
     {
       key: 'kurtalan-passenger',
-      orderId: demoUuid('order:staging-kurtalan-passenger'),
-      paymentId: demoUuid('payment:staging-kurtalan-passenger'),
-      ticketId: demoUuid('ticket:staging-kurtalan-passenger'),
+      orderId: stagingUuid('order:staging-kurtalan-passenger'),
+      paymentId: stagingUuid('payment:staging-kurtalan-passenger'),
+      ticketId: stagingUuid('ticket:staging-kurtalan-passenger'),
       seatNo: '2',
-      orderNo: 'SKE-STAGE-002',
-      ticketNo: 'TKT-STAGE-002',
+      orderNo: 'SKE-DRV-002',
+      ticketNo: 'TKT-DRV-002',
       firstName: 'Ayşe',
       lastName: 'Demir',
       phone: '0532 410 56 56',
       email: 'ayse.demir@example.com',
-      boardingLocationId: DEMO_IDS.kurtalan,
+      boardingLocationId: STAGING_IDS.kurtalan,
+      boardingStatus: 'boarded',
     },
     {
       key: 'batman-passenger',
-      orderId: demoUuid('order:staging-batman-passenger'),
-      paymentId: demoUuid('payment:staging-batman-passenger'),
-      ticketId: demoUuid('ticket:staging-batman-passenger'),
+      orderId: stagingUuid('order:staging-batman-passenger'),
+      paymentId: stagingUuid('payment:staging-batman-passenger'),
+      ticketId: stagingUuid('ticket:staging-batman-passenger'),
       seatNo: '3',
-      orderNo: 'SKE-STAGE-003',
-      ticketNo: 'TKT-STAGE-003',
+      orderNo: 'SKE-DRV-003',
+      ticketNo: 'TKT-DRV-003',
       firstName: 'Serhat',
       lastName: 'Yıldız',
       phone: '0542 720 56 56',
       email: 'serhat.yildiz@example.com',
-      boardingLocationId: DEMO_IDS.batman,
+      boardingLocationId: STAGING_IDS.batman,
+      boardingStatus: 'no_show',
     },
   ];
 
   for (const passenger of passengers) {
-    const tripSeatId = demoUuid(`trip-seat:${DEMO_IDS.liveTrip}:${passenger.seatNo}`);
-    const idempotencyKey = demoUuid(`idempotency:staging:${passenger.key}`);
+    const tripSeatId = stagingUuid(`trip-seat:${STAGING_IDS.liveTrip}:${passenger.seatNo}`);
+    const idempotencyKey = stagingUuid(`idempotency:staging:${passenger.key}`);
     const qrTokenHash = createHash('sha256')
       .update(`siirt-kurtalan-staging:${passenger.key}`)
       .digest('hex');
@@ -301,10 +367,10 @@ async function upsertPassengerScenario(client: PoolClient, passengerId: string) 
         passenger.orderId,
         passenger.orderNo,
         passengerId,
-        DEMO_IDS.liveTrip,
+        STAGING_IDS.liveTrip,
         tripSeatId,
         passenger.boardingLocationId,
-        DEMO_IDS.diyarbakir,
+        STAGING_IDS.diyarbakir,
         idempotencyKey,
         passenger.firstName,
         passenger.lastName,
@@ -321,7 +387,7 @@ async function upsertPassengerScenario(client: PoolClient, passengerId: string) 
          status = 'success',
          amount_minor = 45000,
          paid_at = COALESCE(payments.paid_at, now())`,
-      [passenger.paymentId, passenger.orderId, `staging_${passenger.key}`],
+      [passenger.paymentId, passenger.orderId, `driver_ready_${passenger.key}`],
     );
 
     await client.query(
@@ -338,7 +404,7 @@ async function upsertPassengerScenario(client: PoolClient, passengerId: string) 
         passenger.ticketId,
         passenger.ticketNo,
         passengerId,
-        DEMO_IDS.liveTrip,
+        STAGING_IDS.liveTrip,
         tripSeatId,
         passenger.orderId,
         qrTokenHash,
@@ -346,10 +412,14 @@ async function upsertPassengerScenario(client: PoolClient, passengerId: string) 
     );
 
     await client.query(
-      `INSERT INTO passenger_boarding (id, ticket_id, status)
-       VALUES ($1, $2, 'pending')
+      `INSERT INTO passenger_boarding (id, ticket_id, status, boarded_at)
+       VALUES ($1, $2, $3, CASE WHEN $3 = 'boarded' THEN now() END)
        ON CONFLICT (ticket_id) DO NOTHING`,
-      [demoUuid(`boarding:staging:${passenger.key}`), passenger.ticketId],
+      [
+        stagingUuid(`boarding:staging:${passenger.key}`),
+        passenger.ticketId,
+        passenger.boardingStatus,
+      ],
     );
   }
 }
@@ -364,7 +434,11 @@ async function main() {
 
   try {
     await client.query('BEGIN');
+    const db = await client.query<{ name: string }>('SELECT current_database() AS name');
+    if (db.rows[0]?.name !== 'ekspres_staging')
+      throw new Error('SAFETY GUARD: connected to a different database.');
     const { driverId, passengerId } = await findDemoUsers(client);
+    await assertFixtureOwnership(client, driverId, passengerId);
     await upsertTransport(client, driverId);
     await upsertPassengerScenario(client, passengerId);
     await client.query('COMMIT');

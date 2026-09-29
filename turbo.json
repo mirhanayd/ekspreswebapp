@@ -5,6 +5,7 @@
     "NODE_ENV",
     "PORT",
     "DATABASE_URL",
+    "STAGING_SEED_CONFIRM",
     "REDIS_URL",
     "REDIS_PORT",
     "JWT_SECRET",
