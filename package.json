@@ -33,7 +33,8 @@
     "demo:reset": "pnpm db:migrate && pnpm --filter @ekspres/database demo:reset && pnpm tracking:reset",
     "demo:verify": "pnpm --filter @ekspres/database demo:verify",
     "demo:journey": "pnpm --filter @ekspres/database demo:journey",
-    "staging:seed": "pnpm db:migrate && pnpm --filter @ekspres/database staging:seed",
+    "staging:seed": "pnpm --filter @ekspres/database staging:seed",
+    "staging:verify": "pnpm --filter @ekspres/database staging:verify",
     "tracking:simulate": "pnpm --filter @ekspres/database build && pnpm --filter tracking-simulator build && pnpm --filter tracking-simulator start",
     "tracking:reset": "pnpm --filter tracking-simulator reset"
   },
