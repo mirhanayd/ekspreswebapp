@@ -24,6 +24,7 @@ export {
   createTicketQrPayload,
 } from './server/ticket-service.js';
 export { adminService, createAdminService, adminFleetFreshness } from './server/admin-service.js';
+export { driverAdminService, createDriverAdminService } from './server/driver-admin-service.js';
 export {
   trackingService,
   createTrackingService,

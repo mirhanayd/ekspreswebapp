@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { index, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { tickets } from './checkout';
 import { trips } from './transport';
 import { users } from './users';
@@ -18,6 +18,7 @@ export const tripDrivers = pgTable(
   },
   (table) => ({
     oneDriverPerTrip: uniqueIndex('trip_drivers_trip_unique_idx').on(table.tripId),
+    driverLookup: index('trip_drivers_driver_idx').on(table.driverId),
   }),
 );
 

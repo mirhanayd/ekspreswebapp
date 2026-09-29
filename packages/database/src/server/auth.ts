@@ -7,6 +7,7 @@ export type AccessTokenPrincipal = {
   role: UserRole;
   iat: number;
   exp: number;
+  sessionVersion: number;
 };
 
 export const ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24;
@@ -21,9 +22,19 @@ function encode(value: object) {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
-export function signAccessToken(principal: { id: string; email: string; role: string }) {
+export function signAccessToken(principal: {
+  id: string;
+  email: string;
+  role: string;
+  sessionVersion?: number;
+}) {
   return signJwtPayload(
-    { sub: principal.id, email: principal.email, role: principal.role },
+    {
+      sub: principal.id,
+      email: principal.email,
+      role: principal.role,
+      v: principal.sessionVersion ?? 0,
+    },
     ACCESS_TOKEN_TTL_SECONDS,
   );
 }
@@ -70,6 +81,7 @@ export function verifyAccessToken(token: string): AccessTokenPrincipal | null {
       decoded.iat > now ||
       !Number.isSafeInteger(decoded.exp) ||
       decoded.exp <= now ||
+      (decoded.v !== undefined && (!Number.isSafeInteger(decoded.v) || decoded.v < 0)) ||
       (decoded.nbf !== undefined && (!Number.isSafeInteger(decoded.nbf) || decoded.nbf > now))
     ) {
       return null;
@@ -80,6 +92,7 @@ export function verifyAccessToken(token: string): AccessTokenPrincipal | null {
       role: decoded.role,
       iat: decoded.iat,
       exp: decoded.exp,
+      sessionVersion: decoded.v ?? 0,
     };
   } catch {
     return null;

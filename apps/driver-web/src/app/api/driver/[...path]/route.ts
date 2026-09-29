@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
-import { verifyAccessToken } from '@/lib/server-auth';
 import {
+  authService,
   DriverBackendError,
   getDriverTrip,
   listDriverTrips,
@@ -20,17 +20,14 @@ function json(message: unknown, status = 200) {
   return Response.json(message, { status });
 }
 
-function principal(request: NextRequest) {
+async function principal(request: NextRequest) {
   const token = request.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
   if (!token) throw new DriverBackendError(401, 'Oturum açmanız gerekiyor.');
-
-  const decoded = verifyAccessToken(token);
-  if (!decoded) throw new DriverBackendError(401, 'Oturum süresi dolmuş.');
-  if (decoded.role !== 'driver') {
+  const user = await authService.session(token);
+  if (user.role !== 'driver') {
     throw new DriverBackendError(403, 'Bu hesap sürücü uygulamasına yetkili değil.');
   }
-
-  return decoded;
+  return user;
 }
 
 function validateLocation(body: Record<string, unknown>) {
@@ -70,15 +67,15 @@ function validateLocation(body: Record<string, unknown>) {
 
 async function handler(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   try {
-    const user = principal(request);
+    const user = await principal(request);
     const { path } = await context.params;
 
     if (request.method === 'GET' && path.length === 1 && path[0] === 'trips') {
-      return json(await listDriverTrips(user.sub));
+      return json(await listDriverTrips(user.id));
     }
 
     if (request.method === 'GET' && path.length === 2 && path[0] === 'trips') {
-      return json(await getDriverTrip(user.sub, path[1]!));
+      return json(await getDriverTrip(user.id, path[1]!));
     }
 
     if (
@@ -93,7 +90,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       }
       return json(
         await updateDriverTripStatus(
-          user.sub,
+          user.id,
           path[1]!,
           body.status as 'scheduled' | 'boarding' | 'in_transit' | 'completed',
         ),
@@ -112,7 +109,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       }
       return json(
         await updateDriverPassengerStatus(
-          user.sub,
+          user.id,
           path[1]!,
           path[3]!,
           body.status as 'pending' | 'boarded' | 'no_show',
@@ -127,7 +124,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
       path[2] === 'location'
     ) {
       const body = (await request.json()) as Record<string, unknown>;
-      return json(await recordDriverLocation(user.sub, path[1]!, validateLocation(body)), 201);
+      return json(await recordDriverLocation(user.id, path[1]!, validateLocation(body)), 201);
     }
 
     return json({ message: 'Endpoint bulunamadı.' }, 404);

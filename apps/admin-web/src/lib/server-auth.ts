@@ -1,6 +1,7 @@
 import {
   ACCESS_TOKEN_TTL_SECONDS,
   adminService,
+  driverAdminService,
   authService,
   ServerError,
   signAccessToken,
@@ -19,6 +20,7 @@ export function requireAdmin(request: NextRequest) {
 }
 
 export async function adminData(path: string) {
+  if (path === '/admin/drivers') return driverAdminService.listDrivers();
   if (path === '/admin/metrics') return adminService.getMetrics();
   if (path === '/admin/overview') return adminService.getOverview();
   if (path === '/admin/transport') return adminService.getTransport();

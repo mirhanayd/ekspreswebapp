@@ -84,6 +84,8 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - Passenger transaction identity must come from the canonical JWT principal (`userId`, `email`, `role`), never from client-supplied IDs.
 - Admin and driver APIs must enforce signed JWT role checks server-side. NestJS routes may use `@Roles`; serverless Route Handlers must apply equivalent framework-neutral guards.
 - Driver trip reads, mutations, passenger state changes, and GPS ingestion must verify that the JWT driver is assigned to the target trip.
+- Driver Route Handlers must revalidate the signed principal against the current users row on every request; deactivation and password reset increment `session_version` to revoke existing sessions.
+- Admin driver provisioning and trip assignments use the shared Neon-backed service, a live admin role check, transaction-scoped conflict checks and `driver_admin_audit`. Never expose an account password in API responses or audit records.
 - PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants.
 - Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
 - Managed realtime tokens must be short-lived, subscribe-only and scoped to the authenticated passenger's entitled trip channel.

@@ -11,6 +11,7 @@ export type DriverPrincipal = {
   id: string;
   email: string;
   role: string;
+  sessionVersion: number;
 };
 
 export async function authenticateDriver(

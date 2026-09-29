@@ -205,6 +205,9 @@ export function createAdminService(database: () => Database = serverDatabase) {
             basePrice: schema.trips.basePrice,
             totalSeats: schema.buses.totalSeats,
             soldSeats: sql<number>`(select count(*)::int from tickets where trip_id = ${schema.trips.id} and status != 'cancelled')`,
+            driverId: sql<
+              string | null
+            >`(select driver_id from trip_drivers where trip_id = ${schema.trips.id})`,
           })
           .from(schema.trips)
           .innerJoin(schema.routes, eq(schema.trips.routeId, schema.routes.id))

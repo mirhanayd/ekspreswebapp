@@ -189,6 +189,8 @@ try {
   await waitFor('driver-isolated', 'http://127.0.0.1:3011/login');
   const { runServerlessDriverRegression } = await import('../e2e/serverless-auth.mjs');
   await runServerlessDriverRegression('http://127.0.0.1:3011');
+  const { runDriverAdministrationJourney } = await import('../e2e/serverless-auth.mjs');
+  await runDriverAdministrationJourney('http://127.0.0.1:3002', 'http://127.0.0.1:3011');
   const { runServerlessTrackingJourney } = await import('../e2e/serverless-auth.mjs');
   await runServerlessTrackingJourney('http://127.0.0.1:3010');
   if (rejectedLegacyRequests !== 0)

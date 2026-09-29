@@ -46,7 +46,12 @@ describe('serverless authentication against PostgreSQL', () => {
     const stored = await client.db.query.users.findFirst({ where: eq(users.id, user.id) });
     expect(stored!.passwordHash).not.toBe(body.password);
     const principal = await service.login(body);
-    expect(principal).toEqual({ id: user.id, email: body.email, role: 'passenger' });
+    expect(principal).toEqual({
+      id: user.id,
+      email: body.email,
+      role: 'passenger',
+      sessionVersion: 0,
+    });
     const profile = await service.session(signAccessToken(principal));
     expect(profile.id).toBe(user.id);
     expect(profile).not.toHaveProperty('passwordHash');

@@ -20,6 +20,7 @@ export type AdminTrip = {
   basePrice: number;
   totalSeats: number;
   soldSeats: number;
+  driverId: string | null;
 };
 
 export type AdminTransport = {

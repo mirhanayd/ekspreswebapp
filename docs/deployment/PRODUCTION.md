@@ -34,6 +34,34 @@ Required driver Vercel runtime secrets/config:
 
 `ABLY_API_KEY` is server-side only. Never expose it through a `NEXT_PUBLIC_*` variable.
 
+## Driver account and assignment rollout (#96)
+
+Apply migration `0011_driver-admin.sql` before deploying application code that reads the new
+`users.is_active` and `users.session_version` columns. Take and verify a restore point before
+running the additive migration against staging. The migration adds the driver action audit table;
+it does not alter existing accounts, passwords, assignments or trip statuses.
+
+An authenticated admin uses the operations/trips screen to create driver accounts with a
+unique email and a strong initial password, activate/deactivate an account, reset its password,
+and assign, replace or remove a trip driver. The same-origin admin Route Handlers enforce a
+fresh database-backed admin session. `GET /api/admin/drivers` lists accounts;
+`GET/PUT/DELETE /api/admin/trips/:tripId/driver` reads and changes an assignment.
+`POST /api/admin/drivers`, `PATCH /api/admin/drivers/:id`, and
+`POST /api/admin/drivers/:id/reset-password` manage account access. Passwords are hashed before
+storage, never returned or audited, and must be conveyed to the driver through a separate secure
+channel. Initial passwords and resets revoke prior sessions when changed; deactivation invalidates
+active sessions immediately. The driver API checks the current account row and assignment on
+every request. Assignment writes lock the trip, serialize competing bus/driver assignments and
+reject overlapping trips for either bus or driver. The one-driver-per-trip database index remains
+authoritative. No public demo identity is suitable for real onboarding.
+
+Staging verification order: migrate an isolated copy and run CI integration/E2E; apply the
+additive migration to the verified staging branch with a tested restore procedure; deploy the
+admin and driver previews; create a unique test account from the admin UI; exercise assignment,
+replacement, revocation and unassignment through HTTPS. Do not deploy the new code against a
+database that has not been migrated. Production rollout requires its own restore point and
+credential review. `demo:reset` is local-only and must never run on Neon.
+
 ## Passenger authentication checkpoint (#76)
 
 Passenger `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me` and
