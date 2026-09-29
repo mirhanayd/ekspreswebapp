@@ -1,5 +1,12 @@
 # Current Project Status
 
+## Driver readiness gate (2026-09-29)
+
+- #97 added and verified an isolated, current Neon staging fixture and was merged. It preserves other records.
+- #92 driver UI acceptance and #96 admin driver provisioning/assignment remain open review gates.
+- Physical Android/iOS tests and the locked-screen tracking requirement remain unresolved. The conditional decision and test matrix are in `docs/decisions/0001-background-gps.md`.
+- Do not label continuous background tracking or pre-OBUS readiness complete before that gate and zero-legacy E2E pass.
+
 ## Verified Release Baseline
 
 - Driver presentation/staging restoration was merged by PR #71.
