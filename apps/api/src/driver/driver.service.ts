@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -6,7 +7,7 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { and, eq, inArray, ne } from 'drizzle-orm';
+import { and, eq, gt, inArray, lt, ne } from 'drizzle-orm';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import Redis from 'ioredis';
 import { schema } from '@ekspres/database';
@@ -14,10 +15,13 @@ import { DRIZZLE } from '../database/database.module';
 import { TransportService } from '../transport/transport.service';
 import {
   DriverAssignmentDto,
+  DriverAccountStatusDto,
   DriverLocationDto,
   DriverTripStatusDto,
   PassengerBoardingStatusDto,
 } from './driver.dto';
+import { isTrackingPosition } from '../tracking/tracking.types';
+import { validateTrackingSample } from '../tracking/tracking-validation';
 
 @Injectable()
 export class DriverService implements OnModuleDestroy {
@@ -38,38 +42,92 @@ export class DriverService implements OnModuleDestroy {
         email: schema.users.email,
         firstName: schema.users.firstName,
         lastName: schema.users.lastName,
+        isActive: schema.users.isActive,
       })
       .from(schema.users)
       .where(eq(schema.users.role, 'driver'));
   }
 
-  async assignDriver(tripId: string, dto: DriverAssignmentDto) {
+  async setDriverStatus(driverId: string, dto: DriverAccountStatusDto, actorId?: string) {
+    const [driver] = await this.db
+      .update(schema.users)
+      .set({ isActive: dto.isActive, updatedAt: new Date() })
+      .where(and(eq(schema.users.id, driverId), eq(schema.users.role, 'driver')))
+      .returning({
+        id: schema.users.id,
+        email: schema.users.email,
+        isActive: schema.users.isActive,
+      });
+    if (!driver) throw new NotFoundException('Driver not found');
+    await this.writeAudit(actorId, 'driver.status_changed', 'driver', driverId, dto);
+    return driver;
+  }
+
+  async assignDriver(tripId: string, dto: DriverAssignmentDto, actorId?: string) {
     const driver = await this.db.query.users.findFirst({
       where: and(eq(schema.users.id, dto.driverId), eq(schema.users.role, 'driver')),
     });
     if (!driver) throw new NotFoundException('Driver not found');
+    if (!driver.isActive) throw new ConflictException('Driver account is inactive');
 
     const trip = await this.db.query.trips.findFirst({ where: eq(schema.trips.id, tripId) });
     if (!trip) throw new NotFoundException('Trip not found');
 
-    const [assignment] = await this.db
-      .insert(schema.tripDrivers)
-      .values({ tripId, driverId: dto.driverId, assignedAt: new Date() })
-      .onConflictDoUpdate({
-        target: schema.tripDrivers.tripId,
-        set: { driverId: dto.driverId, assignedAt: new Date() },
-      })
-      .returning();
+    return this.db.transaction(async (tx) => {
+      const conflicts = await tx
+        .select({ tripId: schema.tripDrivers.tripId })
+        .from(schema.tripDrivers)
+        .innerJoin(schema.trips, eq(schema.tripDrivers.tripId, schema.trips.id))
+        .where(
+          and(
+            ne(schema.tripDrivers.tripId, tripId),
+            eq(schema.tripDrivers.driverId, dto.driverId),
+            lt(schema.trips.departureTime, trip.arrivalTime),
+            gt(schema.trips.arrivalTime, trip.departureTime),
+          ),
+        )
+        .limit(1);
+      if (conflicts.length) throw new ConflictException('Driver has an overlapping trip');
 
-    return assignment;
+      const busConflicts = await tx
+        .select({ tripId: schema.tripDrivers.tripId })
+        .from(schema.tripDrivers)
+        .innerJoin(schema.trips, eq(schema.tripDrivers.tripId, schema.trips.id))
+        .where(
+          and(
+            ne(schema.tripDrivers.tripId, tripId),
+            eq(schema.trips.busId, trip.busId),
+            lt(schema.trips.departureTime, trip.arrivalTime),
+            gt(schema.trips.arrivalTime, trip.departureTime),
+          ),
+        )
+        .limit(1);
+      if (busConflicts.length) throw new ConflictException('Bus has an overlapping trip');
+
+      const [assignment] = await tx
+        .insert(schema.tripDrivers)
+        .values({ tripId, driverId: dto.driverId, assignedAt: new Date() })
+        .onConflictDoUpdate({
+          target: schema.tripDrivers.tripId,
+          set: { driverId: dto.driverId, assignedAt: new Date() },
+        })
+        .returning();
+      await this.writeAudit(actorId, 'driver.assigned', 'trip', tripId, {
+        driverId: dto.driverId,
+      });
+      return assignment;
+    });
   }
 
-  async unassignDriver(tripId: string) {
+  async unassignDriver(tripId: string, actorId?: string) {
     const [assignment] = await this.db
       .delete(schema.tripDrivers)
       .where(eq(schema.tripDrivers.tripId, tripId))
       .returning();
     if (!assignment) throw new NotFoundException('Trip assignment not found');
+    await this.writeAudit(actorId, 'driver.unassigned', 'trip', tripId, {
+      driverId: assignment.driverId,
+    });
     return { removed: true };
   }
 
@@ -111,6 +169,20 @@ export class DriverService implements OnModuleDestroy {
 
   async updateTripStatus(driverId: string, tripId: string, dto: DriverTripStatusDto) {
     await this.assertAssignment(driverId, tripId);
+    const current = await this.db.query.trips.findFirst({
+      where: eq(schema.trips.id, tripId),
+      columns: { status: true },
+    });
+    if (!current) throw new NotFoundException('Trip not found');
+    const transitions = {
+      scheduled: ['boarding'],
+      boarding: ['in_transit'],
+      in_transit: ['completed'],
+      completed: [],
+    } as const;
+    if (!transitions[current.status as keyof typeof transitions]?.includes(dto.status as never)) {
+      throw new ConflictException(`Invalid trip transition: ${current.status} -> ${dto.status}`);
+    }
     const [trip] = await this.db
       .update(schema.trips)
       .set({ status: dto.status })
@@ -161,6 +233,24 @@ export class DriverService implements OnModuleDestroy {
 
   async publishLocation(driverId: string, tripId: string, dto: DriverLocationDto) {
     const assignment = await this.assertAssignment(driverId, tripId);
+    const recordedAt = dto.recordedAt ? new Date(dto.recordedAt) : new Date();
+    const previous = await this.redis.get(`tracking:latest:${tripId}`);
+    let previousPosition = null;
+    if (previous) {
+      try {
+        const parsed: unknown = JSON.parse(previous);
+        previousPosition = isTrackingPosition(parsed) ? parsed : null;
+      } catch {
+        previousPosition = null;
+      }
+    }
+    const sample = {
+      ...dto,
+      recordedAt: recordedAt.toISOString(),
+    };
+    const validationError = validateTrackingSample(sample, previousPosition);
+    if (validationError) throw new ConflictException(validationError);
+
     const sequence = await this.redis.incr(`tracking:sequence:${tripId}`);
     const position = {
       tripId,
@@ -169,10 +259,31 @@ export class DriverService implements OnModuleDestroy {
       latitude: dto.latitude,
       speedKph: dto.speedKph,
       headingDeg: dto.headingDeg,
-      recordedAt: dto.recordedAt || new Date().toISOString(),
+      recordedAt: recordedAt.toISOString(),
       sequence,
       source: 'MOBILE_APP' as const,
     };
+
+    // The database is the durable source of truth. Redis publication is a
+    // separate best-effort delivery step and must never precede persistence.
+    try {
+      await this.db.insert(schema.trackingPositions).values({
+        tripId,
+        busId: assignment.busId,
+        longitude: position.longitude,
+        latitude: position.latitude,
+        speedKph: position.speedKph,
+        headingDeg: position.headingDeg,
+        recordedAt,
+        sequence,
+        source: position.source,
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === '23505') {
+        throw new ConflictException('Duplicate GPS sample');
+      }
+      throw error;
+    }
 
     const serialized = JSON.stringify(position);
     await this.redis
@@ -222,6 +333,22 @@ export class DriverService implements OnModuleDestroy {
       );
 
     return rows.map((row) => ({ ...row, boardingStatus: row.boardingStatus || 'pending' }));
+  }
+
+  private async writeAudit(
+    actorId: string | undefined,
+    action: string,
+    resourceType: string,
+    resourceId: string,
+    metadata: Record<string, unknown>,
+  ) {
+    await this.db.insert(schema.driverAuditLogs).values({
+      actorId: actorId || null,
+      action,
+      resourceType,
+      resourceId,
+      metadata: JSON.stringify(metadata),
+    });
   }
 
   onModuleDestroy() {

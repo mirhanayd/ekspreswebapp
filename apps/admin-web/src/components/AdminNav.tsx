@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, BusFront, ChartNoAxesCombined, LayoutDashboard, Ticket } from 'lucide-react';
+import { Activity, BusFront, ChartNoAxesCombined, LayoutDashboard, Ticket, Users } from 'lucide-react';
 
 const navigation = [
   {
@@ -13,6 +13,7 @@ const navigation = [
     group: 'Operasyon',
     items: [
       { href: '/operations/trips', label: 'Ulaşım Operasyonları', icon: BusFront },
+      { href: '/operations/drivers', label: 'Sürücüler', icon: Users },
       { href: '/operations/fleet', label: 'Canlı Filo', icon: Activity },
     ],
   },

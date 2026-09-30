@@ -16,9 +16,12 @@ export const DriverLocationSchema = z.object({
   recordedAt: z.string().datetime().optional(),
 });
 
+export const DriverAccountStatusSchema = z.object({ isActive: z.boolean() });
+
 export type DriverTripStatusDto = z.infer<typeof DriverTripStatusSchema>;
 export type PassengerBoardingStatusDto = z.infer<typeof PassengerBoardingStatusSchema>;
 export type DriverLocationDto = z.infer<typeof DriverLocationSchema>;
+export type DriverAccountStatusDto = z.infer<typeof DriverAccountStatusSchema>;
 
 export const DriverAssignmentSchema = z.object({ driverId: z.string().uuid() });
 export type DriverAssignmentDto = z.infer<typeof DriverAssignmentSchema>;

@@ -27,6 +27,14 @@ export function isTrackingPosition(value: unknown): value is TrackingPosition {
     Number.isFinite(position.latitude) &&
     Number.isFinite(position.speedKph) &&
     Number.isFinite(position.headingDeg) &&
+    (position.longitude as number) >= -180 &&
+    (position.longitude as number) <= 180 &&
+    (position.latitude as number) >= -90 &&
+    (position.latitude as number) <= 90 &&
+    (position.speedKph as number) >= 0 &&
+    (position.speedKph as number) <= 180 &&
+    (position.headingDeg as number) >= 0 &&
+    (position.headingDeg as number) <= 360 &&
     typeof position.recordedAt === 'string' &&
     Number.isInteger(position.sequence) &&
     ['SIMULATOR', 'GPS_DEVICE', 'MOBILE_APP'].includes(String(position.source))

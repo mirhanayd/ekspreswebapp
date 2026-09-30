@@ -4,6 +4,16 @@ import { tickets } from './checkout';
 import { trips } from './transport';
 import { users } from './users';
 
+export const driverAuditLogs = pgTable('driver_audit_logs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  actorId: uuid('actor_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(),
+  resourceType: text('resource_type').notNull(),
+  resourceId: uuid('resource_id'),
+  metadata: text('metadata'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export const tripDrivers = pgTable(
   'trip_drivers',
   {

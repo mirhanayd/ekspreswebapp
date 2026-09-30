@@ -18,6 +18,7 @@ Driver operations extension implemented on a feature branch and ready for reposi
 - Add driver-only trip, manifest, boarding-state, trip-status and GPS APIs.
 - Feed mobile GPS into the existing Redis snapshot/pub-sub pipeline used by passenger live tracking.
 - Add a mobile-first `apps/driver-web` interface aligned with the passenger visual language.
+- Local web parity uses API `3001`, passenger `3000`, admin `3002`, driver `3004`, and tracking simulator health `3003`.
 
 ## Driver Capability Set
 
@@ -39,13 +40,15 @@ No OBUS/Obilet credentials or APIs are required for the driver demo. A future OB
 ## Validation Status
 
 - Repository write access is working and implementation commits are being created on `feature/64-driver-operations`.
-- The execution container still cannot clone `github.com` directly and does not have the repository dependencies installed, so local pnpm quality gates are not claimed as passed.
-- `apps/driver-web` is a new pnpm workspace. `pnpm-lock.yaml` must be regenerated with pnpm before a frozen-lockfile CI run can pass.
+- Local dependencies are installed and the workspace build, typecheck, lint, and test commands have been exercised. Repository-wide Prettier still reports pre-existing formatting drift across unrelated files.
+- `apps/driver-web` is included in the workspace lockfile and E2E harness on port 3004.
 - Browser geolocation requires HTTPS in production (localhost is the normal development exception); ordinary mobile web pages do not guarantee background/lock-screen GPS continuity.
+- Driver hardening now revalidates active JWT principals against the database, enforces forward-only trip transitions, rejects stale/future/out-of-order GPS samples, and checks driver/bus assignment overlap.
 
 ## Next Campaign
 
-- Run `corepack enable && pnpm install` in a normal repository clone to regenerate `pnpm-lock.yaml`.
-- Run migration/reset and full format/lint/typecheck/test/build gates.
+- Apply migrations `0010_driver-account-lifecycle`, `0011_tracking-positions`, and `0012_driver-audit-logs` in the target environment.
+- Run the authenticated driver E2E journey and migration-backed integration tests, including inactive JWTs, invalid transitions, overlap conflicts, audit writes, and stale GPS.
 - Add physical-device QA for GPS behavior.
+- The E2E harness now starts and waits for the driver web app; an authenticated driver journey is still pending.
 - Integrate OBUS only after official credentials and API contracts are supplied.

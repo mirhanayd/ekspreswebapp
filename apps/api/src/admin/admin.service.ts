@@ -112,14 +112,46 @@ export class AdminService {
             select count(*)::int from tickets
             where trip_id = ${schema.trips.id} and status != 'cancelled'
           )`,
+          driverId: schema.users.id,
+          driverEmail: schema.users.email,
+          driverFirstName: schema.users.firstName,
+          driverLastName: schema.users.lastName,
+          driverIsActive: schema.users.isActive,
         })
         .from(schema.trips)
         .innerJoin(schema.routes, eq(schema.trips.routeId, schema.routes.id))
         .innerJoin(schema.buses, eq(schema.trips.busId, schema.buses.id))
+        .leftJoin(schema.tripDrivers, eq(schema.tripDrivers.tripId, schema.trips.id))
+        .leftJoin(schema.users, eq(schema.users.id, schema.tripDrivers.driverId))
         .orderBy(desc(schema.trips.departureTime)),
     ]);
 
-    return { locations, routes, buses, trips };
+    return {
+      locations,
+      routes,
+      buses,
+      trips: trips.map(
+        ({
+          driverId,
+          driverEmail,
+          driverFirstName,
+          driverLastName,
+          driverIsActive,
+          ...trip
+        }) => ({
+          ...trip,
+          driver: driverId
+            ? {
+                id: driverId,
+                email: driverEmail!,
+                firstName: driverFirstName,
+                lastName: driverLastName,
+                isActive: driverIsActive!,
+              }
+            : null,
+        }),
+      ),
+    };
   }
 
   async getTickets() {

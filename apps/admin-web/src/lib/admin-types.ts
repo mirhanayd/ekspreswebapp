@@ -20,6 +20,15 @@ export type AdminTrip = {
   basePrice: number;
   totalSeats: number;
   soldSeats: number;
+  driver: AdminDriver | null;
+};
+
+export type AdminDriver = {
+  id: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  isActive: boolean;
 };
 
 export type AdminTransport = {

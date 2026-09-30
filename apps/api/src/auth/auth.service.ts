@@ -46,6 +46,9 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Account is inactive');
+    }
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) {
