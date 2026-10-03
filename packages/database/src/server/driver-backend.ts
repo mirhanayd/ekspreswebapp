@@ -1,5 +1,5 @@
 import { authService } from './auth-service.js';
-import { and, desc, eq, inArray, ne } from 'drizzle-orm';
+import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
 import { publishManagedTrackingPosition } from './tracking-service.js';
@@ -131,7 +131,58 @@ export async function getDriverTrip(driverId: string, tripId: string) {
     ),
   }));
 
-  return { ...trip, route: { ...trip.route, stops }, manifest };
+  const geometryResult = await db().execute<{ geometry: string | null }>(sql`
+    SELECT ST_AsGeoJSON(geometry)::text AS geometry
+    FROM routes
+    WHERE id = ${trip.route.id}
+  `);
+  const latestResult = await db().execute<{
+    trip_id: string;
+    bus_id: string;
+    longitude: number;
+    latitude: number;
+    speed_kph: number;
+    heading_deg: number;
+    recorded_at: Date | string;
+    sequence: number;
+    source: string;
+  }>(sql`
+    SELECT trip_id, bus_id,
+           ST_X(position)::float8 AS longitude,
+           ST_Y(position)::float8 AS latitude,
+           speed_kph, heading_deg, recorded_at, sequence, source
+    FROM tracking_positions
+    WHERE trip_id = ${tripId}
+    ORDER BY recorded_at DESC
+    LIMIT 1
+  `);
+  const latest = latestResult.rows[0];
+  const latestPosition = latest
+    ? {
+        tripId: latest.trip_id,
+        busId: latest.bus_id,
+        longitude: Number(latest.longitude),
+        latitude: Number(latest.latitude),
+        speedKph: Number(latest.speed_kph),
+        headingDeg: Number(latest.heading_deg),
+        recordedAt: new Date(latest.recorded_at).toISOString(),
+        sequence: Number(latest.sequence),
+        source: latest.source,
+      }
+    : null;
+
+  return {
+    ...trip,
+    route: {
+      ...trip.route,
+      geometry: geometryResult.rows[0]?.geometry
+        ? JSON.parse(geometryResult.rows[0].geometry)
+        : null,
+      stops,
+    },
+    latestPosition,
+    manifest,
+  };
 }
 
 export async function updateDriverTripStatus(

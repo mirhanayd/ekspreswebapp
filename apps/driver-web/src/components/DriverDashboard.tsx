@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DriverMap, type DriverMapPosition, type RouteGeometry } from './DriverMap';
 
 type Passenger = {
   ticketId: string;
@@ -21,7 +22,7 @@ type Stop = {
   locationId: string;
   stopOrder: number;
   estimatedMinutesFromStart: number;
-  location: { id: string; name: string; type: string };
+  location: { id: string; name: string; type: string; coordinates?: unknown };
   passengers: Passenger[];
 };
 
@@ -38,12 +39,14 @@ type Trip = {
     destinationId: string;
     origin: { id: string; name: string };
     destination: { id: string; name: string };
+    geometry: RouteGeometry | null;
     stops: Stop[];
   };
   manifest: Passenger[];
+  latestPosition: DriverMapPosition | null;
 };
 
-type TripSummary = Omit<Trip, 'manifest'> & {
+type TripSummary = Omit<Trip, 'manifest' | 'latestPosition'> & {
   passengerSummary: { total: number; boarded: number; noShow: number };
 };
 
@@ -91,12 +94,14 @@ export function DriverDashboard() {
   const [message, setMessage] = useState('');
   const [sharing, setSharing] = useState(false);
   const [lastLocationAt, setLastLocationAt] = useState<string | null>(null);
+  const [latestPosition, setLatestPosition] = useState<DriverMapPosition | null>(null);
   const watchId = useRef<number | null>(null);
   const lastSentAt = useRef(0);
 
   const loadTrip = useCallback(async (tripId: string) => {
     const detail = await api<Trip>(`trips/${tripId}`);
     setTrip(detail);
+    setLatestPosition(detail.latestPosition);
   }, []);
 
   const load = useCallback(async () => {
@@ -183,7 +188,7 @@ export function DriverDashboard() {
         if (now - lastSentAt.current < 5000) return;
         lastSentAt.current = now;
         const speedKph = Math.max(0, (position.coords.speed || 0) * 3.6);
-        void api(`trips/${trip.id}/location`, {
+        void api<DriverMapPosition>(`trips/${trip.id}/location`, {
           method: 'POST',
           body: JSON.stringify({
             longitude: position.coords.longitude,
@@ -193,7 +198,10 @@ export function DriverDashboard() {
             recordedAt: new Date(position.timestamp).toISOString(),
           }),
         })
-          .then(() => setLastLocationAt(new Date().toISOString()))
+          .then((nextPosition) => {
+            setLastLocationAt(new Date().toISOString());
+            setLatestPosition(nextPosition);
+          })
           .catch((error) =>
             setMessage(error instanceof Error ? error.message : 'Konum gönderilemedi.'),
           );
@@ -283,6 +291,13 @@ export function DriverDashboard() {
           </button>
         </div>
       </section>
+
+      <DriverMap
+        geometry={trip.route.geometry}
+        stops={trip.route.stops}
+        position={latestPosition}
+        sharing={sharing}
+      />
 
       <section className="metric-grid">
         <article>
