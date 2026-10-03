@@ -116,7 +116,7 @@ describe('driver administration against isolated PostgreSQL', () => {
     await service.setDriverActive(adminId, first.id, false);
     await expect(auth.session(token)).rejects.toMatchObject({ status: 401 });
     await expect(
-      auth.login({ email: firstInput.email, password: firstInput.password }, 'driver'),
+      auth.login({ email: firstInput.email, password: first.temporaryPassword }, 'driver'),
     ).rejects.toMatchObject({ status: 403 });
     await service.setDriverActive(adminId, first.id, true);
     await expect(auth.session(token)).rejects.toMatchObject({ status: 401 });
@@ -138,6 +138,10 @@ describe('driver administration against isolated PostgreSQL', () => {
 
   it('assigns, replaces, immediately revokes old assignment and rejects overlaps', async () => {
     const [first, second] = driverIds;
+    await client.db
+      .update(users)
+      .set({ isActive: true, sessionsValidAfter: null })
+      .where(inArray(users.id, [first!, second!]));
     await expect(service.getAssignment(randomUUID())).rejects.toMatchObject({ status: 404 });
     expect(await service.getAssignment(tripIds[0]!)).toMatchObject({ driverId: null });
     expect(await service.assign(adminId, tripIds[0]!, first!)).toMatchObject({ unchanged: false });
