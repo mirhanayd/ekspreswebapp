@@ -18,6 +18,7 @@ import {
 } from '@/components/ui';
 import { AdminTransport } from '@/lib/admin-types';
 import { adminApiJson } from '@/lib/server-api';
+import { DriverAssignmentControl, DriverManagement, type DriverRecord } from './DriverManagement';
 
 const statusLabel: Record<string, string> = {
   scheduled: 'Planlandı',
@@ -35,7 +36,10 @@ const statusTone = (status: string) =>
       : ('neutral' as const);
 
 export default async function TripsPage() {
-  const operations = await adminApiJson<AdminTransport>('/admin/transport');
+  const [operations, drivers] = await Promise.all([
+    adminApiJson<AdminTransport>('/admin/transport'),
+    adminApiJson<DriverRecord[]>('/admin/drivers'),
+  ]);
   const totalSeats = operations.trips.reduce((sum, trip) => sum + trip.totalSeats, 0);
   const soldSeats = operations.trips.reduce((sum, trip) => sum + trip.soldSeats, 0);
 
@@ -62,6 +66,8 @@ export default async function TripsPage() {
           hint={totalSeats ? `%${Math.round((soldSeats / totalSeats) * 100)} doluluk` : undefined}
         />
       </div>
+
+      <DriverManagement drivers={drivers} />
 
       <div className="grid gap-3 lg:grid-cols-2">
         <Card>
@@ -143,7 +149,7 @@ export default async function TripsPage() {
                 <TableHead>Doluluk</TableHead>
                 <TableHead>Ücret</TableHead>
                 <TableHead>Durum</TableHead>
-                <TableHead className="text-right">İşlem</TableHead>
+                <TableHead>Şoför ataması</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -185,13 +191,12 @@ export default async function TripsPage() {
                         {statusLabel[trip.status] || trip.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <Link
-                        href="/operations/fleet"
-                        className="font-semibold text-brand-700 hover:underline"
-                      >
-                        Filoda gör
-                      </Link>
+                    <TableCell>
+                      <DriverAssignmentControl
+                        tripId={trip.id}
+                        initialDriverId={trip.driverId}
+                        drivers={drivers}
+                      />
                     </TableCell>
                   </TableRow>
                 );

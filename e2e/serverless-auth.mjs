@@ -390,3 +390,95 @@ export async function runServerlessDriverRegression(baseURL) {
     await context.dispose();
   }
 }
+
+export async function runDriverAdministrationJourney(adminURL, driverURL) {
+  const admin = await request.newContext({
+    baseURL: adminURL,
+    extraHTTPHeaders: { Origin: adminURL },
+  });
+  const first = await request.newContext({ baseURL: driverURL });
+  const second = await request.newContext({ baseURL: driverURL });
+  try {
+    assert.equal((await admin.get('/api/admin/drivers')).status(), 401);
+    assert.equal(
+      (
+        await admin.post('/api/auth/login', {
+          data: { email: 'admin@siirtkurtalan.demo', password: 'Admin123!' },
+        })
+      ).status(),
+      200,
+    );
+    const transport = await (await admin.get('/api/admin/transport')).json();
+    const trip = transport.trips.find((item) => item.status === 'scheduled');
+    assert.ok(trip, 'a scheduled fixture trip is required');
+    const originalDriverId = trip.driverId;
+    const create = async (name) => {
+      const email = `${name}-${randomUUID()}@example.test`;
+      const response = await admin.post('/api/admin/drivers', {
+        data: { firstName: name, lastName: 'Test', email },
+      });
+      assert.equal(response.status(), 201);
+      const created = await response.json();
+      return { email, password: created.temporaryPassword, ...created };
+    };
+    const driverA = await create('First');
+    const driverB = await create('Second');
+    assert.equal((await admin.get('/api/admin/drivers')).status(), 200);
+    const assignmentURL = `/api/admin/trips/${trip.id}/driver`;
+    assert.equal((await admin.get(assignmentURL)).status(), 200);
+    assert.equal(
+      (await admin.put(assignmentURL, { data: { driverId: driverA.id } })).status(),
+      200,
+    );
+    assert.equal(
+      (await admin.put(assignmentURL, { data: { driverId: driverA.id } })).status(),
+      200,
+      'duplicate assignment is idempotent',
+    );
+    assert.equal((await first.post('/api/auth/login', { data: driverA })).status(), 200);
+    assert.equal((await first.get(`/api/driver/trips/${trip.id}`)).status(), 200);
+    const driverCookie = (await first.storageState()).cookies.find(
+      (item) => item.name === 'ekspres_driver_access_token',
+    );
+    assert.ok(driverCookie);
+    assert.equal(
+      (
+        await first.get(`${adminURL}/api/admin/drivers`, {
+          headers: { Cookie: `ekspres_admin_access_token=${driverCookie.value}` },
+        })
+      ).status(),
+      403,
+      'driver cannot call admin API with a valid signed token',
+    );
+    assert.equal(
+      (await admin.put(assignmentURL, { data: { driverId: driverB.id } })).status(),
+      200,
+    );
+    assert.equal((await first.get(`/api/driver/trips/${trip.id}`)).status(), 403);
+    assert.equal((await second.post('/api/auth/login', { data: driverB })).status(), 200);
+    assert.equal((await second.get(`/api/driver/trips/${trip.id}`)).status(), 200);
+    assert.equal((await admin.delete(assignmentURL)).status(), 200);
+    assert.equal((await second.get(`/api/driver/trips/${trip.id}`)).status(), 403);
+    assert.equal((await admin.delete(assignmentURL)).status(), 200);
+    assert.equal(
+      (
+        await admin.patch(`/api/admin/drivers/${driverA.id}`, {
+          data: { isActive: false },
+        })
+      ).status(),
+      200,
+    );
+    assert.equal((await first.get('/api/driver/trips')).status(), 401);
+    if (originalDriverId) {
+      assert.equal(
+        (await admin.put(assignmentURL, { data: { driverId: originalDriverId } })).status(),
+        200,
+      );
+    }
+    process.stdout.write(
+      'PASS driver admin: provision → assign → driver read → replace/revoke → unassign → deactivate; legacy backend unavailable\n',
+    );
+  } finally {
+    await Promise.all([admin.dispose(), first.dispose(), second.dispose()]);
+  }
+}

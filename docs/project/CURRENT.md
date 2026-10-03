@@ -34,6 +34,9 @@ Incremental serverless backend migration.
 - GPS history remains durable in PostGIS.
 - `ABLY_API_KEY` is configured server-side for passenger and driver staging; the next Preview deployment verifies GPS publish and ticket-scoped receive before #88 merges.
 - Issue #73 tracks passenger/admin migration, realtime subscriber cutover and final Render/NestJS removal.
+- Issue #96 admin driver controls are implemented on the Vercel + Neon path: driver lifecycle,
+  server-generated temporary passwords, same-origin assignment handlers, overlap conflict/override
+  auditing, and live driver assignment/session revalidation.
 
 ## Temporary Hybrid State
 
@@ -46,6 +49,8 @@ Incremental serverless backend migration.
 - Admin HTTP operations: Vercel Route Handlers/shared Neon/PostGIS services.
 - Passenger live tracking: Vercel bootstrap/token handlers -> Neon/PostGIS + ticket-scoped Ably subscription while #88 is in review.
 - Render resources must not be deleted until passenger booking, tickets, admin and live tracking pass E2E on the replacement path.
+- The #96 integration suite requires an isolated PostgreSQL/PostGIS service; it is not run when
+  local Postgres is unavailable.
 
 ## Driver Capability Set
 

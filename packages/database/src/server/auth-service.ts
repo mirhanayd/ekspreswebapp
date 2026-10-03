@@ -51,6 +51,9 @@ const publicColumns = {
   firstName: users.firstName,
   lastName: users.lastName,
   role: users.role,
+  isActive: users.isActive,
+  sessionsValidAfter: users.sessionsValidAfter,
+  sessionVersion: users.sessionVersion,
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
 };
@@ -65,10 +68,16 @@ export function createAuthService(database: () => Database = serverDatabase) {
       if (!user || !(await bcrypt.compare(input.password, user.passwordHash))) {
         throw new ServerError(401, 'Giriş bilgileri doğrulanamadı.');
       }
+      if (!user.isActive) throw new ServerError(403, 'Bu hesap devre dışı.');
       if (requiredRole && user.role !== requiredRole) {
         throw new ServerError(403, 'Bu hesap uygulamaya yetkili değil.');
       }
-      return { id: user.id, email: user.email, role: user.role };
+      return {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        sessionVersion: user.sessionVersion,
+      };
     },
 
     async register(body: unknown) {
@@ -98,7 +107,14 @@ export function createAuthService(database: () => Database = serverDatabase) {
         .from(users)
         .where(eq(users.id, principal.sub))
         .limit(1);
-      if (!user) throw new ServerError(401, 'Oturum açmanız gerekiyor.');
+      if (!user || !user.isActive) throw new ServerError(401, 'Oturum açmanız gerekiyor.');
+      if (user.sessionVersion !== principal.sessionVersion)
+        throw new ServerError(401, 'Oturum süresi doldu.');
+      if (
+        user.sessionsValidAfter &&
+        principal.iat < Math.floor(user.sessionsValidAfter.getTime() / 1000)
+      )
+        throw new ServerError(401, 'Oturum süresi doldu.');
       return user;
     },
   };

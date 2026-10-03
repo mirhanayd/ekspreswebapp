@@ -33,6 +33,9 @@ describe('shared access tokens', () => {
     expect(result).toMatchObject({ sub: principal.id, email: principal.email, role: 'driver' });
     expect(result.exp - result.iat).toBe(86400);
     expect(verifyAccessToken(signed(result))).toEqual(result);
+    expect(result.sessionVersion).toBe(0);
+    expect(verifyAccessToken(signed({ ...result, v: 4 }))?.sessionVersion).toBe(4);
+    expect(verifyAccessToken(signed({ ...result, v: -1 }))).toBeNull();
   });
 
   it('rejects expiration at the exact boundary and after', () => {
