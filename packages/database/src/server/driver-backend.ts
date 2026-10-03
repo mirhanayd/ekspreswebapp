@@ -44,6 +44,18 @@ async function getTripDetails(tripId: string) {
 }
 
 async function assertAssignment(driverId: string, tripId: string) {
+  const [driver] = await db()
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(
+      and(
+        eq(schema.users.id, driverId),
+        eq(schema.users.role, 'driver'),
+        eq(schema.users.isActive, true),
+      ),
+    )
+    .limit(1);
+  if (!driver) throw new DriverBackendError(403, 'Sürücü hesabı etkin değil.');
   const [assignment] = await db()
     .select({
       tripId: schema.tripDrivers.tripId,

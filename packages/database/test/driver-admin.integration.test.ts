@@ -107,7 +107,7 @@ describe('driver administration against isolated PostgreSQL', () => {
     await expect(service.createDriver(adminId, firstInput)).rejects.toMatchObject({ status: 409 });
     const auth = createAuthService(() => client.db);
     const principal = await auth.login(
-      { email: firstInput.email, password: firstInput.password },
+      { email: firstInput.email, password: first.temporaryPassword },
       'driver',
     );
     const token = signAccessToken(principal);

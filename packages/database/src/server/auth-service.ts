@@ -52,6 +52,7 @@ const publicColumns = {
   lastName: users.lastName,
   role: users.role,
   isActive: users.isActive,
+  sessionsValidAfter: users.sessionsValidAfter,
   sessionVersion: users.sessionVersion,
   createdAt: users.createdAt,
   updatedAt: users.updatedAt,
@@ -108,6 +109,11 @@ export function createAuthService(database: () => Database = serverDatabase) {
         .limit(1);
       if (!user || !user.isActive) throw new ServerError(401, 'Oturum açmanız gerekiyor.');
       if (user.sessionVersion !== principal.sessionVersion)
+        throw new ServerError(401, 'Oturum süresi doldu.');
+      if (
+        user.sessionsValidAfter &&
+        principal.iat < Math.floor(user.sessionsValidAfter.getTime() / 1000)
+      )
         throw new ServerError(401, 'Oturum süresi doldu.');
       return user;
     },

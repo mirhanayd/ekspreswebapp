@@ -27,6 +27,7 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [temporaryPassword, setTemporaryPassword] = useState('');
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,14 +37,14 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
     setError('');
     setSuccess('');
     try {
-      await request('drivers', 'POST', {
+      const created = await request('drivers', 'POST', {
         firstName: data.get('firstName'),
         lastName: data.get('lastName'),
         email: data.get('email'),
-        password: data.get('password'),
       });
       form.reset();
-      setSuccess('Sürücü hesabı oluşturuldu. Şifreyi güvenli şekilde sürücüye iletin.');
+      setTemporaryPassword(created.temporaryPassword);
+      setSuccess('Sürücü hesabı oluşturuldu. Geçici şifre yalnızca şimdi gösterilir.');
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Hesap oluşturulamadı.');
@@ -119,18 +120,6 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
           E-posta
           <input className="ops-field" name="email" type="email" required autoComplete="off" />
         </label>
-        <label className="grid gap-1 text-sm font-semibold">
-          İlk şifre
-          <input
-            className="ops-field"
-            name="password"
-            type="password"
-            minLength={12}
-            maxLength={72}
-            required
-            autoComplete="new-password"
-          />
-        </label>
         <button
           type="submit"
           disabled={busy}
@@ -147,6 +136,11 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
       {success && (
         <p role="status" className="text-sm text-brand-700">
           {success}
+        </p>
+      )}
+      {temporaryPassword && (
+        <p className="break-all rounded-lg bg-brand-50 p-3 font-mono text-sm text-brand-900">
+          Geçici şifre: <strong>{temporaryPassword}</strong>
         </p>
       )}
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -224,6 +218,8 @@ export function DriverAssignmentControl({
   const [current, setCurrent] = useState(initialDriverId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [override, setOverride] = useState(false);
+  const [reason, setReason] = useState('');
   const active = drivers.filter((driver) => driver.isActive);
   useEffect(() => {
     setCurrent(initialDriverId);
@@ -236,7 +232,7 @@ export function DriverAssignmentControl({
       await request(
         `trips/${tripId}/driver`,
         method,
-        method === 'PUT' ? { driverId: selected } : undefined,
+        method === 'PUT' ? { driverId: selected, override, reason } : undefined,
       );
       setCurrent(method === 'PUT' ? selected : null);
       if (method === 'DELETE') setSelected('');
@@ -288,7 +284,9 @@ export function DriverAssignmentControl({
             type="button"
             className="ops-btn ops-btn-secondary"
             disabled={busy}
-            onClick={() => save('DELETE')}
+            onClick={() => {
+              if (window.confirm('Bu seferdeki sürücü ataması kaldırılsın mı?')) save('DELETE');
+            }}
           >
             Kaldır
           </button>
@@ -298,6 +296,28 @@ export function DriverAssignmentControl({
         <span role="alert" className="max-w-48 text-xs text-red-700">
           {error}
         </span>
+      )}
+      <label className="flex items-center gap-2 text-xs text-ink-600">
+        <input
+          type="checkbox"
+          checked={override}
+          onChange={(event) => setOverride(event.target.checked)}
+          disabled={busy}
+        />
+        Çakışmayı gerekçeyle geç
+      </label>
+      {override && (
+        <label className="grid gap-1 text-xs font-semibold">
+          Gerekçe
+          <input
+            className="ops-field"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            minLength={3}
+            maxLength={500}
+            required
+          />
+        </label>
       )}
     </div>
   );
