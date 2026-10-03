@@ -84,15 +84,13 @@ export function createDriverAdminService(database: () => Database = serverDataba
             isActive: schema.users.isActive,
           });
         if (!user) throw new ServerError(409, 'Bu e-posta zaten kullanımda.');
-        await tx
-          .insert(schema.adminAuditLog)
-          .values({
-            actorId: adminId,
-            action: 'create',
-            entity: 'driver',
-            entityId: user.id,
-            after: { role: 'driver', isActive: 'true' },
-          });
+        await tx.insert(schema.adminAuditLog).values({
+          actorId: adminId,
+          action: 'create',
+          entity: 'driver',
+          entityId: user.id,
+          after: { role: 'driver', isActive: 'true' },
+        });
         return { ...user, temporaryPassword };
       });
     },
@@ -121,16 +119,14 @@ export function createDriverAdminService(database: () => Database = serverDataba
           })
           .where(eq(schema.users.id, current.id))
           .returning({ id: schema.users.id, isActive: schema.users.isActive });
-        await tx
-          .insert(schema.adminAuditLog)
-          .values({
-            actorId: adminId,
-            action: isActive ? 'activate' : 'deactivate',
-            entity: 'driver',
-            entityId: user.id,
-            before: { isActive: String(current.isActive) },
-            after: { isActive: String(isActive) },
-          });
+        await tx.insert(schema.adminAuditLog).values({
+          actorId: adminId,
+          action: isActive ? 'activate' : 'deactivate',
+          entity: 'driver',
+          entityId: user.id,
+          before: { isActive: String(current.isActive) },
+          after: { isActive: String(isActive) },
+        });
         return user;
       });
     },
@@ -150,15 +146,13 @@ export function createDriverAdminService(database: () => Database = serverDataba
           .where(and(eq(schema.users.id, uuid(driverId)), eq(schema.users.role, 'driver')))
           .returning({ id: schema.users.id });
         if (!user) throw new ServerError(404, 'Sürücü bulunamadı.');
-        await tx
-          .insert(schema.adminAuditLog)
-          .values({
-            actorId: adminId,
-            action: 'reset_password',
-            entity: 'driver',
-            entityId: user.id,
-            after: { mustChangePassword: 'true' },
-          });
+        await tx.insert(schema.adminAuditLog).values({
+          actorId: adminId,
+          action: 'reset_password',
+          entity: 'driver',
+          entityId: user.id,
+          after: { mustChangePassword: 'true' },
+        });
         return { updated: true };
       });
     },

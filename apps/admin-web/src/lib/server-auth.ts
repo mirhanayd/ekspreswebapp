@@ -37,7 +37,9 @@ export function adminErrorResponse(error: unknown) {
   const message = error instanceof ServerError ? error.message : 'İşlem tamamlanamıyor.';
   if (status === 500) console.error('Admin serverless operation failed');
   const response = NextResponse.json(
-    error instanceof ServerError ? { message, code: error.code, details: error.details } : { message },
+    error instanceof ServerError
+      ? { message, code: error.code, details: error.details }
+      : { message },
     { status },
   );
   if (status === 401) response.cookies.delete(ADMIN_ACCESS_TOKEN_COOKIE);

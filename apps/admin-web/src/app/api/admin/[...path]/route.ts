@@ -38,7 +38,8 @@ async function body(request: NextRequest) {
 
 function requireSameOrigin(request: NextRequest) {
   const origin = request.headers.get('origin');
-  const protocol = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
+  const protocol =
+    request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(':', '');
   const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
   const expected = `${protocol}://${host}`;
   if (!origin || origin !== expected) throw new ServerError(403, 'İstek kaynağı reddedildi.');
@@ -56,9 +57,12 @@ export async function POST(request: NextRequest, context: Context) {
     }
     if (path.length !== 1 || path[0] !== 'drivers')
       throw new ServerError(404, 'Yönetim kaynağı bulunamadı.');
-    return Response.json(await driverAdminService.createDriverAccount(admin.id, await body(request)), {
-      status: 201,
-    });
+    return Response.json(
+      await driverAdminService.createDriverAccount(admin.id, await body(request)),
+      {
+        status: 201,
+      },
+    );
   } catch (error) {
     return adminErrorResponse(error);
   }
@@ -86,8 +90,7 @@ export async function PUT(request: NextRequest, context: Context) {
     if (path.length !== 3 || path[0] !== 'trips' || path[2] !== 'driver')
       throw new ServerError(404, 'Yönetim kaynağı bulunamadı.');
     const input = await body(request);
-    if (typeof input.driverId !== 'string')
-      throw new ServerError(422, 'Sürücü seçin.');
+    if (typeof input.driverId !== 'string') throw new ServerError(422, 'Sürücü seçin.');
     return Response.json(
       await driverAdminService.assign(
         admin.id,
