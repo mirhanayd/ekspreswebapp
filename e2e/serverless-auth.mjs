@@ -392,7 +392,10 @@ export async function runServerlessDriverRegression(baseURL) {
 }
 
 export async function runDriverAdministrationJourney(adminURL, driverURL) {
-  const admin = await request.newContext({ baseURL: adminURL });
+  const admin = await request.newContext({
+    baseURL: adminURL,
+    extraHTTPHeaders: { Origin: adminURL },
+  });
   const first = await request.newContext({ baseURL: driverURL });
   const second = await request.newContext({ baseURL: driverURL });
   try {
@@ -409,14 +412,14 @@ export async function runDriverAdministrationJourney(adminURL, driverURL) {
     const trip = transport.trips.find((item) => item.status === 'scheduled');
     assert.ok(trip, 'a scheduled fixture trip is required');
     const originalDriverId = trip.driverId;
-    const password = 'local-e2e-only-strong-password';
     const create = async (name) => {
       const email = `${name}-${randomUUID()}@example.test`;
       const response = await admin.post('/api/admin/drivers', {
-        data: { firstName: name, lastName: 'Test', email, password },
+        data: { firstName: name, lastName: 'Test', email },
       });
       assert.equal(response.status(), 201);
-      return { ...(await response.json()), password };
+      const created = await response.json();
+      return { email, password: created.temporaryPassword, ...created };
     };
     const driverA = await create('First');
     const driverB = await create('Second');
