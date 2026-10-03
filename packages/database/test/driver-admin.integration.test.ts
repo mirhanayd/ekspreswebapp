@@ -10,6 +10,7 @@ import {
   users,
   tripDrivers,
   driverAdminAudit,
+  adminAuditLog,
 } from '../src/schema/index.js';
 import { createDriverAdminService } from '../src/server/driver-admin-service.js';
 import { createAuthService } from '../src/server/auth-service.js';
@@ -78,6 +79,7 @@ describe('driver administration against isolated PostgreSQL', () => {
     if (client) {
       try {
         await client.db.delete(driverAdminAudit).where(eq(driverAdminAudit.adminId, adminId));
+        await client.db.delete(adminAuditLog).where(eq(adminAuditLog.actorId, adminId));
         await client.db.delete(tripDrivers).where(inArray(tripDrivers.tripId, tripIds));
         await client.db.delete(trips).where(inArray(trips.id, tripIds));
         await client.db.delete(buses).where(inArray(buses.id, busIds));
@@ -120,7 +122,7 @@ describe('driver administration against isolated PostgreSQL', () => {
     await expect(auth.session(token)).rejects.toMatchObject({ status: 401 });
     await service.setDriverActive(adminId, first.id, true);
     const reactivatedToken = signAccessToken(
-      await auth.login({ email: firstInput.email, password: firstInput.password }, 'driver'),
+      await auth.login({ email: firstInput.email, password: first.temporaryPassword }, 'driver'),
     );
     expect((await auth.session(reactivatedToken)).id).toBe(first.id);
     await service.resetDriverPassword(adminId, first.id, 'another-strong-password');
