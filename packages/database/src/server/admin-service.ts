@@ -20,6 +20,18 @@ export function adminFleetFreshness(ageSeconds: number | null): FleetFreshness {
   return 'live';
 }
 
+/**
+ * Raw SQL projections can be returned as ISO strings by serverless Postgres
+ * clients, even when the same timestamp column is returned as a Date through
+ * a Drizzle schema column.
+ */
+export function normalizeAdminTimestamp(value: Date | string | null): Date | null {
+  if (value === null) return null;
+  const normalized = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(normalized.getTime())) throw new Error('Invalid admin timestamp.');
+  return normalized;
+}
+
 export function createAdminService(database: () => Database = serverDatabase) {
   const ticketQuery = () =>
     database()
@@ -67,7 +79,7 @@ export function createAdminService(database: () => Database = serverDatabase) {
           latitude: sql<number | null>`ST_Y(latest.position)`,
           speedKph: sql<number | null>`latest.speed_kph`,
           headingDeg: sql<number | null>`latest.heading_deg`,
-          recordedAt: sql<Date | null>`latest.recorded_at`,
+          recordedAt: sql<Date | string | null>`latest.recorded_at`,
           sequence: sql<number | null>`latest.sequence`,
         })
         .from(schema.trips)
@@ -86,11 +98,12 @@ export function createAdminService(database: () => Database = serverDatabase) {
         .where(sql`${schema.trips.status} in ('boarding', 'in_transit')`)
         .orderBy(schema.trips.departureTime);
       return rows.map((row) => {
-        const ageSeconds = row.recordedAt
-          ? Math.max(0, Math.floor((Date.now() - row.recordedAt.getTime()) / 1000))
+        const recordedAt = normalizeAdminTimestamp(row.recordedAt);
+        const ageSeconds = recordedAt
+          ? Math.max(0, Math.floor((Date.now() - recordedAt.getTime()) / 1000))
           : null;
         const latest =
-          row.recordedAt && row.longitude !== null && row.latitude !== null
+          recordedAt && row.longitude !== null && row.latitude !== null
             ? {
                 tripId: row.tripId,
                 busId: row.busId,
@@ -98,7 +111,7 @@ export function createAdminService(database: () => Database = serverDatabase) {
                 latitude: row.latitude,
                 speedKph: row.speedKph ?? 0,
                 headingDeg: row.headingDeg ?? 0,
-                recordedAt: row.recordedAt.toISOString(),
+                recordedAt: recordedAt.toISOString(),
                 sequence: row.sequence ?? 0,
               }
             : null;
