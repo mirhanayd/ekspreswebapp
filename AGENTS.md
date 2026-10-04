@@ -28,6 +28,7 @@ Develop the Siirt Kurtalan Ekspres bus platform as a modern passenger, driver an
 - `docs/project/DELIVERY_WORKFLOW.md`
 - `docs/project/CURRENT.md`
 - `docs/deployment/PRODUCTION.md`
+- `docs/decisions/0001-background-gps.md` (driver tracking release decision and device gate)
 
 ## 4. Repository Structure (Planned)
 
