@@ -31,8 +31,14 @@ Required driver Vercel runtime secrets/config:
 - `JWT_SECRET`: the same high-entropy signing secret used for the current staging identity contract.
 - `TRACKING_HISTORY_INTERVAL_SECONDS`: optional; defaults to 30.
 - `ABLY_API_KEY`: optional during #72; required when the managed realtime subscriber cutover is enabled.
+- `NEXT_PUBLIC_MAPTILER_KEY`: recommended browser-facing MapTiler key, restricted to the driver web
+  domains; used by the MapLibre route surface when no custom style URL is supplied.
+- `NEXT_PUBLIC_MAP_STYLE_URL`: optional public MapLibre style JSON URL for a company-owned or
+  alternative provider style. The style provider's attribution must remain visible in the map.
 
 `ABLY_API_KEY` is server-side only. Never expose it through a `NEXT_PUBLIC_*` variable.
+Map tile keys are different: they are intentionally browser-facing, but must be domain-restricted
+and must never be confused with server secrets.
 
 ## Driver account and assignment rollout (#96)
 
