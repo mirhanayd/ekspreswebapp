@@ -98,13 +98,26 @@ export function DriverMap({
     const initial = initialPosition.current
       ? [initialPosition.current.longitude, initialPosition.current.latitude]
       : coordinates[0] || TURKEY_CENTER;
+    const mapTilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+    const mapStyle =
+      process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
+      (mapTilerKey
+        ? {
+            version: 8 as const,
+            sources: {
+              'maptiler-raster': {
+                type: 'raster' as const,
+                tiles: [`https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=${mapTilerKey}`],
+                tileSize: 256,
+                attribution: '© MapTiler © OpenStreetMap contributors',
+              },
+            },
+            layers: [{ id: 'maptiler-raster', type: 'raster' as const, source: 'maptiler-raster' }],
+          }
+        : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json');
     const instance = new maplibregl.Map({
       container: mapContainer.current,
-      style:
-        process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
-        (process.env.NEXT_PUBLIC_MAPTILER_KEY
-          ? `https://api.maptiler.com/maps/streets-v4/style.json?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`
-          : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json'),
+      style: mapStyle,
       center: initial as [number, number],
       zoom: coordinates.length > 1 ? 7 : 9,
       attributionControl: { compact: true },
