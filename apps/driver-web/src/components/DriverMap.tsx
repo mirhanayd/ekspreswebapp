@@ -183,6 +183,8 @@ export function DriverMap({
     };
 
     instance.once('load', setupOverlays);
+    instance.on('styledata', setupOverlays);
+    instance.on('idle', setupOverlays);
 
     return () => {
       vehicleMarker.current?.remove();
