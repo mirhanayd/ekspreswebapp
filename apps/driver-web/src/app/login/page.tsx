@@ -2,11 +2,12 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function DriverLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState('sofor@siirtkurtalan.demo');
-  const [password, setPassword] = useState('Sofor123!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -32,7 +33,16 @@ export default function DriverLoginPage() {
   return (
     <main className="login-shell">
       <section className="login-card">
-        <div className="brand-mark">SKE</div>
+        <div className="brand-mark">
+          <Image
+            src="/brand/logo.png"
+            alt="Siirt Kurtalan Ekspres"
+            width={106}
+            height={54}
+            style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+            priority
+          />
+        </div>
         <p className="eyebrow">SÜRÜCÜ OPERASYON</p>
         <h1>Günün seferi burada.</h1>
         <p className="muted">
@@ -45,6 +55,7 @@ export default function DriverLoginPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
+              autoComplete="username"
               required
             />
           </label>
@@ -54,6 +65,7 @@ export default function DriverLoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              autoComplete="current-password"
               required
             />
           </label>
