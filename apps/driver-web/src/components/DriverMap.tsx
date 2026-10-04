@@ -115,11 +115,11 @@ export function DriverMap({
     let overlaysAdded = false;
     const setupOverlays = () => {
       if (overlaysAdded) {
-        setMapReady(instance.isStyleLoaded() === true);
+        setMapReady(true);
         return;
       }
       overlaysAdded = true;
-      setMapReady(instance.isStyleLoaded() === true);
+      setMapReady(true);
       if (coordinates.length > 1) {
         instance.addSource('driver-route', {
           type: 'geojson',
@@ -182,9 +182,7 @@ export function DriverMap({
         .addTo(instance);
     };
 
-    instance.on('load', setupOverlays);
-    instance.on('styledata', setupOverlays);
-    instance.on('idle', setupOverlays);
+    instance.once('load', setupOverlays);
 
     return () => {
       vehicleMarker.current?.remove();
