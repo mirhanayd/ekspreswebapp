@@ -136,7 +136,10 @@ async function adminJourney(browser) {
 
     await page.goto('http://127.0.0.1:3002/operations/fleet');
     await visible(page.getByRole('heading', { name: 'Aktif araçlar' }), 'admin live fleet');
-    await visible(page.getByText('56 SKE 01'), 'admin fleet vehicle');
+    await visible(
+      page.getByRole('region', { name: 'Araç listesi' }).getByText('56 SKE 01'),
+      'admin fleet vehicle',
+    );
     await noPageOverflow(page);
     process.stdout.write(
       'PASS serverless admin: role denial → login → dashboard → tickets → fleet; legacy backend unavailable\n',
