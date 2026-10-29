@@ -35,6 +35,13 @@ Required driver Vercel runtime secrets/config:
   domains; used by the MapLibre route surface when no custom style URL is supplied.
 - `NEXT_PUBLIC_MAP_STYLE_URL`: optional public MapLibre style JSON URL for a company-owned or
   alternative provider style. The style provider's attribution must remain visible in the map.
+- `NEXT_PUBLIC_OPERATIONS_PHONE`: optional operations-center number for the driver "Ara" and
+  "Sorun bildir" actions. Without it those buttons stay disabled.
+
+The driver app is installable as a PWA (`/manifest.webmanifest`, `/sw.js`). The service worker
+caches only hashed static assets, icons and an offline notice; `/api/*` responses and rendered
+pages (passenger manifest, GPS, driver identity) are never cached. `sw.js` is served with
+`Cache-Control: no-cache` so a new deployment replaces the worker on the next load.
 
 `ABLY_API_KEY` is server-side only. Never expose it through a `NEXT_PUBLIC_*` variable.
 Map tile keys are different: they are intentionally browser-facing, but must be domain-restricted

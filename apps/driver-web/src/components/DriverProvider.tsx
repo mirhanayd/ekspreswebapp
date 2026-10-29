@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import type { DriverMapPosition, RouteGeometry } from './DriverMap';
 
@@ -50,7 +58,10 @@ export type TripSummary = Omit<Trip, 'manifest' | 'latestPosition'> & {
   passengerSummary: { total: number; boarded: number; noShow: number };
 };
 
+export type DriverIdentity = { firstName: string; lastName: string; email: string };
+
 type DriverContextValue = {
+  driver: DriverIdentity | null;
   trips: TripSummary[];
   trip: Trip | null;
   loading: boolean;
@@ -63,6 +74,10 @@ type DriverContextValue = {
   latestPosition: DriverMapPosition | null;
   counts: { total: number; boarded: number; pending: number; noShow: number };
   nextStop: Stop | null;
+  /** Stops the driver marked as reached on this device; there is no server-side stop log yet. */
+  arrivedStopIds: Set<string>;
+  // eslint-disable-next-line no-unused-vars
+  markStopArrived: (stopId: string) => void;
   // eslint-disable-next-line no-unused-vars
   switchTrip: (tripId: string) => Promise<void>;
   // eslint-disable-next-line no-unused-vars
@@ -123,7 +138,10 @@ function preferredTrip(trips: TripSummary[]) {
   return upcoming || open[open.length - 1] || trips[trips.length - 1];
 }
 
-export function DriverProvider({ children }: Readonly<{ children: React.ReactNode }>) {
+export function DriverProvider({
+  children,
+  driver = null,
+}: Readonly<{ children: React.ReactNode; driver?: DriverIdentity | null }>) {
   const pathname = usePathname();
   const [trips, setTrips] = useState<TripSummary[]>([]);
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -135,6 +153,10 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
   const [busyTickets, setBusyTickets] = useState<Set<string>>(() => new Set());
   const [lastLocationAt, setLastLocationAt] = useState<string | null>(null);
   const [latestPosition, setLatestPosition] = useState<DriverMapPosition | null>(null);
+  const [arrived, setArrived] = useState<{ tripId: string | null; ids: Set<string> }>(() => ({
+    tripId: null,
+    ids: new Set(),
+  }));
   const watchId = useRef<number | null>(null);
   const lastSentAt = useRef(0);
   const sharingTripId = useRef<string | null>(null);
@@ -154,6 +176,7 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
 
   const requestWakeLock = useCallback(async () => {
     const nav = navigator as Navigator & {
+      // eslint-disable-next-line no-unused-vars
       wakeLock?: { request: (...args: ['screen']) => Promise<WakeLockSentinelLike> };
     };
     if (!nav.wakeLock || wakeLock.current) return;
@@ -267,16 +290,28 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
     };
   }, [trip]);
 
+  const arrivedStopIds = useMemo(
+    () => (arrived.tripId === trip?.id ? arrived.ids : new Set<string>()),
+    [arrived, trip?.id],
+  );
+
+  const markStopArrived = useCallback(
+    (stopId: string) => {
+      if (!trip) return;
+      setArrived((current) => {
+        const ids = new Set(current.tripId === trip.id ? current.ids : []);
+        ids.add(stopId);
+        return { tripId: trip.id, ids };
+      });
+    },
+    [trip],
+  );
+
   const nextStop = useMemo(() => {
     if (!trip) return null;
-    return (
-      trip.route.stops.find((stop) =>
-        stop.passengers.some((passenger) => passenger.boardingStatus === 'pending'),
-      ) ||
-      trip.route.stops[0] ||
-      null
-    );
-  }, [trip]);
+    const stops = [...trip.route.stops].sort((a, b) => a.stopOrder - b.stopOrder);
+    return stops.find((stop) => !arrivedStopIds.has(stop.id)) || null;
+  }, [arrivedStopIds, trip]);
 
   const setTripStatus = useCallback(
     async (status: string) => {
@@ -430,7 +465,8 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
   const switchTrip = useCallback(
     async (tripId: string) => {
       if (sharingTripId.current && sharingTripId.current !== tripId) {
-        if (!window.confirm('Konum paylaşımı bu sefer için durdurulacak. Devam edilsin mi?')) return;
+        if (!window.confirm('Konum paylaşımı bu sefer için durdurulacak. Devam edilsin mi?'))
+          return;
         stopLocationSharing();
       }
       setMessage('');
@@ -458,6 +494,7 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
 
   const value = useMemo(
     () => ({
+      driver,
       trips,
       trip,
       loading,
@@ -470,6 +507,8 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
       latestPosition,
       counts,
       nextStop,
+      arrivedStopIds,
+      markStopArrived,
       switchTrip,
       setTripStatus,
       setPassengerStatus,
@@ -479,12 +518,15 @@ export function DriverProvider({ children }: Readonly<{ children: React.ReactNod
       logout,
     }),
     [
+      arrivedStopIds,
       busyTickets,
       counts,
+      driver,
       lastLocationAt,
       latestPosition,
       loading,
       logout,
+      markStopArrived,
       message,
       nextStop,
       notice,

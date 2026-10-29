@@ -152,7 +152,7 @@ export function TripsBoard({
                       </button>
                     </td>
                     <td>
-                      <p className="whitespace-nowrap font-medium">
+                      <p className="min-w-44 font-medium">
                         {trip.originName} → {trip.destinationName}
                       </p>
                       <p className="whitespace-nowrap text-xs text-adm-muted">

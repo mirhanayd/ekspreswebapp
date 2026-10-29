@@ -51,9 +51,24 @@ const config: Pick<Config, 'prefix' | 'presets' | 'content' | 'theme'> = {
         },
       },
       fontFamily: {
-        sans: ['var(--font-plex-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['var(--font-plex-sans)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-plex-mono)', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+        sans: [
+          "var(--font-plex-sans, 'IBM Plex Sans')",
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif',
+        ],
+        display: [
+          "var(--font-plex-sans, 'IBM Plex Sans')",
+          'ui-sans-serif',
+          'system-ui',
+          'sans-serif',
+        ],
+        mono: [
+          "var(--font-plex-mono, 'IBM Plex Mono')",
+          'ui-monospace',
+          'SFMono-Regular',
+          'monospace',
+        ],
       },
       borderRadius: {
         card: '12px',
