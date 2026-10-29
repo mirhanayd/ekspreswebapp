@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Archivo, Inter } from 'next/font/google';
 import './globals.css';
 import './presentation.css';
+import { DriverProvider } from '@/components/DriverProvider';
 
 const inter = Inter({ subsets: ['latin', 'latin-ext'], variable: '--font-inter', display: 'swap' });
 const display = Archivo({
@@ -24,7 +25,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="tr">
-      <body className={`${inter.variable} ${display.variable}`}>{children}</body>
+      <body className={`${inter.variable} ${display.variable}`}><DriverProvider>{children}</DriverProvider></body>
     </html>
   );
 }

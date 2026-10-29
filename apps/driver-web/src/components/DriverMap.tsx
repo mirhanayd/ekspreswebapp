@@ -31,11 +31,17 @@ export function DriverMap({
   stops,
   position,
   sharing,
+  originName,
+  destinationName,
+  nextStopName,
 }: {
   geometry: RouteGeometry | null;
   stops: DriverMapStop[];
   position: DriverMapPosition | null;
   sharing: boolean;
+  originName: string;
+  destinationName: string;
+  nextStopName: string;
 }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
@@ -93,17 +99,40 @@ export function DriverMap({
     const initial = initialPosition.current
       ? [initialPosition.current.longitude, initialPosition.current.latitude]
       : coordinates[0] || TURKEY_CENTER;
+    const mapTilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+    const mapStyle =
+      process.env.NEXT_PUBLIC_MAP_STYLE_URL ||
+      (mapTilerKey
+        ? {
+            version: 8 as const,
+            sources: {
+              'maptiler-raster': {
+                type: 'raster' as const,
+                tiles: [`https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=${mapTilerKey}`],
+                tileSize: 256,
+                attribution: '© MapTiler © OpenStreetMap contributors',
+              },
+            },
+            layers: [{ id: 'maptiler-raster', type: 'raster' as const, source: 'maptiler-raster' }],
+          }
+        : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json');
     const instance = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+      style: mapStyle,
       center: initial as [number, number],
       zoom: coordinates.length > 1 ? 7 : 9,
-      attributionControl: false,
+      attributionControl: { compact: true },
     });
     map.current = instance;
     setMapReady(false);
 
-    instance.on('load', () => {
+    let overlaysAdded = false;
+    const setupOverlays = () => {
+      if (overlaysAdded) {
+        setMapReady(true);
+        return;
+      }
+      overlaysAdded = true;
       setMapReady(true);
       if (coordinates.length > 1) {
         instance.addSource('driver-route', {
@@ -119,14 +148,14 @@ export function DriverMap({
           type: 'line',
           source: 'driver-route',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.95 },
+          paint: { 'line-color': '#071a10', 'line-width': 11, 'line-opacity': 0.42 },
         });
         instance.addLayer({
           id: 'driver-route-line',
           type: 'line',
           source: 'driver-route',
           layout: { 'line-cap': 'round', 'line-join': 'round' },
-          paint: { 'line-color': '#F7AA12', 'line-width': 4 },
+          paint: { 'line-color': '#f5b629', 'line-width': 5 },
         });
 
         const bounds = coordinates.reduce(
@@ -165,7 +194,11 @@ export function DriverMap({
       vehicleMarker.current = new maplibregl.Marker({ element: markerContent })
         .setLngLat(initial as [number, number])
         .addTo(instance);
-    });
+    };
+
+    instance.once('load', setupOverlays);
+    instance.on('styledata', setupOverlays);
+    instance.on('idle', setupOverlays);
 
     return () => {
       vehicleMarker.current?.remove();
@@ -192,18 +225,7 @@ export function DriverMap({
     : null;
 
   return (
-    <section className="driver-map-card" aria-label="Sefer haritası">
-      <div className="driver-map-heading">
-        <div>
-          <p className="eyebrow">CANLI ROTA</p>
-          <h3>Otobüs nerede?</h3>
-        </div>
-        <span className={`map-state ${sharing ? 'map-state-live' : ''}`}>
-          <i aria-hidden />
-          {sharing ? 'GPS açık' : position ? `Son konum ${updatedAt}` : 'GPS bekleniyor'}
-        </span>
-      </div>
-
+    <section className="driver-map-card" id="map" aria-label="Sefer haritası">
       <div className="driver-map-viewport">
         <div
           ref={mapContainer}
@@ -214,7 +236,8 @@ export function DriverMap({
         {!mapReady ? (
           <div className="driver-map-fallback" aria-hidden="true">
             <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-              <polyline points={routePreview.line} />
+              <polyline className="fallback-route-casing" points={routePreview.line} />
+              <polyline className="fallback-route-line" points={routePreview.line} />
               {routePreview.vehicle ? (
                 <circle
                   cx={routePreview.vehicle.split(',')[0]}
@@ -223,7 +246,6 @@ export function DriverMap({
                 />
               ) : null}
             </svg>
-            <span>Rota hazırlanıyor</span>
           </div>
         ) : null}
         <div className="driver-map-controls" aria-label="Harita kontrolleri">
@@ -247,16 +269,28 @@ export function DriverMap({
             disabled={!position}
             aria-label="Otobüsü ortala"
           >
-            ◎
+            ⊙
           </button>
         </div>
-        <div className="driver-map-caption">
-          <span>
-            <i className="legend-route" aria-hidden /> Rota
+        <div className="map-topbar">
+          <span className="map-label"><i /> Canlı rota</span>
+          <span className={`map-state ${sharing ? 'map-state-live' : ''}`}>
+            <i aria-hidden />
+            {sharing ? 'GPS açık' : position ? `GPS ${updatedAt}` : 'GPS bekleniyor'}
           </span>
-          <span>
-            <i className="legend-vehicle" aria-hidden /> Son GPS
-          </span>
+        </div>
+        <div className="map-trip-sheet">
+          <div className="map-sheet-top">
+            <div>
+              <small>ŞİMDİKİ SEFER</small>
+              <strong>{originName} <span>→</span> {destinationName}</strong>
+            </div>
+            <span className="map-bus-badge">SKE</span>
+          </div>
+          <div className="map-sheet-bottom">
+            <span><i className="legend-vehicle" /> {sharing ? 'Konum canlı' : 'Konum kapalı'}</span>
+            <span><i className="legend-route" /> Sonraki durak: {nextStopName}</span>
+          </div>
         </div>
       </div>
     </section>
