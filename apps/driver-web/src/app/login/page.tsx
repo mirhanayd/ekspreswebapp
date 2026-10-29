@@ -36,35 +36,43 @@ export default function DriverLoginPage() {
   }
 
   return (
-    <main className="login-shell">
+    <main className="center-screen">
       <section className="login-card">
-        <div className="brand-mark">SKE</div>
-        <p className="eyebrow">SÜRÜCÜ OPERASYON</p>
-        <h1>Günün seferi burada.</h1>
-        <p className="muted">
-          Durakları, yolcuları ve canlı konum paylaşımını tek ekrandan yönetin.
-        </p>
+        <span className="brand-tile">SKE</span>
+        <div>
+          <p className="eyebrow">Sürücü operasyon</p>
+          <h1>Günün seferi burada.</h1>
+          <p className="muted" style={{ marginTop: 6 }}>
+            Durakları, yolcuları ve canlı konum paylaşımını tek ekrandan yönetin.
+          </p>
+        </div>
         <form onSubmit={submit} className="login-form">
-          <label>
+          <label className="field">
             E-posta
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               type="email"
+              autoComplete="username"
               required
             />
           </label>
-          <label>
+          <label className="field">
             Şifre
             <input
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               type="password"
+              autoComplete="current-password"
               required
             />
           </label>
-          {error ? <p className="error-box">{error}</p> : null}
-          <button className="primary-button" disabled={pending} type="submit">
+          {error ? (
+            <p className="alert" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <button className="btn btn-primary btn-lg" disabled={pending} type="submit">
             {pending ? 'Giriş yapılıyor…' : 'Sürücü paneline gir'}
           </button>
         </form>

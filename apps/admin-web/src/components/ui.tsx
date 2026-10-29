@@ -1,25 +1,67 @@
 import type { ReactNode } from 'react';
+import { statusMeta } from '@/lib/trip-status';
 
 type Base = { children?: ReactNode; className?: string };
 
-export const Card = ({ children, className = '' }: Base) => (
-  <section className={`surface ${className}`}>{children}</section>
+export function StatusChip({ status, className = '' }: { status: string; className?: string }) {
+  const meta = statusMeta(status);
+  return (
+    <span
+      className={`chip-status ${className}`}
+      style={{ backgroundColor: meta.bg, color: meta.fg }}
+    >
+      <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden />
+      {meta.label}
+    </span>
+  );
+}
+
+export function Avatar({ name, className = '' }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#EEF0F3] text-xs font-semibold text-[#344054] ${className}`}
+      aria-hidden
+    >
+      {name}
+    </span>
+  );
+}
+
+export function OccupancyBar({ sold, total }: { sold: number; total: number }) {
+  const percent = total ? Math.round((sold / total) * 100) : 0;
+  return (
+    <div className="min-w-24">
+      <p className="text-xs text-adm-muted">
+        <span className="font-medium text-adm-text">
+          {sold}/{total}
+        </span>{' '}
+        · %{percent}
+      </p>
+      <span className="ops-meter mt-1.5" aria-hidden>
+        <span className="ops-meter-fill" style={{ width: `${Math.min(100, percent)}%` }} />
+      </span>
+    </div>
+  );
+}
+
+export const Card = ({ children, className = '', id }: Base & { id?: string }) => (
+  <section id={id} className={`surface ${className}`}>
+    {children}
+  </section>
 );
 
 export const CardHeader = ({ children, className = '' }: Base) => (
-  <div className={`flex flex-col gap-1 border-b border-ink-100 px-4 py-3.5 sm:px-5 ${className}`}>
+  <div className={`flex flex-col gap-1 border-b border-adm-line px-4 py-3.5 sm:px-5 ${className}`}>
     {children}
   </div>
 );
 
 export const CardTitle = ({ children, className = '' }: Base) => (
-  <h2 className={`font-display text-base font-bold tracking-tight text-ink-900 ${className}`}>
-    {children}
-  </h2>
+  <h2 className={`text-base font-semibold text-adm-text ${className}`}>{children}</h2>
 );
 
 export const CardDescription = ({ children, className = '' }: Base) => (
-  <p className={`text-xs text-ink-500 ${className}`}>{children}</p>
+  <p className={`text-sm text-adm-muted ${className}`}>{children}</p>
 );
 
 export const CardContent = ({ children, className = '' }: Base) => (
@@ -82,7 +124,7 @@ export function PageHeader({
       <div className="min-w-0">
         <p className="page-eyebrow">{eyebrow}</p>
         <h1 className="page-title mt-1">{title}</h1>
-        {description ? <p className="mt-1 text-sm text-ink-600">{description}</p> : null}
+        {description ? <p className="mt-1 text-sm text-adm-muted">{description}</p> : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
     </div>
@@ -92,7 +134,7 @@ export function PageHeader({
 export function EmptyRow({ colSpan, children }: { colSpan: number; children: ReactNode }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-3 py-10 text-center text-sm text-ink-500">
+      <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-adm-muted">
         {children}
       </td>
     </tr>
