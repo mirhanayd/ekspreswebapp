@@ -21,8 +21,11 @@
   --radius: 16px;
   --tabbar-h: 68px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --font-sans: var(--font-plex-sans, 'IBM Plex Sans'), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: var(--font-plex-mono, 'IBM Plex Mono'), ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --font-sans:
+    var(--font-plex-sans, 'IBM Plex Sans'), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    sans-serif;
+  --font-mono:
+    var(--font-plex-mono, 'IBM Plex Mono'), ui-monospace, 'Cascadia Mono', Consolas, monospace;
   color-scheme: dark;
 }
 
@@ -284,7 +287,6 @@ svg {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-
 
 /* ---------- Chips & badges ---------- */
 
@@ -784,9 +786,13 @@ svg {
   background: #0f1216;
 }
 
-.driver-map {
+/* maplibre-gl.css sets `.maplibregl-map { position: relative }` with equal specificity,
+   which collapsed the container to 0px; the viewport selector wins on specificity. */
+.driver-map-viewport > .driver-map {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .driver-map .maplibregl-canvas {
