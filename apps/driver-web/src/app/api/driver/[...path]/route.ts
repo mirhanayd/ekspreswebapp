@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import {
   authService,
@@ -17,7 +17,13 @@ const tripStatuses = new Set(['scheduled', 'boarding', 'in_transit', 'completed'
 const boardingStatuses = new Set(['pending', 'boarded', 'no_show']);
 
 function json(message: unknown, status = 200) {
-  return Response.json(message, { status });
+  const response = NextResponse.json(message, {
+    status,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+  // A revoked or expired session must not leave a stale cookie that bounces / <-> /login.
+  if (status === 401) response.cookies.delete(ACCESS_TOKEN_COOKIE);
+  return response;
 }
 
 async function principal(request: NextRequest) {

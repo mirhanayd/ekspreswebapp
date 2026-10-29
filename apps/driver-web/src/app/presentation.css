@@ -22,9 +22,15 @@
   content: '';
   opacity: 0.7;
   background:
-    linear-gradient(90deg, var(--lime-400) 0 20%, transparent 20% 25%, var(--sage-200) 25% 52%, transparent 52% 58%, var(--cream-200) 58%),
-    radial-gradient(circle at 78% 34%, var(--amber-400) 0 10px, transparent 11px),
-    var(--cream-100);
+    linear-gradient(
+      90deg,
+      var(--lime-400) 0 20%,
+      transparent 20% 25%,
+      var(--sage-200) 25% 52%,
+      transparent 52% 58%,
+      var(--cream-200) 58%
+    ),
+    radial-gradient(circle at 78% 34%, var(--amber-400) 0 10px, transparent 11px), var(--cream-100);
 }
 
 .loading-card::after,
@@ -35,7 +41,11 @@
   border: 1px solid var(--line);
   border-radius: 26px;
   content: '';
-  background: repeating-linear-gradient(105deg, transparent 0 48px, rgba(9, 32, 15, 0.08) 48px 50px);
+  background: repeating-linear-gradient(
+    105deg,
+    transparent 0 48px,
+    rgba(9, 32, 15, 0.08) 48px 50px
+  );
 }
 
 .empty-card strong,
@@ -73,9 +83,45 @@
 
 @media (max-width: 640px) {
   .loading-card,
-  .empty-card { min-height: 360px; padding: 24px; border-radius: 26px; }
+  .empty-card {
+    min-height: 360px;
+    padding: 24px;
+    border-radius: 26px;
+  }
   .loading-card::before,
   .empty-card::before,
   .loading-card::after,
-  .empty-card::after { right: 24px; left: 24px; height: 150px; }
+  .empty-card::after {
+    right: 24px;
+    left: 24px;
+    height: 150px;
+  }
+}
+
+.notice-box {
+  margin-top: 14px;
+  padding: 13px 15px;
+  border-radius: 18px;
+  color: var(--ink-900);
+  background: var(--cream-100);
+  border: 1px solid var(--line);
+  font-size: 0.8125rem;
+}
+
+.empty-card span,
+.empty-card .empty-retry {
+  position: relative;
+  z-index: 1;
+}
+
+.empty-card .empty-retry {
+  align-self: flex-start;
+  margin-top: 18px;
+}
+
+.status-actions button:disabled,
+.primary-button:disabled,
+.passenger-row select:disabled {
+  cursor: progress;
+  opacity: 0.6;
 }

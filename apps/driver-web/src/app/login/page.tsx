@@ -12,21 +12,27 @@ export default function DriverLoginPage() {
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (pending) return;
     setPending(true);
     setError('');
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
-    const body = await response.json().catch(() => ({}));
-    setPending(false);
-    if (!response.ok) {
-      setError(body.message || 'Giriş yapılamadı.');
-      return;
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(body.message || 'Giriş yapılamadı.');
+        setPending(false);
+        return;
+      }
+      router.replace('/');
+      router.refresh();
+    } catch {
+      setError('Bağlantı kurulamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.');
+      setPending(false);
     }
-    router.replace('/');
-    router.refresh();
   }
 
   return (
