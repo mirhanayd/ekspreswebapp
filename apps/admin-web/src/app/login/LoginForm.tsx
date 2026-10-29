@@ -43,7 +43,7 @@ export function LoginForm() {
           required
           autoComplete="email"
           placeholder="admin@siirtkurtalan.demo"
-          className="ops-field min-h-11"
+          className="ops-field h-11"
         />
       </div>
 
@@ -57,21 +57,21 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="ops-field min-h-11"
+          className="ops-field h-11"
         />
       </div>
 
       {error ? (
         <p
           role="alert"
-          className="flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm font-semibold text-brand-800"
+          className="flex items-start gap-2 rounded-btn bg-[#FEE2E2] p-3 text-sm font-medium text-[#991B1B]"
         >
           <TriangleAlert className="mt-px h-4 w-4 shrink-0" aria-hidden />
           {error}
         </p>
       ) : null}
 
-      <button type="submit" disabled={pending} className="ops-btn ops-btn-primary min-h-11 w-full">
+      <button type="submit" disabled={pending} className="ops-btn ops-btn-primary h-11 w-full">
         {pending ? <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden /> : null}
         {pending ? 'Doğrulanıyor…' : 'Yönetim paneline giriş'}
         {!pending ? <ArrowRight className="h-4 w-4" aria-hidden /> : null}

@@ -44,8 +44,10 @@ export function OccupancyBar({ sold, total }: { sold: number; total: number }) {
   );
 }
 
-export const Card = ({ children, className = '' }: Base) => (
-  <section className={`surface ${className}`}>{children}</section>
+export const Card = ({ children, className = '', id }: Base & { id?: string }) => (
+  <section id={id} className={`surface ${className}`}>
+    {children}
+  </section>
 );
 
 export const CardHeader = ({ children, className = '' }: Base) => (
@@ -55,9 +57,7 @@ export const CardHeader = ({ children, className = '' }: Base) => (
 );
 
 export const CardTitle = ({ children, className = '' }: Base) => (
-  <h2 className={`text-base font-semibold text-adm-text ${className}`}>
-    {children}
-  </h2>
+  <h2 className={`text-base font-semibold text-adm-text ${className}`}>{children}</h2>
 );
 
 export const CardDescription = ({ children, className = '' }: Base) => (

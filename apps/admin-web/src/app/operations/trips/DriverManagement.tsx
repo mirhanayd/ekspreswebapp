@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export type DriverRecord = {
@@ -11,9 +11,9 @@ export type DriverRecord = {
   isActive: boolean;
 };
 
-type RequestError = Error & { status?: number; code?: string };
+export type RequestError = Error & { status?: number; code?: string };
 
-async function request(path: string, method: string, value?: object) {
+export async function request(path: string, method: string, value?: object) {
   let response: Response;
   try {
     response = await fetch(`/api/admin/${path}`, {
@@ -117,15 +117,19 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
   }
 
   return (
-    <section className="surface space-y-4 p-4 sm:p-5" aria-label="Sürücü yönetimi">
+    <section
+      id="surucu-hesaplari"
+      className="surface scroll-mt-24 space-y-4 p-4 sm:p-5"
+      aria-label="Sürücü yönetimi"
+    >
       <div>
-        <h2 className="text-lg font-bold text-ink-900">Sürücü hesapları</h2>
-        <p className="text-sm text-ink-500">
+        <h2 className="text-base font-semibold text-adm-text">Sürücü hesapları</h2>
+        <p className="text-sm text-adm-muted">
           Yalnız yetkili yönetici hesap açabilir ve sürücüyü sefere atayabilir.
         </p>
       </div>
       <form onSubmit={create} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <label className="grid gap-1 text-sm font-semibold">
+        <label className="grid gap-1 text-sm font-medium">
           Ad
           <input
             className="ops-field"
@@ -136,7 +140,7 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
             autoComplete="off"
           />
         </label>
-        <label className="grid gap-1 text-sm font-semibold">
+        <label className="grid gap-1 text-sm font-medium">
           Soyad
           <input
             className="ops-field"
@@ -147,7 +151,7 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
             autoComplete="off"
           />
         </label>
-        <label className="grid gap-1 text-sm font-semibold">
+        <label className="grid gap-1 text-sm font-medium">
           E-posta
           <input className="ops-field" name="email" type="email" required autoComplete="off" />
         </label>
@@ -160,17 +164,17 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
         </button>
       </form>
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-[#991B1B]">
           {error}
         </p>
       )}
       {success && (
-        <p role="status" className="text-sm text-brand-700">
+        <p role="status" className="text-sm text-[#166534]">
           {success}
         </p>
       )}
       {temporaryPassword && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+        <div className="flex flex-wrap items-center gap-2 rounded-btn bg-adm-sel-bg p-3 text-sm text-adm-sel-text">
           <p className="min-w-0 flex-1 break-all font-mono">
             {createdEmail ? `${createdEmail} · ` : ''}Geçici şifre:{' '}
             <strong>{temporaryPassword}</strong>
@@ -203,7 +207,7 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
         {drivers.map((driver) => (
           <li
             key={driver.id}
-            className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-ink-200 p-3"
+            className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-card border border-adm-line p-3"
           >
             <span className="min-w-0">
               <strong className="block truncate text-sm">
@@ -216,13 +220,13 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
             <button
               type="button"
               disabled={busy}
-              className="ops-btn ops-btn-secondary min-h-11 shrink-0"
+              className="ops-btn ops-btn-secondary h-11 shrink-0"
               onClick={() => toggle(driver)}
             >
               {driver.isActive ? 'Pasifleştir' : 'Etkinleştir'}
             </button>
             <details className="w-full text-sm">
-              <summary className="cursor-pointer font-semibold text-brand-700">
+              <summary className="cursor-pointer font-medium text-adm-sel-text">
                 Şifre yenile
               </summary>
               <form
@@ -243,11 +247,7 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
                   autoComplete="new-password"
                   placeholder="En az 12 karakter"
                 />
-                <button
-                  className="ops-btn ops-btn-secondary min-h-11"
-                  type="submit"
-                  disabled={busy}
-                >
+                <button className="ops-btn ops-btn-secondary h-11" type="submit" disabled={busy}>
                   Yenile
                 </button>
               </form>
@@ -257,157 +257,5 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
         {!drivers.length && <li className="text-sm text-ink-500">Henüz sürücü hesabı yok.</li>}
       </ul>
     </section>
-  );
-}
-
-export function DriverAssignmentControl({
-  tripId,
-  tripStatus,
-  initialDriverId,
-  drivers,
-}: {
-  tripId: string;
-  tripStatus: string;
-  initialDriverId: string | null;
-  drivers: DriverRecord[];
-}) {
-  const locked = tripStatus === 'completed' || tripStatus === 'cancelled';
-  const router = useRouter();
-  const [selected, setSelected] = useState(initialDriverId ?? '');
-  const [current, setCurrent] = useState(initialDriverId);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
-  const [override, setOverride] = useState(false);
-  const [reason, setReason] = useState('');
-  const [saved, setSaved] = useState('');
-  const active = drivers.filter((driver) => driver.isActive);
-  useEffect(() => {
-    setCurrent(initialDriverId);
-    setSelected(initialDriverId ?? '');
-  }, [initialDriverId]);
-  async function save(method: 'PUT' | 'DELETE') {
-    if (method === 'PUT' && override && reason.trim().length < 3) {
-      setError('Çakışmayı geçmek için en az 3 karakterlik gerekçe yazın.');
-      return;
-    }
-    setBusy(true);
-    setError('');
-    setSaved('');
-    try {
-      await request(
-        `trips/${tripId}/driver`,
-        method,
-        method === 'PUT' ? { driverId: selected, override, reason } : undefined,
-      );
-      setCurrent(method === 'PUT' ? selected : null);
-      if (method === 'DELETE') setSelected('');
-      setOverride(false);
-      setReason('');
-      setSaved(method === 'PUT' ? 'Atandı' : 'Kaldırıldı');
-      router.refresh();
-    } catch (cause) {
-      const failure = cause as RequestError;
-      setError(
-        failure.code === 'TRIP_OVERLAP'
-          ? `${failure.message} Yine de atamak için “Çakışmayı gerekçeyle geç” seçin.`
-          : failure instanceof Error
-            ? failure.message
-            : 'Atama güncellenemedi.',
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
-  if (locked) {
-    const assigned = drivers.find((driver) => driver.id === current);
-    return (
-      <p className="min-w-44 text-xs text-ink-500">
-        {assigned ? `${assigned.firstName} ${assigned.lastName}` : 'Sürücü atanmadı'} · sefer kapalı
-      </p>
-    );
-  }
-
-  return (
-    <div className="grid min-w-44 gap-1.5 text-left">
-      <label className="sr-only" htmlFor={`driver-${tripId}`}>
-        Sefer sürücüsü
-      </label>
-      <select
-        id={`driver-${tripId}`}
-        className="ops-field"
-        value={selected}
-        onChange={(event) => setSelected(event.target.value)}
-        disabled={busy}
-      >
-        <option value="">Sürücü seçin</option>
-        {drivers
-          .filter((driver) => driver.isActive || driver.id === current)
-          .map((driver) => (
-            <option key={driver.id} value={driver.id}>
-              {driver.firstName} {driver.lastName}
-              {driver.isActive ? '' : ' (pasif)'}
-            </option>
-          ))}
-      </select>
-      <div className="flex flex-wrap gap-1">
-        <button
-          type="button"
-          className="ops-btn ops-btn-secondary"
-          disabled={
-            busy ||
-            !selected ||
-            selected === current ||
-            !active.some((driver) => driver.id === selected)
-          }
-          onClick={() => save('PUT')}
-        >
-          {current ? 'Değiştir' : 'Ata'}
-        </button>
-        {current && (
-          <button
-            type="button"
-            className="ops-btn ops-btn-secondary"
-            disabled={busy}
-            onClick={() => {
-              if (window.confirm('Bu seferdeki sürücü ataması kaldırılsın mı?')) save('DELETE');
-            }}
-          >
-            Kaldır
-          </button>
-        )}
-      </div>
-      {error && (
-        <span role="alert" className="max-w-48 text-xs text-red-700">
-          {error}
-        </span>
-      )}
-      {saved && !error && (
-        <span role="status" className="text-xs font-semibold text-brand-700">
-          {saved}
-        </span>
-      )}
-      <label className="flex items-center gap-2 text-xs text-ink-600">
-        <input
-          type="checkbox"
-          checked={override}
-          onChange={(event) => setOverride(event.target.checked)}
-          disabled={busy}
-        />
-        Çakışmayı gerekçeyle geç
-      </label>
-      {override && (
-        <label className="grid gap-1 text-xs font-semibold">
-          Gerekçe
-          <input
-            className="ops-field"
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            minLength={3}
-            maxLength={500}
-            required
-          />
-        </label>
-      )}
-    </div>
   );
 }
