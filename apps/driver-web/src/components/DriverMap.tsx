@@ -202,10 +202,11 @@ export function DriverMap({
         .addTo(instance);
     };
 
+    // `load` waits for every initial tile; `style.load` fires as soon as the style is usable,
+    // so the route and markers appear even while tiles are slow or blocked.
+    instance.once('style.load', setupOverlays);
     instance.once('load', setupOverlays);
-    instance.on('styledata', () => {
-      if (instance.isStyleLoaded()) setupOverlays();
-    });
+    if (instance.isStyleLoaded()) setupOverlays();
 
     return () => {
       vehicleMarker.current?.remove();
