@@ -11,14 +11,29 @@ export type DriverRecord = {
   isActive: boolean;
 };
 
+type RequestError = Error & { status?: number; code?: string };
+
 async function request(path: string, method: string, value?: object) {
-  const response = await fetch(`/api/admin/${path}`, {
-    method,
-    headers: value ? { 'Content-Type': 'application/json' } : undefined,
-    body: value ? JSON.stringify(value) : undefined,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`/api/admin/${path}`, {
+      method,
+      headers: value ? { 'Content-Type': 'application/json' } : undefined,
+      body: value ? JSON.stringify(value) : undefined,
+    });
+  } catch {
+    throw new Error('Sunucuya ulaşılamadı. Bağlantıyı kontrol edip tekrar deneyin.');
+  }
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.message || 'İşlem tamamlanamadı.');
+  if (response.status === 401) {
+    window.location.replace('/api/auth/logout');
+    throw new Error('Oturum süresi doldu.');
+  }
+  if (!response.ok)
+    throw Object.assign(new Error(data.message || 'İşlem tamamlanamadı.'), {
+      status: response.status,
+      code: typeof data.code === 'string' ? data.code : undefined,
+    }) as RequestError;
   return data;
 }
 
@@ -28,6 +43,8 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [createdEmail, setCreatedEmail] = useState('');
+  const [copied, setCopied] = useState(false);
 
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -44,6 +61,8 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
       });
       form.reset();
       setTemporaryPassword(created.temporaryPassword);
+      setCreatedEmail(created.email);
+      setCopied(false);
       setSuccess('Sürücü hesabı oluşturuldu. Geçici şifre yalnızca şimdi gösterilir.');
       router.refresh();
     } catch (cause) {
@@ -54,11 +73,23 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
   }
 
   async function toggle(driver: DriverRecord) {
+    if (
+      driver.isActive &&
+      !window.confirm(
+        `${driver.firstName} ${driver.lastName} pasifleştirilsin mi? Açık oturumu hemen kapanır.`,
+      )
+    )
+      return;
     setBusy(true);
     setError('');
     setSuccess('');
     try {
       await request(`drivers/${driver.id}`, 'PATCH', { isActive: !driver.isActive });
+      setSuccess(
+        driver.isActive
+          ? `${driver.firstName} ${driver.lastName} pasifleştirildi.`
+          : `${driver.firstName} ${driver.lastName} etkinleştirildi.`,
+      );
       router.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Hesap güncellenemedi.');
@@ -139,9 +170,34 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
         </p>
       )}
       {temporaryPassword && (
-        <p className="break-all rounded-lg bg-brand-50 p-3 font-mono text-sm text-brand-900">
-          Geçici şifre: <strong>{temporaryPassword}</strong>
-        </p>
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
+          <p className="min-w-0 flex-1 break-all font-mono">
+            {createdEmail ? `${createdEmail} · ` : ''}Geçici şifre:{' '}
+            <strong>{temporaryPassword}</strong>
+          </p>
+          <button
+            type="button"
+            className="ops-btn ops-btn-secondary"
+            onClick={() => {
+              void navigator.clipboard
+                ?.writeText(temporaryPassword)
+                .then(() => setCopied(true))
+                .catch(() => setCopied(false));
+            }}
+          >
+            {copied ? 'Kopyalandı' : 'Kopyala'}
+          </button>
+          <button
+            type="button"
+            className="ops-btn ops-btn-secondary"
+            onClick={() => {
+              setTemporaryPassword('');
+              setCreatedEmail('');
+            }}
+          >
+            Gizle
+          </button>
+        </div>
       )}
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {drivers.map((driver) => (
@@ -206,13 +262,16 @@ export function DriverManagement({ drivers }: { drivers: DriverRecord[] }) {
 
 export function DriverAssignmentControl({
   tripId,
+  tripStatus,
   initialDriverId,
   drivers,
 }: {
   tripId: string;
+  tripStatus: string;
   initialDriverId: string | null;
   drivers: DriverRecord[];
 }) {
+  const locked = tripStatus === 'completed' || tripStatus === 'cancelled';
   const router = useRouter();
   const [selected, setSelected] = useState(initialDriverId ?? '');
   const [current, setCurrent] = useState(initialDriverId);
@@ -220,14 +279,20 @@ export function DriverAssignmentControl({
   const [error, setError] = useState('');
   const [override, setOverride] = useState(false);
   const [reason, setReason] = useState('');
+  const [saved, setSaved] = useState('');
   const active = drivers.filter((driver) => driver.isActive);
   useEffect(() => {
     setCurrent(initialDriverId);
     setSelected(initialDriverId ?? '');
   }, [initialDriverId]);
   async function save(method: 'PUT' | 'DELETE') {
+    if (method === 'PUT' && override && reason.trim().length < 3) {
+      setError('Çakışmayı geçmek için en az 3 karakterlik gerekçe yazın.');
+      return;
+    }
     setBusy(true);
     setError('');
+    setSaved('');
     try {
       await request(
         `trips/${tripId}/driver`,
@@ -236,13 +301,32 @@ export function DriverAssignmentControl({
       );
       setCurrent(method === 'PUT' ? selected : null);
       if (method === 'DELETE') setSelected('');
+      setOverride(false);
+      setReason('');
+      setSaved(method === 'PUT' ? 'Atandı' : 'Kaldırıldı');
       router.refresh();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Atama güncellenemedi.');
+      const failure = cause as RequestError;
+      setError(
+        failure.code === 'TRIP_OVERLAP'
+          ? `${failure.message} Yine de atamak için “Çakışmayı gerekçeyle geç” seçin.`
+          : failure instanceof Error
+            ? failure.message
+            : 'Atama güncellenemedi.',
+      );
     } finally {
       setBusy(false);
     }
   }
+  if (locked) {
+    const assigned = drivers.find((driver) => driver.id === current);
+    return (
+      <p className="min-w-44 text-xs text-ink-500">
+        {assigned ? `${assigned.firstName} ${assigned.lastName}` : 'Sürücü atanmadı'} · sefer kapalı
+      </p>
+    );
+  }
+
   return (
     <div className="grid min-w-44 gap-1.5 text-left">
       <label className="sr-only" htmlFor={`driver-${tripId}`}>
@@ -295,6 +379,11 @@ export function DriverAssignmentControl({
       {error && (
         <span role="alert" className="max-w-48 text-xs text-red-700">
           {error}
+        </span>
+      )}
+      {saved && !error && (
+        <span role="status" className="text-xs font-semibold text-brand-700">
+          {saved}
         </span>
       )}
       <label className="flex items-center gap-2 text-xs text-ink-600">

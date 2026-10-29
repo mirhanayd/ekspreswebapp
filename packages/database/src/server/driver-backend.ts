@@ -60,6 +60,7 @@ async function assertAssignment(driverId: string, tripId: string) {
     .select({
       tripId: schema.tripDrivers.tripId,
       busId: schema.trips.busId,
+      status: schema.trips.status,
     })
     .from(schema.tripDrivers)
     .innerJoin(schema.trips, eq(schema.tripDrivers.tripId, schema.trips.id))
@@ -95,7 +96,9 @@ async function getManifest(tripId: string) {
       and(eq(schema.tickets.tripId, tripId), inArray(schema.tickets.status, ['active', 'used'])),
     );
 
-  return rows.map((row) => ({ ...row, boardingStatus: row.boardingStatus || 'pending' }));
+  return rows
+    .map((row) => ({ ...row, boardingStatus: row.boardingStatus || 'pending' }))
+    .sort((a, b) => a.seatNo.localeCompare(b.seatNo, 'tr', { numeric: true }));
 }
 
 export async function listDriverTrips(driverId: string) {
@@ -104,7 +107,7 @@ export async function listDriverTrips(driverId: string) {
     .from(schema.tripDrivers)
     .where(eq(schema.tripDrivers.driverId, driverId));
 
-  return Promise.all(
+  const trips = await Promise.all(
     assignments.map(async ({ tripId }) => {
       const trip = await getTripDetails(tripId);
       const manifest = await getManifest(tripId);
@@ -117,6 +120,11 @@ export async function listDriverTrips(driverId: string) {
         },
       };
     }),
+  );
+
+  // Stable chronological order lets the driver UI pick the active/next trip deterministically.
+  return trips.sort(
+    (a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime(),
   );
 }
 
@@ -190,7 +198,10 @@ export async function updateDriverTripStatus(
   tripId: string,
   status: 'scheduled' | 'boarding' | 'in_transit' | 'completed',
 ) {
-  await assertAssignment(driverId, tripId);
+  const assignment = await assertAssignment(driverId, tripId);
+  if (assignment.status === 'cancelled') {
+    throw new DriverBackendError(409, 'İptal edilen seferin durumu değiştirilemez.');
+  }
   const [trip] = await db()
     .update(schema.trips)
     .set({ status })
@@ -255,6 +266,9 @@ export async function recordDriverLocation(
   input: DriverLocationInput,
 ) {
   const assignment = await assertAssignment(driverId, tripId);
+  if (assignment.status === 'completed' || assignment.status === 'cancelled') {
+    throw new DriverBackendError(409, 'Sefer kapandığı için konum paylaşımı durduruldu.');
+  }
   const recordedAt = input.recordedAt ? new Date(input.recordedAt) : new Date();
   const sequence = Math.floor(recordedAt.getTime() / 1000);
 

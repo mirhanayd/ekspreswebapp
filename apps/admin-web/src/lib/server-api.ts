@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { ServerError } from '@ekspres/database';
 import { ADMIN_ACCESS_TOKEN_COOKIE } from './auth';
 import { adminData, requireAdminToken } from './server-auth';
 
@@ -7,7 +8,18 @@ export async function adminApiJson<T>(path: string): Promise<T> {
   const token = (await cookies()).get(ADMIN_ACCESS_TOKEN_COOKIE)?.value;
   if (!token) redirect('/login');
 
-  await requireAdminToken(token);
+  let sessionValid = true;
+  try {
+    await requireAdminToken(token);
+  } catch (error) {
+    if (!(error instanceof ServerError) || (error.status !== 401 && error.status !== 403)) {
+      throw error;
+    }
+    sessionValid = false;
+  }
+  // An expired/revoked cookie would otherwise crash the page and middleware would keep
+  // bouncing /login back to /dashboard; the GET logout clears it first.
+  if (!sessionValid) redirect('/api/auth/logout');
   return (await adminData(path)) as T;
 }
 

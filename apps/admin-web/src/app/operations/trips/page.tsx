@@ -194,6 +194,7 @@ export default async function TripsPage() {
                     <TableCell>
                       <DriverAssignmentControl
                         tripId={trip.id}
+                        tripStatus={trip.status}
                         initialDriverId={trip.driverId}
                         drivers={drivers}
                       />

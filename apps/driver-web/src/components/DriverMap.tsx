@@ -45,19 +45,20 @@ export function DriverMap({
   const [mapReady, setMapReady] = useState(false);
   initialPosition.current = position;
 
-  const stopPoints = useMemo(
-    () =>
-      stops.flatMap((stop) => {
-        const point = toLngLat(stop.location.coordinates);
-        return point ? [{ ...point, id: stop.id, name: stop.location.name }] : [];
-      }),
-    [stops],
-  );
+  const computedStopPoints = stops.flatMap((stop) => {
+    const point = toLngLat(stop.location.coordinates);
+    return point ? [{ ...point, id: stop.id, name: stop.location.name }] : [];
+  });
+  const computedCoordinates =
+    geometry && geometry.coordinates.length >= 2
+      ? geometry.coordinates
+      : computedStopPoints.map((point) => [point.longitude, point.latitude] as [number, number]);
 
-  const coordinates = useMemo(() => {
-    if (geometry && geometry.coordinates.length >= 2) return geometry.coordinates;
-    return stopPoints.map((point) => [point.longitude, point.latitude] as [number, number]);
-  }, [geometry, stopPoints]);
+  // Every trip refresh returns new objects; keying by content keeps the map from being torn down
+  // and re-created after each passenger/status update or background refresh.
+  const routeKey = JSON.stringify([computedCoordinates, computedStopPoints]);
+  const stopPoints = useMemo(() => computedStopPoints, [routeKey]);
+  const coordinates = useMemo(() => computedCoordinates, [routeKey]);
 
   const focusVehicle = useCallback(() => {
     if (!position) return;
