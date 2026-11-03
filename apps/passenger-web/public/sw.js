@@ -27,11 +27,10 @@ self.addEventListener('push', (event) => {
     (async () => {
       const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
       const visible = windows.filter((client) => client.visibilityState === 'visible');
-      if (visible.length) {
-        // The app is open: it shows its own banner, so the system tray stays quiet.
-        for (const client of visible) client.postMessage({ type: 'alighting-push', payload });
-        return;
-      }
+      // An open app shows its own banner; the notification still lands in the tray, but silently,
+      // so the alert is not lost if the passenger leaves the app before reading it.
+      for (const client of visible) client.postMessage({ type: 'alighting-push', payload });
+      const quiet = visible.length > 0 || payload.sound === false;
       await self.registration.showNotification(payload.title, {
         body: payload.body,
         tag: payload.tag,
@@ -41,8 +40,8 @@ self.addEventListener('push', (event) => {
         renotify: false,
         requireInteraction: payload.threshold === 1,
         // Silent still vibrates on most phones; sound-off passengers get neither a chime nor a buzz.
-        silent: payload.sound === false,
-        vibrate: payload.sound === false ? undefined : [200, 100, 200],
+        silent: quiet,
+        vibrate: quiet ? undefined : [200, 100, 200],
         data: { url: payload.url || '/', dispatchId: payload.dispatchId },
       });
     })(),

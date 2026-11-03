@@ -226,8 +226,11 @@ geometry. The first time that distance is at or under 5 km, and again at 1 km, o
 jumps past a threshold, only the most urgent alert is sent. A switched-off threshold is recorded as
 `disabled`, so turning it on later never replays it. Failures never reject the driver's GPS write.
 
-**Delivery.** Passengers subscribe from the settings sheet (`POST /api/push/subscription`). A visible app
-window gets the alert as a banner through the service worker; a closed app gets the system notification.
+**Delivery.** Passengers subscribe from the settings sheet (`POST /api/push/subscription`). Each alert goes
+to all of a passenger's devices, at most 8 push requests at a time with a 4 s socket timeout each; one failing
+device never stops the others. The service worker always shows the system notification (same tag, so it
+replaces rather than stacks); when an app window is visible it is shown silently and the window also gets
+the alert as an in-app banner.
 Dispatches with no push delivery (no subscription, permission refused, VAPID unset) are offered to the open
 app as banners by `GET /api/notifications/alighting`, and acknowledged with `POST .../ack`.
 

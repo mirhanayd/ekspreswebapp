@@ -114,6 +114,33 @@ export function buildAlightingMessage(input: {
 
 // ── Orchestration (storage and push transport are injected) ──────────────────
 
+/** Most push requests in flight at once for one alert. */
+export const PUSH_CONCURRENCY = 8;
+/** Socket timeout for one push service request, so a stalled endpoint cannot hang GPS ingestion. */
+export const PUSH_TIMEOUT_MS = 4000;
+
+/**
+ * Runs `task` over `items` with at most `limit` running at a time. Like Promise.allSettled,
+ * every item is attempted and a rejection is reported in place instead of stopping the rest.
+ */
+export async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  task: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const index = next;
+      next += 1;
+      [results[index]] = await Promise.allSettled([task(items[index])]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 export type TrackedPosition = {
   tripId: string;
   longitude: number;
@@ -207,12 +234,19 @@ export function createAlightingNotifier(deps: { store: AlightingStore; send: Pus
             url: `/trips/${position.tripId}/live?ticketId=${candidate.ticketId}`,
           };
           const subscriptions = await deps.store.listSubscriptions(candidate.userId);
-          let pushed = false;
-          for (const subscription of subscriptions) {
-            const result = await deps.send(subscription, payload);
-            if (result === 'sent') pushed = true;
-            if (result === 'gone') await deps.store.removeSubscription(subscription.endpoint);
-          }
+          // A slow or failing device must not hold up, or cancel, delivery to the others.
+          const results = await mapWithConcurrency(
+            subscriptions,
+            PUSH_CONCURRENCY,
+            async (subscription) => {
+              const result = await deps.send(subscription, payload);
+              if (result === 'gone') await deps.store.removeSubscription(subscription.endpoint);
+              return result;
+            },
+          );
+          const pushed = results.some(
+            (result) => result.status === 'fulfilled' && result.value === 'sent',
+          );
           if (pushed) await deps.store.markPushed(dispatchId);
         }
       }
@@ -328,6 +362,7 @@ export const webPushSender: PushSender = async (subscription, payload) => {
       JSON.stringify(payload),
       {
         TTL: 120,
+        timeout: PUSH_TIMEOUT_MS,
         urgency: 'high',
         topic: payload.tag.slice(0, 32).replace(/[^A-Za-z0-9_-]/g, ''),
         vapidDetails: {

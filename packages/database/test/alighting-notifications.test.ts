@@ -1,4 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const sendNotification = vi.hoisted(() => vi.fn());
+vi.mock('web-push', () => ({ default: { sendNotification } }));
+
 import {
   buildAlightingMessage,
   createAlightingNotifier,
@@ -6,7 +10,12 @@ import {
   estimateMinutes,
   planAlightingDispatches,
   turkishDative,
+  mapWithConcurrency,
+  PUSH_CONCURRENCY,
+  PUSH_TIMEOUT_MS,
+  webPushSender,
   type AlightingCandidate,
+  type AlightingPayload,
   type AlightingStore,
   type PushSender,
 } from '../src/server/alighting-notifications.js';
@@ -241,6 +250,108 @@ describe('alighting notifier', () => {
     const { store, dispatches } = fakeStore();
     await createAlightingNotifier({ store, send: async () => 'unconfigured' }).evaluate(fix(4.5));
     expect(dispatches.get('ticket-1:5')).toMatchObject({ status: 'sent', pushed: false });
+  });
+});
+
+describe('parallel push delivery', () => {
+  const subscriptions = Array.from({ length: 20 }, (_, index) => ({
+    endpoint: `https://push.example/${index}`,
+    p256dh: 'k',
+    auth: 'a',
+  }));
+
+  it('sends to every subscription with at most 8 requests in flight', async () => {
+    const { store, dispatches } = fakeStore();
+    vi.mocked(store.listSubscriptions).mockResolvedValue(subscriptions);
+    let inFlight = 0;
+    let peak = 0;
+    const send = vi.fn<PushSender>(async () => {
+      inFlight += 1;
+      peak = Math.max(peak, inFlight);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      inFlight -= 1;
+      return 'sent';
+    });
+    await createAlightingNotifier({ store, send }).evaluate(fix(4.5));
+    expect(send).toHaveBeenCalledTimes(20);
+    expect(peak).toBe(PUSH_CONCURRENCY);
+    expect(dispatches.get('ticket-1:5')?.pushed).toBe(true);
+  });
+
+  it('keeps delivering when one device throws, fails or is gone', async () => {
+    const { store, removed, dispatches } = fakeStore();
+    vi.mocked(store.listSubscriptions).mockResolvedValue(subscriptions);
+    const send = vi.fn<PushSender>(async (subscription) => {
+      if (subscription.endpoint.endsWith('/0')) throw new Error('socket hang up');
+      if (subscription.endpoint.endsWith('/1')) return 'failed';
+      if (subscription.endpoint.endsWith('/2')) return 'gone';
+      return 'sent';
+    });
+    await createAlightingNotifier({ store, send }).evaluate(fix(4.5));
+    expect(send).toHaveBeenCalledTimes(20);
+    expect(removed).toEqual(['https://push.example/2']);
+    expect(dispatches.get('ticket-1:5')?.pushed).toBe(true);
+  });
+
+  it('reports each result in input order, rejections included', async () => {
+    const results = await mapWithConcurrency([30, 1, 10], 2, async (ms) => {
+      await new Promise((resolve) => setTimeout(resolve, ms));
+      if (ms === 1) throw new Error('boom');
+      return ms;
+    });
+    expect(results.map((result) => result.status)).toEqual(['fulfilled', 'rejected', 'fulfilled']);
+    expect(results[0]).toEqual({ status: 'fulfilled', value: 30 });
+    expect(await mapWithConcurrency([], 8, async () => 1)).toEqual([]);
+  });
+});
+
+describe('web push transport', () => {
+  const payload: AlightingPayload = {
+    title: 't',
+    body: 'b',
+    tag: 'alighting-ticket-5km',
+    dispatchId: 'd',
+    ticketId: 'ticket',
+    tripId: 'trip',
+    threshold: 5,
+    sound: true,
+    url: '/',
+  };
+  const subscription = { endpoint: 'https://push.example/one', p256dh: 'k', auth: 'a' };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    sendNotification.mockReset();
+  });
+
+  function configure() {
+    vi.stubEnv('VAPID_PUBLIC_KEY', 'public');
+    vi.stubEnv('VAPID_PRIVATE_KEY', 'private');
+    vi.stubEnv('VAPID_SUBJECT', 'mailto:ops@example.test');
+  }
+
+  it('gives every push request a 4 second socket timeout', async () => {
+    configure();
+    sendNotification.mockResolvedValue({ statusCode: 201 });
+    await expect(webPushSender(subscription, payload)).resolves.toBe('sent');
+    expect(PUSH_TIMEOUT_MS).toBe(4000);
+    expect(sendNotification).toHaveBeenCalledWith(
+      { endpoint: subscription.endpoint, keys: { p256dh: 'k', auth: 'a' } },
+      JSON.stringify(payload),
+      expect.objectContaining({ timeout: 4000, TTL: 120 }),
+    );
+  });
+
+  it('turns a timed-out request into a failure instead of throwing', async () => {
+    configure();
+    sendNotification.mockRejectedValue(new Error('Socket timeout'));
+    await expect(webPushSender(subscription, payload)).resolves.toBe('failed');
+  });
+
+  it('skips sending without VAPID configuration', async () => {
+    vi.stubEnv('VAPID_PUBLIC_KEY', '');
+    await expect(webPushSender(subscription, payload)).resolves.toBe('unconfigured');
+    expect(sendNotification).not.toHaveBeenCalled();
   });
 });
 
