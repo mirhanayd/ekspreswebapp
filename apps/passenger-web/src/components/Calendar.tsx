@@ -26,18 +26,14 @@ function monthGrid(cursor: Date) {
   return cells;
 }
 
-/**
- * The app's own calendar. The native date input has no styling surface, so the
- * date picker is drawn here in the same vocabulary as the rest of the app: a
- * lime selected day, a near-black ring on today, and past days quietly muted.
- */
+/** The app's own calendar: a brand-red selected day, an ink ring on today, past days muted. */
 export function Calendar({
   value,
   onSelect,
   monthsAhead = 6,
 }: {
   value: string;
-  onSelect: React.Dispatch<string>;
+  onSelect: (iso: string) => void;
   monthsAhead?: number;
 }) {
   const today = isoDate(0);
@@ -68,35 +64,27 @@ export function Calendar({
           onClick={() => shift(-1)}
           disabled={!canGoBack}
           aria-label="Önceki ay"
-          className="icon-btn icon-btn-sm bg-ink-900/[0.06] text-ink-700 transition hover:bg-ink-900/10 disabled:opacity-35"
+          className="round-btn border-0 bg-sk-bg disabled:opacity-35"
         >
-          <ChevronLeft className="h-5 w-5" aria-hidden />
+          <ChevronLeft size={20} aria-hidden />
         </button>
-
-        <p
-          aria-live="polite"
-          className="font-display text-[1.0625rem] font-bold capitalize text-ink-900"
-        >
+        <p aria-live="polite" className="m-0 text-[17px] font-extrabold capitalize">
           {cursor.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })}
         </p>
-
         <button
           type="button"
           onClick={() => shift(1)}
           disabled={!canGoForward}
           aria-label="Sonraki ay"
-          className="icon-btn icon-btn-sm bg-ink-900/[0.06] text-ink-700 transition hover:bg-ink-900/10 disabled:opacity-35"
+          className="round-btn border-0 bg-sk-bg disabled:opacity-35"
         >
-          <ChevronRight className="h-5 w-5" aria-hidden />
+          <ChevronRight size={20} aria-hidden />
         </button>
       </div>
 
       <div className="mt-4 grid grid-cols-7 gap-1">
         {WEEKDAYS.map((day) => (
-          <span
-            key={day}
-            className="py-1 text-center text-[0.6875rem] font-semibold uppercase text-ink-400"
-          >
+          <span key={day} className="py-1 text-center text-[11px] font-bold uppercase text-sk-ink3">
             {day}
           </span>
         ))}
@@ -120,46 +108,19 @@ export function Calendar({
                 month: 'long',
               })}
               onClick={() => onSelect(iso)}
-              className={`num grid aspect-square place-items-center rounded-full text-[0.9375rem] font-semibold transition ${
+              className={`num-md grid aspect-square place-items-center rounded-full border-0 text-[15px] transition-colors ${
                 isSelected
-                  ? 'bg-lime-500 text-ink-900'
+                  ? 'bg-sk-brand text-white'
                   : isPast
-                    ? 'text-ink-300'
-                    : 'text-ink-800 hover:bg-cream-200'
-              } ${isToday && !isSelected ? 'ring-1 ring-inset ring-ink-900/25' : ''}`}
+                    ? 'bg-transparent text-[#B9B9B3]'
+                    : 'bg-transparent text-sk-ink hover:bg-sk-bg'
+              } ${isToday && !isSelected ? 'ring-1 ring-inset ring-sk-ink/30' : ''}`}
             >
               {date.getDate()}
             </button>
           );
         })}
       </div>
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        {[
-          { label: 'Bugün', offset: 0 },
-          { label: 'Yarın', offset: 1 },
-          { label: 'Hafta sonu', offset: nextWeekendOffset() },
-        ].map(({ label, offset }) => {
-          const iso = isoDate(offset);
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onSelect(iso)}
-              aria-pressed={selected === iso}
-              className={`chip chip-sm ${selected === iso ? 'chip-active' : 'chip-flat'}`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
     </div>
   );
-}
-
-/** Days until the coming Saturday (today counts when it is already Saturday). */
-function nextWeekendOffset() {
-  const day = new Date().getDay();
-  return (6 - day + 7) % 7;
 }

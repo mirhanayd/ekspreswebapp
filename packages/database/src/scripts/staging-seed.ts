@@ -4,6 +4,7 @@ import { join } from 'path';
 import { Pool, PoolClient } from 'pg';
 import { DEMO_CREDENTIALS } from '../demo-constants.js';
 import { STAGING_IDS, stagingUuid } from '../staging-fixture-ids.js';
+import { COACH_SEAT_COUNT, createCoachSeatLayout } from '../seat-layout.js';
 
 dotenv.config({ path: join(process.cwd(), '../../.env') });
 
@@ -80,7 +81,9 @@ async function assertFixtureOwnership(client: PoolClient, driverId: string, pass
     stagingUuid('ticket:staging-batman-passenger'),
   ];
   const seatIds = tripIds.flatMap((tripId) =>
-    Array.from({ length: 39 }, (_, index) => stagingUuid(`trip-seat:${tripId}:${index + 1}`)),
+    Array.from({ length: COACH_SEAT_COUNT }, (_, index) =>
+      stagingUuid(`trip-seat:${tripId}:${index + 1}`),
+    ),
   );
   const result = await client.query<{
     foreign_orders: string;
@@ -119,27 +122,6 @@ async function assertFixtureOwnership(client: PoolClient, driverId: string, pass
   if (!row || Object.values(row).some((count) => Number(count) !== 0)) {
     throw new Error('SAFETY GUARD: staging fixture ownership changed; no records were updated.');
   }
-}
-
-function createSeatLayout() {
-  const items: Array<{
-    type: 'driver' | 'seat' | 'aisle';
-    row: number;
-    column: number;
-    seatNo?: string;
-  }> = [{ type: 'driver', row: 1, column: 1 }];
-
-  for (let row = 2; row <= 14; row++) {
-    const firstSeat = (row - 2) * 3 + 1;
-    items.push(
-      { type: 'seat', seatNo: String(firstSeat), row, column: 1 },
-      { type: 'seat', seatNo: String(firstSeat + 1), row, column: 2 },
-      { type: 'aisle', row, column: 3 },
-      { type: 'seat', seatNo: String(firstSeat + 2), row, column: 4 },
-    );
-  }
-
-  return { layout: '2+1', rows: 14, columns: 4, items };
 }
 
 async function findDemoUsers(client: PoolClient) {
@@ -210,13 +192,13 @@ async function upsertTransport(client: PoolClient, driverId: string) {
 
   await client.query(
     `INSERT INTO buses (id, plate_number, model, seat_layout, total_seats)
-     VALUES ($1, '56 SKE STG', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 39)
+     VALUES ($1, '56 SKE STG', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 41)
      ON CONFLICT (id) DO UPDATE SET
        plate_number = EXCLUDED.plate_number,
        model = EXCLUDED.model,
        seat_layout = EXCLUDED.seat_layout,
        total_seats = EXCLUDED.total_seats`,
-    [STAGING_IDS.bus, JSON.stringify(createSeatLayout())],
+    [STAGING_IDS.bus, JSON.stringify(createCoachSeatLayout())],
   );
 
   const now = new Date();
@@ -270,7 +252,7 @@ async function upsertTransport(client: PoolClient, driverId: string) {
       [stagingUuid(`trip-driver:${trip.id}`), trip.id, driverId],
     );
 
-    for (let seatNo = 1; seatNo <= 39; seatNo++) {
+    for (let seatNo = 1; seatNo <= COACH_SEAT_COUNT; seatNo++) {
       const purchased = trip.id === STAGING_IDS.liveTrip && seatNo <= 3;
       await client.query(
         `INSERT INTO trip_seats (id, trip_id, seat_no, seat_type, price_minor, status, version)

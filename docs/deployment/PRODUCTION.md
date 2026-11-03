@@ -213,6 +213,40 @@ the latest-position source: bootstrap/admin reads use `tracking_positions`. The 
 Redis/Socket.IO services remain available only as rollback until final #73 E2E and the
 explicit Render deletion approval.
 
+## Passenger redesign and alighting notifications (#106)
+
+The passenger app is a phone-width PWA (`/manifest.webmanifest`, `/sw.js`). The service worker caches
+nothing; it only receives Web Push and focuses or opens the live-tracking screen when a notification is tapped.
+
+**Trigger.** `recordDriverLocation` (driver Vercel project) calls the alighting notifier after every accepted
+GPS fix. For each active, non-`no_show` ticket on the trip it computes the remaining road distance to the
+ticket's alighting stop (`orders.alightingLocationId`, route destination when unset) along the stored route
+geometry. The first time that distance is at or under 5 km, and again at 1 km, one row is claimed in
+`alighting_notification_dispatches` (unique per ticket and threshold) and a Web Push is sent. If a GPS gap
+jumps past a threshold, only the most urgent alert is sent. A switched-off threshold is recorded as
+`disabled`, so turning it on later never replays it. Failures never reject the driver's GPS write.
+
+**Delivery.** Passengers subscribe from the settings sheet (`POST /api/push/subscription`). A visible app
+window gets the alert as a banner through the service worker; a closed app gets the system notification.
+Dispatches with no push delivery (no subscription, permission refused, VAPID unset) are offered to the open
+app as banners by `GET /api/notifications/alighting`, and acknowledged with `POST .../ack`.
+
+**Environment (server-only; never `NEXT_PUBLIC_*`).** Set the same values on the passenger **and** driver
+projects: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (`mailto:` or https URL). Generate with
+`npx web-push generate-vapid-keys`. Without them push is skipped and only in-app banners work.
+
+**Migration.** `0013_alighting-notifications` adds `alighting_notification_dispatches`, `push_subscriptions`
+and `notification_preferences` with `IF NOT EXISTS` guards, so it can be re-run safely. The demo and staging
+seeds now create the 41-seat coach layout; existing staging buses keep their stored layout until re-seeded.
+
+**Map worker.** maplibre-gl 6 starts its worker from `import.meta.url`, which a bundled build turns into a
+`file:` URL, so the map would only paint its background. `apps/passenger-web/scripts/copy-maplibre-worker.mjs`
+(run by `pnpm dev` and `pnpm build`) copies the worker and its shared chunk to `public/maplibre/`, and the
+live-tracking screen calls `setWorkerUrl()`. Do not bypass the package `build` script on Vercel.
+
+**Timezone.** Trip and hold times are stored as zone-less wall-clock values and read back as UTC. Run the
+seed and the apps with `TZ=UTC` (as Vercel and CI do); a local non-UTC machine shifts raw-SQL hold sweeps.
+
 ## Temporary compatibility path
 
 The migrated passenger, admin and driver critical handlers no longer require

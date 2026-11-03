@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { Pool, PoolClient } from 'pg';
 import { DEMO_CREDENTIALS, DEMO_IDS, demoUuid } from './demo-constants.js';
+import { COACH_SEAT_COUNT, createCoachSeatLayout } from './seat-layout.js';
 
 dotenv.config({ path: join(process.cwd(), '../../.env') });
 
@@ -42,25 +43,6 @@ function dateAt(dayOffset: number, hour: number, minute = 0) {
   value.setDate(value.getDate() + dayOffset);
   value.setHours(hour, minute, 0, 0);
   return value;
-}
-
-function createSeatLayout() {
-  const items: Array<{
-    type: 'driver' | 'seat' | 'aisle';
-    row: number;
-    column: number;
-    seatNo?: string;
-  }> = [{ type: 'driver', row: 1, column: 1 }];
-  for (let row = 2; row <= 14; row++) {
-    const firstSeat = (row - 2) * 3 + 1;
-    items.push(
-      { type: 'seat', seatNo: String(firstSeat), row, column: 1 },
-      { type: 'seat', seatNo: String(firstSeat + 1), row, column: 2 },
-      { type: 'aisle', row, column: 3 },
-      { type: 'seat', seatNo: String(firstSeat + 2), row, column: 4 },
-    );
-  }
-  return { layout: '2+1', rows: 14, columns: 4, items };
 }
 
 async function insertUsers(client: PoolClient) {
@@ -117,10 +99,10 @@ async function insertTransport(client: PoolClient) {
     );
   }
 
-  const seatLayout = createSeatLayout();
+  const seatLayout = createCoachSeatLayout();
   await client.query(
     `INSERT INTO buses (id, plate_number, model, seat_layout, total_seats)
-     VALUES ($1, '56 SKE 01', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 39)`,
+     VALUES ($1, '56 SKE 01', 'Mercedes-Benz Travego 15 SHD', $2::jsonb, 41)`,
     [DEMO_IDS.bus, JSON.stringify(seatLayout)],
   );
 
@@ -163,7 +145,7 @@ async function insertTransport(client: PoolClient) {
       DEMO_IDS.driver,
     ]);
 
-    for (let seatNo = 1; seatNo <= 39; seatNo++) {
+    for (let seatNo = 1; seatNo <= COACH_SEAT_COUNT; seatNo++) {
       const purchased = trip.id === DEMO_IDS.liveTrip && seatNo === 1;
       await client.query(
         `INSERT INTO trip_seats (id, trip_id, seat_no, seat_type, price_minor, status, version)

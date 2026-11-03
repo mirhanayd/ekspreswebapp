@@ -1,70 +1,70 @@
 import Link from 'next/link';
-import SeatSelector from './SeatSelector';
+import { SeatBooking } from '@/components/seats/SeatBooking';
+import { BackButton } from '@/components/nav/BackButton';
 import { getTripDetails } from '@/lib/server-transport';
 import { getSeatMap } from '@/lib/server-seats';
-import { BookingSteps } from '@/components/BookingSteps';
-import { ScreenHeader } from '@/components/ScreenHeader';
+import { getSessionUser } from '@/lib/session';
 import { formatLongDate, formatTime, placeShortName } from '@/lib/format';
 
 export const metadata = { title: 'Koltuk seçimi' };
+export const dynamic = 'force-dynamic';
 
 export default async function SeatSelectionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   let seatMapData;
   let tripData;
   try {
-    const [seats, trip] = await Promise.all([getSeatMap(id), getTripDetails(id)]);
-    seatMapData = seats;
-    tripData = trip;
+    [seatMapData, tripData] = await Promise.all([getSeatMap(id), getTripDetails(id)]);
   } catch {
     return (
-      <div className="canvas-cream min-h-[100dvh]">
-        <div className="screen screen-pad">
-          <ScreenHeader backHref={`/trips/${id}`} backLabel="Sefer detayına dön" />
-          <div className="empty-state mt-6">
-            <h1 className="title-md">Koltuk bilgileri yüklenemedi</h1>
-            <p className="subtle mt-2 max-w-xs">
-              Sefer envanterine şu anda ulaşılamıyor. Kısa süre sonra tekrar deneyin.
-            </p>
-            <Link href={`/trips/${id}`} className="btn btn-primary mt-6">
-              Sefer detayına dön
-            </Link>
-          </div>
+      <div className="flex min-h-[100dvh] flex-col gap-4 px-4 pt-3.5">
+        <BackButton fallback="/search" />
+        <div className="surface flex flex-col items-center gap-2 px-6 py-10 text-center">
+          <h1 className="m-0 text-lg font-extrabold">Koltuk bilgileri yüklenemedi</h1>
+          <p className="m-0 max-w-[260px] text-sm text-sk-ink2">
+            Sefer envanterine şu anda ulaşılamıyor. Kısa süre sonra tekrar dene.
+          </p>
+          <Link href="/search" className="btn btn-brand mt-4">
+            Seferlere dön
+          </Link>
         </div>
       </div>
     );
   }
 
+  const user = await getSessionUser();
   const originName = tripData.route?.origin?.name ?? 'Kalkış';
   const destinationName = tripData.route?.destination?.name ?? 'Varış';
+  const route = `${placeShortName(originName)} → ${placeShortName(destinationName)}`;
+  const day = formatLongDate(tripData.departureTime);
 
   return (
-    <div className="canvas-cream min-h-[100dvh]">
-      <div className="screen-wide screen-pad pb-44 lg:pb-14">
-        <ScreenHeader
-          backHref={`/trips/${id}`}
-          backLabel="Sefer detayına dön"
-          title="Koltuk seçimi"
-        />
-
-        <div className="mt-5">
-          <BookingSteps current={2} />
+    <div className="flex min-h-[100dvh] flex-col">
+      <header className="flex items-center gap-3 px-4 pb-2 pt-3.5">
+        <BackButton fallback="/search" />
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <h1 className="m-0 text-lg font-extrabold">Koltuğunu seç</h1>
+          <span className="truncate text-[13px] text-sk-ink2">
+            {formatTime(tripData.departureTime)} · {route} · {day}
+          </span>
         </div>
-
-        <header className="mt-6">
-          <p className="eyebrow">{seatMapData.seatLayout?.layout || '2+1'} konfor düzeni</p>
-          <h1 className="title-lg mt-1.5">Koltuğunu seç</h1>
-          <p className="caption mt-1.5">
-            {placeShortName(originName)} – {placeShortName(destinationName)} ·{' '}
-            {formatLongDate(tripData.departureTime)} · {formatTime(tripData.departureTime)} ·{' '}
-            {seatMapData.bus.plateNumber}
-          </p>
-        </header>
-
-        <div className="mt-5">
-          <SeatSelector tripId={id} initialData={seatMapData} />
-        </div>
-      </div>
+      </header>
+      <SeatBooking
+        tripId={id}
+        initialData={seatMapData as never}
+        summary={{
+          departure: formatTime(tripData.departureTime),
+          route,
+          meta: day,
+        }}
+        stopName={destinationName}
+        passenger={{
+          firstName: user?.firstName ?? '',
+          lastName: user?.lastName ?? '',
+          phone: '',
+          email: user?.email ?? '',
+        }}
+      />
     </div>
   );
 }

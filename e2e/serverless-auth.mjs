@@ -391,6 +391,169 @@ export async function runServerlessDriverRegression(baseURL) {
   }
 }
 
+const EARTH_RADIUS_M = 6_371_008.8;
+
+function metersBetween(a, b) {
+  const rad = (value) => (value * Math.PI) / 180;
+  const x = rad(b[0] - a[0]) * Math.cos(rad((a[1] + b[1]) / 2));
+  const y = rad(b[1] - a[1]);
+  return Math.sqrt(x * x + y * y) * EARTH_RADIUS_M;
+}
+
+/** The point `km` of road before the end of the route, plus the bearing of that stretch. */
+function pointBeforeRouteEnd(line, km) {
+  let left = km * 1000;
+  for (let index = line.length - 1; index > 0; index -= 1) {
+    const segment = metersBetween(line[index - 1], line[index]);
+    if (left <= segment) {
+      const t = 1 - left / segment;
+      const [x1, y1] = line[index - 1];
+      const [x2, y2] = line[index];
+      return {
+        longitude: x1 + (x2 - x1) * t,
+        latitude: y1 + (y2 - y1) * t,
+        headingDeg: (Math.round((Math.atan2(x2 - x1, y2 - y1) * 180) / Math.PI) + 360) % 360,
+      };
+    }
+    left -= segment;
+  }
+  throw new Error(`Route is shorter than ${km} km`);
+}
+
+/**
+ * Alighting notifications, end to end: GPS fixes go through the driver app's real ingestion path,
+ * the server decides from the stored route and the ticket's alighting stop, and the passenger app
+ * hands out each alert exactly once. VAPID is not configured here, so delivery is the in-app
+ * banner path; the push transport itself is covered by the package unit tests.
+ */
+export async function runAlightingNotificationJourney(passengerURL, driverURL) {
+  const passenger = await request.newContext({ baseURL: passengerURL });
+  const driver = await request.newContext({ baseURL: driverURL });
+  try {
+    assert.equal((await passenger.get('/api/notifications/alighting')).status(), 401);
+    assert.equal(
+      (
+        await passenger.post('/api/auth/login', {
+          data: { email: 'yolcu@siirtkurtalan.demo', password: 'Demo123!' },
+        })
+      ).status(),
+      200,
+    );
+
+    // Settings persist per passenger and reject anything that is not a boolean switch.
+    assert.deepEqual(await (await passenger.get('/api/notifications/preferences')).json(), {
+      km5: true,
+      km1: true,
+      sound: true,
+    });
+    assert.equal(
+      (await passenger.put('/api/notifications/preferences', { data: { km1: 'yes' } })).status(),
+      400,
+    );
+    const changed = await passenger.put('/api/notifications/preferences', {
+      data: { sound: false },
+    });
+    assert.deepEqual(await changed.json(), { km5: true, km1: true, sound: false });
+    await passenger.put('/api/notifications/preferences', { data: { sound: true } });
+
+    const vapid = await passenger.get('/api/push/vapid-key');
+    assert.equal(vapid.status(), 503, 'VAPID is server-only config and absent in e2e');
+    assert.equal(
+      (await passenger.post('/api/push/subscription', { data: { endpoint: 'http://x' } })).status(),
+      400,
+    );
+
+    const wallet = await (await passenger.get('/api/tickets')).json();
+    const ticket = wallet.active.find((item) => item.ticketNo === 'TKT-DEMO-AKTIF');
+    assert.ok(ticket, 'notification journey requires the active seeded ticket');
+    const bootstrap = await (
+      await passenger.get(`/api/tracking/tickets/${ticket.id}/bootstrap`)
+    ).json();
+    assert.ok(bootstrap.alighting?.name, 'bootstrap carries the ticket alighting stop');
+    assert.equal(bootstrap.seatNo, ticket.tripSeat.seatNo);
+    const line = bootstrap.routeGeometry.coordinates;
+
+    assert.equal(
+      (
+        await driver.post('/api/auth/login', {
+          data: { email: 'sofor@siirtkurtalan.demo', password: 'Sofor123!' },
+        })
+      ).status(),
+      200,
+    );
+    let clock = Date.now() + 3_600_000;
+    const fix = async (km) => {
+      clock += 60_000;
+      const point = pointBeforeRouteEnd(line, km);
+      const response = await driver.post(`/api/driver/trips/${ticket.tripId}/location`, {
+        data: { ...point, speedKph: 60, recordedAt: new Date(clock).toISOString() },
+      });
+      assert.equal(response.status(), 201, `GPS fix at ${km} km was accepted`);
+    };
+    const pending = async () =>
+      (await (await passenger.get('/api/notifications/alighting')).json()).banners;
+    const acknowledge = (banners) =>
+      passenger.post('/api/notifications/alighting/ack', {
+        data: { ids: banners.map((banner) => banner.id) },
+      });
+
+    await fix(8);
+    await fix(6.5);
+    assert.deepEqual(await pending(), [], 'nothing is sent above 5 km');
+
+    await fix(4.8);
+    const five = await pending();
+    assert.equal(five.length, 1, 'the 5 km alert fires the first time the bus is under 5 km');
+    assert.equal(five[0].threshold, 5);
+    assert.match(five[0].title, /5 km kaldı$/);
+    assert.match(five[0].body, /^Yaklaşık \d+ dakika sonra ineceksin\.$/);
+    assert.equal(five[0].ticketId, ticket.id);
+    assert.equal((await acknowledge(five)).status(), 200);
+
+    await fix(4.2);
+    await fix(3.1);
+    await fix(5.5); // a bus drifting back out and in again must not repeat it
+    await fix(4.9);
+    assert.deepEqual(await pending(), [], 'the 5 km alert is sent once per ticket');
+
+    await fix(0.9);
+    const one = await pending();
+    assert.equal(one.length, 1, 'the 1 km alert fires once');
+    assert.equal(one[0].threshold, 1);
+    assert.equal(one[0].title, '1 km kaldı, inişe hazırlan');
+    assert.equal(one[0].body, `Koltuk ${ticket.tripSeat.seatNo}’te eşyanı unutma.`);
+    await acknowledge(one);
+
+    await fix(0.5);
+    await fix(0.2);
+    assert.deepEqual(await pending(), [], 'no further alerts after both thresholds');
+
+    // Another passenger can neither read nor acknowledge this ticket's alerts.
+    const outsider = await request.newContext({ baseURL: passengerURL });
+    try {
+      await outsider.post('/api/auth/register', {
+        data: {
+          email: `e2e-alert-${randomUUID()}@example.test`,
+          password: 'Local-test-pass123!',
+          firstName: 'Alert',
+          lastName: 'Outsider',
+        },
+      });
+      assert.deepEqual(await (await outsider.get('/api/notifications/alighting')).json(), {
+        banners: [],
+      });
+    } finally {
+      await outsider.dispose();
+    }
+
+    process.stdout.write(
+      'PASS alighting notifications: GPS ingestion → 5 km → 1 km, each exactly once → settings → scoped to the ticket owner\n',
+    );
+  } finally {
+    await Promise.all([passenger.dispose(), driver.dispose()]);
+  }
+}
+
 export async function runDriverAdministrationJourney(adminURL, driverURL) {
   const admin = await request.newContext({
     baseURL: adminURL,

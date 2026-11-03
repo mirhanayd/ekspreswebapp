@@ -39,7 +39,7 @@ export function createTicketQrPayload(ticket: { id: string; ticketNo: string; tr
 const ticketRelations = {
   trip: { with: { route: { with: { origin: true, destination: true } }, bus: true } },
   tripSeat: true,
-  order: true,
+  order: { with: { alightingLocation: true } },
 } as const;
 
 export function createTicketService(database: () => Database = serverDatabase) {

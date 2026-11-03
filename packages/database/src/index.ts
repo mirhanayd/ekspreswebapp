@@ -34,3 +34,26 @@ export {
   type TrackingPosition,
   type ManagedRealtimeTokenRequest,
 } from './server/tracking-service.js';
+export {
+  alightingNotifier,
+  createAlightingNotifier,
+  createSqlAlightingStore,
+  planAlightingDispatches,
+  buildAlightingMessage,
+  estimateMinutes,
+  turkishDative,
+  vapidConfigured,
+  ALIGHTING_THRESHOLDS_KM,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  type AlightingThreshold,
+  type NotificationPreferences,
+} from './server/alighting-notifications.js';
+export {
+  notificationService,
+  createNotificationService,
+  validatePreferencesInput,
+  validatePushSubscription,
+  type InAppAlightingBanner,
+} from './server/notification-service.js';
+export { remainingRoadMeters, alongLineMeters, distanceMeters } from './server/route-distance.js';
+export { createCoachSeatLayout, COACH_SEAT_COUNT, type SeatLayout } from './seat-layout.js';

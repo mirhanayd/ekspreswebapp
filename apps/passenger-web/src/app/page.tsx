@@ -1,227 +1,172 @@
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BusFront, Clock3, MapPin, Ticket, Wallet } from 'lucide-react';
-import { authenticatedApiFetch } from '@/lib/server-api';
-import { getLocations, getRoutes, getTrips } from '@/lib/server-transport';
-import type { SearchLocation } from '@/components/SearchPanel';
-import { HomeJourney } from '@/components/HomeJourney';
-import { RewardLadder } from '@/components/RewardLadder';
-import { tiersReached } from '@/lib/campaigns';
-import {
-  formatDayMonth,
-  formatDuration,
-  formatPrice,
-  formatTime,
-  isoDate,
-  minutesBetween,
-  placeShortName,
-} from '@/lib/format';
+import { ArrowRight, Ticket } from 'lucide-react';
+import { ticketService } from '@ekspres/database';
+import { getLocations } from '@/lib/server-transport';
+import { getSessionUser } from '@/lib/session';
+import { BrandMark } from '@/components/BrandLogo';
+import { JourneyCard, type JourneyLocation } from '@/components/home/JourneyCard';
+import { LiveJourneyCard } from '@/components/home/LiveJourneyCard';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { campaigns } from '@/lib/campaigns';
+import { CAMPAIGN_TONES } from '@/lib/campaign-tones';
+import { formatDayMonth, formatTime, placeShortName } from '@/lib/format';
 
-type Location = SearchLocation & { type: string };
-type Route = { id: string; name: string; originId: string; destinationId: string };
-type TripResult = {
-  trip: { id: string; departureTime: string; arrivalTime: string; basePrice: number };
-  route: { name: string; originId: string; destinationId: string };
-  bus: { model: string; plateNumber: string; seatLayout?: { layout?: string } };
-};
-type ActiveTicket = {
+export const dynamic = 'force-dynamic';
+
+type WalletTicket = {
   id: string;
-  ticketNo: string;
   tripSeat: { seatNo: string };
   trip: {
     id: string;
     status: string;
-    departureTime: string;
+    departureTime: Date;
     route: { origin: { name: string }; destination: { name: string } };
   };
 };
 
-/**
- * The passenger's own wallet: the next journey to surface, plus how many
- * journeys they have taken so the reward ladder reflects real history.
- */
-async function loadWallet(): Promise<{ active: ActiveTicket | null; tripCount: number }> {
+async function loadWallet(userId: string | undefined) {
+  if (!userId) return { live: null, upcoming: null };
   try {
-    const response = await authenticatedApiFetch('/tickets');
-    if (!response?.ok) return { active: null, tripCount: 0 };
-    const data = await response.json();
-    const active = (data.active as ActiveTicket[]) ?? [];
-    const past = (data.past as ActiveTicket[]) ?? [];
-    return { active: active[0] ?? null, tripCount: past.length };
+    const { active } = (await ticketService.getMyTickets(userId)) as unknown as {
+      active: WalletTicket[];
+    };
+    const live = active.find((ticket) => ['boarding', 'in_transit'].includes(ticket.trip.status));
+    const upcoming = active
+      .filter((ticket) => ticket !== live)
+      .sort((a, b) => +new Date(a.trip.departureTime) - +new Date(b.trip.departureTime))[0];
+    return { live: live ?? null, upcoming: upcoming ?? null };
   } catch {
-    return { active: null, tripCount: 0 };
+    return { live: null, upcoming: null };
   }
 }
 
 /**
- * Home — `ui/mobile-home-reference.png`.
- *
- * Greeting row with a circular status widget, a small tracked eyebrow, an
- * oversized two-line display heading paired with a tall search capsule, a
- * horizontally scrolling chip rail with the first chip filled near-black, and a
- * large rounded hero image card whose scrim carries the title, a short
- * description, three icon stats and a white outline pill.
+ * Home: dark header with the search card overlapping it, the passenger's live
+ * journey, and the campaigns from `lib/campaigns.ts`.
  */
 export default async function Home() {
-  const [locations, routes, trips, wallet] = await Promise.all([
-    getLocations().catch(() => [] as Location[]),
-    getRoutes().catch(() => [] as Route[]),
-    getTrips().catch(() => [] as TripResult[]),
-    loadWallet(),
+  const user = await getSessionUser();
+  const [locations, wallet] = await Promise.all([
+    getLocations().catch(() => [] as JourneyLocation[]),
+    loadWallet(user?.id),
   ]);
-  const activeTicket = wallet.active;
-
-  const names = new Map(locations.map((location) => [location.id, location.name]));
-  const popular = routes
-    .filter((route) => names.has(route.originId) && names.has(route.destinationId))
-    .slice(0, 6);
-  const tomorrow = isoDate(1);
-
-  const featured = trips
-    .filter((item) => new Date(item.trip.departureTime).getTime() > Date.now())
-    .sort(
-      (a, b) => new Date(a.trip.departureTime).getTime() - new Date(b.trip.departureTime).getTime(),
-    )[0];
-
-  const featuredOrigin = featured ? (names.get(featured.route.originId) ?? '') : '';
-  const featuredDestination = featured ? (names.get(featured.route.destinationId) ?? '') : '';
+  const journeyLocations = (locations as JourneyLocation[]).map(({ id, name }) => ({ id, name }));
+  const label = (ticket: WalletTicket) =>
+    `${placeShortName(ticket.trip.route.origin.name)} → ${placeShortName(ticket.trip.route.destination.name)}`;
 
   return (
-    <div className="canvas-sage min-h-[100dvh]">
-      <div className="screen screen-pad">
-        {/* Greeting + status widget ------------------------------------- */}
-        <div className="top-row">
-          <p className="font-display text-[1.375rem] font-bold leading-tight text-ink-900">
-            Merhaba{' '}
-            <span aria-hidden className="inline-block">
-              👋
-            </span>
-          </p>
-
-          <div className="flex items-center gap-2.5">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-full bg-white text-ink-900 shadow-card">
-              <BusFront className="h-6 w-6" aria-hidden />
-            </span>
-            <p className="leading-tight">
-              <span className="block text-[0.8125rem] font-semibold text-ink-500">Bugün</span>
-              <span className="block font-display text-[0.9375rem] font-bold text-ink-900">
-                {formatDayMonth(new Date())}
-              </span>
-            </p>
-          </div>
-        </div>
-
-        {/* Area + display heading + inline journey editor ---------------- */}
-        <HomeJourney locations={locations} defaultDate={tomorrow} />
-
-        {/* Popular route chips ----------------------------------------- */}
-        {popular.length ? (
-          <nav aria-label="Popüler hatlar" className="rail-scroll mt-5">
-            {popular.map((route, index) => (
-              <Link
-                key={route.id}
-                href={`/search?originId=${route.originId}&destinationId=${route.destinationId}&date=${tomorrow}`}
-                className={`chip ${index === 0 ? 'chip-active' : ''}`}
-              >
-                <BusFront className="h-4 w-4 shrink-0" aria-hidden />
-                {placeShortName(names.get(route.originId) ?? '')} –{' '}
-                {placeShortName(names.get(route.destinationId) ?? '')}
-              </Link>
-            ))}
-          </nav>
-        ) : null}
-
-        {/* Reward ladder ------------------------------------------------ */}
-        <div className="mt-6">
-          <RewardLadder reached={tiersReached(wallet.tripCount)} tripCount={wallet.tripCount} />
-        </div>
-
-        {/* Hero service card ------------------------------------------- */}
-        <figure className="relative mt-7 overflow-hidden rounded-[2rem] bg-ink-900 shadow-lift">
-          <Image
-            src="/brand/coach.jpg"
-            alt="Siirt Kurtalan Ekspres filosuna ait şehirlerarası otobüs"
-            fill
-            sizes="(max-width: 1024px) 100vw, 640px"
-            priority
-            className="object-cover object-center"
+    <div className="screen-tab">
+      <header className="relative h-[290px] overflow-hidden rounded-b-[34px] bg-sk-dark px-5 pt-4">
+        <svg
+          width="390"
+          height="290"
+          viewBox="0 0 390 290"
+          aria-hidden
+          className="absolute left-0 top-0"
+        >
+          <path
+            d="M-20 250C80 230 160 170 250 150C320 134 360 90 410 40"
+            fill="none"
+            stroke="#26282E"
+            strokeWidth="2"
           />
-          <div className="absolute inset-0 bg-hero-scrim" aria-hidden />
+          <path
+            d="M-20 276C90 256 170 198 262 178C332 162 372 120 422 70"
+            fill="none"
+            stroke="#26282E"
+            strokeWidth="2"
+            strokeDasharray="2 9"
+            strokeLinecap="round"
+          />
+          <circle cx="250" cy="150" r="5" fill="#16171B" stroke="#3C3E45" strokeWidth="2" />
+          <circle cx="352" cy="96" r="5" fill="#16171B" stroke="#3C3E45" strokeWidth="2" />
+          <circle cx="120" cy="214" r="5" fill="#16171B" stroke="#3C3E45" strokeWidth="2" />
+        </svg>
+        <div className="relative flex h-11 items-center justify-between">
+          <BrandMark tone="light" className="w-[124px]" priority />
+          <NotificationBell />
+        </div>
+        <p className="relative m-0 mt-[22px] text-[15px] text-sk-mute">
+          {user ? `Merhaba ${user.firstName}` : 'Merhaba'}
+        </p>
+        <h1 className="relative m-0 mt-1.5 text-[32px] font-extrabold leading-[1.04] tracking-[-0.02em] text-white [font-stretch:112%]">
+          Nereye
+          <br />
+          gidiyorsun?
+        </h1>
+      </header>
 
-          <figcaption className="relative flex min-h-[19.5rem] flex-col items-center justify-end px-6 pb-6 pt-24 text-center text-white sm:min-h-[22rem]">
-            {featured ? (
-              <>
-                <p className="font-display text-[1.5rem] font-bold leading-tight">
-                  {placeShortName(featuredOrigin)} – {placeShortName(featuredDestination)}
-                </p>
-                <p className="mt-2 max-w-[17rem] text-[0.8125rem] leading-5 text-white/75">
-                  2+1 geniş koltuk düzeni, gerçek koltuk seçimi ve yolculuk boyunca canlı sefer
-                  takibi.
-                </p>
+      <JourneyCard locations={journeyLocations} />
 
-                <ul className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[0.8125rem] font-semibold">
-                  <li className="flex items-center gap-1.5">
-                    <Clock3 className="h-4 w-4 text-white/60" aria-hidden />
-                    {formatTime(featured.trip.departureTime)}
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-white/60" aria-hidden />
-                    {formatDuration(
-                      minutesBetween(featured.trip.departureTime, featured.trip.arrivalTime),
-                    )}
-                  </li>
-                  <li className="flex items-center gap-1.5">
-                    <Wallet className="h-4 w-4 text-white/60" aria-hidden />
-                    {formatPrice(featured.trip.basePrice)}
-                  </li>
-                </ul>
+      {wallet.live || wallet.upcoming ? (
+        <section className="flex flex-col gap-2.5 px-4 pt-[22px]" aria-label="Yolculuğun">
+          <h2 className="m-0 mx-1 text-lg font-extrabold">Yolculuğun</h2>
+          {wallet.live ? (
+            <Link
+              href={`/trips/${wallet.live.trip.id}/live?ticketId=${wallet.live.id}`}
+              className="block text-inherit no-underline"
+            >
+              <LiveJourneyCard
+                ticketId={wallet.live.id}
+                routeLabel={label(wallet.live)}
+                departureLabel={formatTime(wallet.live.trip.departureTime)}
+                seatNo={wallet.live.tripSeat.seatNo}
+              />
+            </Link>
+          ) : wallet.upcoming ? (
+            <Link
+              href={`/tickets/${wallet.upcoming.id}`}
+              className="flex items-center gap-3 rounded-3xl border border-sk-line bg-white p-4 text-inherit no-underline"
+            >
+              <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-sk-tint text-sk-brand">
+                <Ticket size={20} aria-hidden />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="eyebrow">Yaklaşan yolculuğun</span>
+                <span className="truncate text-base font-extrabold">
+                  {label(wallet.upcoming)} · {formatDayMonth(wallet.upcoming.trip.departureTime)}{' '}
+                  {formatTime(wallet.upcoming.trip.departureTime)}
+                </span>
+              </span>
+              <ArrowRight size={18} aria-hidden className="text-sk-ink3" />
+            </Link>
+          ) : null}
+        </section>
+      ) : null}
 
-                <Link
-                  href={`/trips/${featured.trip.id}`}
-                  className="btn btn-outline-invert mt-6 px-9"
-                >
-                  Seferi incele
-                </Link>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-[1.5rem] font-bold leading-tight">
-                  Bölgenin ekspres hattı
-                </p>
-                <p className="mt-2 max-w-[17rem] text-[0.8125rem] leading-5 text-white/75">
-                  Modern filo, 2+1 konforlu koltuk düzeni ve canlı sefer takibi.
-                </p>
-                <Link href="/search" className="btn btn-outline-invert mt-6 px-9">
-                  Sefer ara
-                </Link>
-              </>
-            )}
-          </figcaption>
-        </figure>
-
-        {/* Active ticket shortcut -------------------------------------- */}
-        {activeTicket ? (
+      <section className="pt-6" aria-label="Kampanyalar">
+        <div className="flex items-center justify-between px-5">
+          <h2 className="m-0 text-lg font-extrabold">Kampanyalar</h2>
           <Link
-            href={`/tickets/${activeTicket.id}`}
-            className="mt-4 flex items-center gap-3 rounded-card bg-white p-4 shadow-card transition hover:bg-cream-50"
+            href="/kampanyalar"
+            className="flex h-11 items-center px-1 text-sm font-extrabold text-sk-brandInk no-underline"
           >
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[1.125rem] bg-lime-400 text-ink-900">
-              <Ticket className="h-5 w-5" aria-hidden />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-500">
-                Yaklaşan yolculuğun
-              </span>
-              <span className="mt-0.5 block truncate font-display text-[0.9375rem] font-bold text-ink-900">
-                {placeShortName(activeTicket.trip.route.origin.name)} –{' '}
-                {placeShortName(activeTicket.trip.route.destination.name)} ·{' '}
-                {formatTime(activeTicket.trip.departureTime)}
-              </span>
-            </span>
-            <ArrowRight className="h-5 w-5 shrink-0 text-ink-400" aria-hidden />
+            Tümü
           </Link>
-        ) : null}
-      </div>
+        </div>
+        <div className="scroll-x px-5 pb-1.5 pt-1">
+          {campaigns.map((campaign) => (
+            <Link
+              key={campaign.slug}
+              href={`/kampanyalar/${campaign.slug}`}
+              className={`relative flex h-[150px] w-[252px] flex-none snap-start flex-col justify-between overflow-hidden rounded-3xl border p-4 no-underline ${CAMPAIGN_TONES[campaign.artwork]}`}
+            >
+              <span className="flex flex-col gap-1.5">
+                <span className="eyebrow !text-current opacity-85">{campaign.kicker}</span>
+                <span className="max-w-[170px] text-base font-extrabold leading-tight">
+                  {campaign.title}
+                </span>
+              </span>
+              <span className="flex items-baseline gap-1.5">
+                <span className="num text-[34px] leading-none text-[var(--accent)]">
+                  {campaign.reward}
+                </span>
+                <span className="text-xs opacity-85">{campaign.rewardNote}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

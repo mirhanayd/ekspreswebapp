@@ -13,6 +13,7 @@ Develop the Siirt Kurtalan Ekspres bus platform as a modern passenger, driver an
 - **Geographic DB:** PostGIS
 - **Cache/Hold target:** PostgreSQL transactions/expiration; no new Redis/KV unless a measured need is approved
 - **Realtime target:** managed Pub/Sub (Ably is the initial migration target); durable GPS remains in PostGIS
+- **Passenger alerts:** Web Push (PWA service worker + VAPID via `web-push`) for alighting notifications; the in-app banner is the fallback, and the dispatch log in PostgreSQL is authoritative
 - **Object Storage:** S3-compatible storage (Cloudflare R2 is the initial target when uploads are introduced)
 - **Map:** MapLibre GL JS
 - **ORM/SQL:** Drizzle ORM
@@ -90,6 +91,8 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
 - Managed realtime tokens must be short-lived, subscribe-only and scoped to the authenticated passenger's entitled trip channel.
 - Managed realtime API keys are server-only and must never use a `NEXT_PUBLIC_*` name.
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` are server-only too (never `NEXT_PUBLIC_*`); the browser receives the public key from `GET /api/push/vapid-key`. Configure the same three values on the passenger and driver Vercel projects, because the driver GPS ingest path decides and sends alighting alerts.
+- Alighting alerts are decided on the server from durable tracking data and the ticket's `orders.alightingLocationId` (route destination when unset); `alighting_notification_dispatches` has a unique `(ticket_id, threshold_km)` so every alert is sent once. Push subscriptions and preferences always come from the signed passenger principal, never from client-supplied user IDs.
 - Production secrets belong in the hosting provider's secret store, never in Git.
 
 ## 11. Migration Rules

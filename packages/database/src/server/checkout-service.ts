@@ -139,6 +139,12 @@ export function createCheckoutService(database: () => Database = serverDatabase)
         });
         if (activeOrder) return { state: 'existing' as const, order: activeOrder };
 
+        // Web orders do not choose a stop yet, so the passenger alights at the route end.
+        const trip = await tx.query.trips.findFirst({
+          where: eq(schema.trips.id, input.tripId),
+          with: { route: true },
+        });
+
         const [order] = await tx
           .insert(schema.orders)
           .values({
@@ -146,6 +152,7 @@ export function createCheckoutService(database: () => Database = serverDatabase)
             userId,
             tripId: input.tripId,
             tripSeatId: seat.id,
+            alightingLocationId: trip?.route.destinationId ?? null,
             status: 'pending',
             totalMinor: seat.priceMinor,
             currency: 'TRY',

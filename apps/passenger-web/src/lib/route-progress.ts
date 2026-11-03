@@ -94,3 +94,23 @@ export function projectOnRoute(
 
   return best;
 }
+
+/**
+ * Road distance left between the bus and a stop, following the route line.
+ * A bus that has passed the stop reports 0.
+ */
+export function remainingToStop(
+  coordinates: Array<[number, number]>,
+  metrics: RouteMetrics,
+  bus: Point,
+  stop: Point,
+): { remainingKm: number; stopKm: number; travelledKm: number } | null {
+  const busProjection = projectOnRoute(coordinates, metrics, bus);
+  const stopProjection = projectOnRoute(coordinates, metrics, stop);
+  if (!busProjection || !stopProjection) return null;
+  return {
+    remainingKm: Math.max(0, stopProjection.travelledKm - busProjection.travelledKm),
+    stopKm: stopProjection.travelledKm,
+    travelledKm: busProjection.travelledKm,
+  };
+}
