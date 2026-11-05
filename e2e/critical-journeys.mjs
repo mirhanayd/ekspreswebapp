@@ -302,7 +302,7 @@ export async function runDriverUiJourney(baseURL) {
 
     await page.getByRole('button', { name: 'Otobüs planı' }).click();
     await page.getByRole('button', { name: 'Haritaya dön' }).click();
-    await visible(page.locator('.bubble').first(), 'stop bubbles');
+    await visible(page.locator('.bubble[data-state="next"]'), 'next stop bubble');
     await visible(page.getByRole('button', { name: /vardım$/ }), 'arrival button');
     assert.equal(await page.locator('canvas').count(), 1, 'MapLibre should render one canvas');
     const worker = await context.request.get(`${baseURL}/maplibre/maplibre-gl-worker.mjs`);
