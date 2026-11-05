@@ -262,6 +262,19 @@ Leaving a stop marks on-board passengers for that stop `alighted` and waiting pa
 confirmation when anyone is still waiting. The operations call and report buttons appear only when
 `NEXT_PUBLIC_OPERATIONS_PHONE` is set.
 
+## Driver stop data (#110)
+
+Migrations run in order after `0014`. `0015_coach-41-seats` rewrites every `2+1` bus to the 41-seat layout and
+adds the missing seats to trips that are not finished. Seat numbers on sold tickets do not change, but seats
+1-39 move on the plan, so sold seats keep their number and not their old position.
+
+`0016_seat-ticket-legs` needs the `btree_gist` extension (available on Neon) and replaces
+`seat_ticket_unique_idx` with the exclusion constraint `tickets_seat_leg_excl`. Existing tickets default to the
+whole route, so they keep their exclusivity.
+
+`GET /api/driver/trips/:id/stops/:locationId` responds `403` to a driver not assigned to the trip and `404`
+when the location is not on the route.
+
 ## Temporary compatibility path
 
 The migrated passenger, admin and driver critical handlers no longer require

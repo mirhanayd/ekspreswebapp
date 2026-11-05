@@ -381,6 +381,51 @@ export async function runServerlessDriverRegression(baseURL) {
     assert.equal(location.status(), 201);
     assert.equal((await location.json()).source, 'MOBILE_APP');
     assert.equal((await context.get(`/api/driver/trips/${randomUUID()}`)).status(), 403);
+
+    // The 14:00 run: a stop lists who gets off and on, and seat 17 changes hands at Kurtalan.
+    const details = await Promise.all(
+      trips.map(async (item) => (await context.get(`/api/driver/trips/${item.id}`)).json()),
+    );
+    const afternoon = details.find((item) =>
+      item.manifest.some((passenger) => passenger.ticketNo === 'TKT-DEMO-DURAK-01'),
+    );
+    assert.ok(afternoon, 'fixture must assign the 14:00 stop scenario to this driver');
+    assert.equal(afternoon.bus.totalSeats, 41);
+    const kurtalan = afternoon.route.stops[1];
+    const stopResponse = await context.get(
+      `/api/driver/trips/${afternoon.id}/stops/${kurtalan.locationId}`,
+    );
+    assert.equal(stopResponse.status(), 200);
+    const stop = await stopResponse.json();
+    assert.deepEqual(
+      stop.alighting.map((item) => item.seatNo),
+      ['17', '32'],
+    );
+    assert.deepEqual(
+      stop.boarding.map((item) => item.seatNo),
+      ['17', '29', '32', '37'],
+    );
+    assert.notEqual(stop.alighting[0].ticketId, stop.boarding[0].ticketId);
+    assert.deepEqual(
+      stop.stops.map((item) => [item.alightingCount, item.boardingCount]),
+      [
+        [0, 7],
+        [2, 4],
+        [4, 3],
+        [8, 0],
+      ],
+    );
+    assert.equal(
+      (await context.get(`/api/driver/trips/${afternoon.id}/stops/${randomUUID()}`)).status(),
+      404,
+    );
+    assert.equal(
+      (
+        await context.get(`/api/driver/trips/${randomUUID()}/stops/${kurtalan.locationId}`)
+      ).status(),
+      403,
+    );
+
     assert.equal((await context.post('/api/auth/logout')).status(), 200);
     assert.equal((await context.get('/api/driver/trips')).status(), 401);
     process.stdout.write(

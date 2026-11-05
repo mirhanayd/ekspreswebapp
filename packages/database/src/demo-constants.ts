@@ -15,6 +15,7 @@ export const DEMO_IDS = {
   passenger: demoUuid('user:passenger'),
   admin: demoUuid('user:admin'),
   driver: demoUuid('user:driver'),
+  stopPassengers: demoUuid('user:stop-passengers'),
   siirt: demoUuid('location:siirt'),
   kurtalan: demoUuid('location:kurtalan'),
   batman: demoUuid('location:batman'),

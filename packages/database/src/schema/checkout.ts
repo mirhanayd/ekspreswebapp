@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, uuid, integer, uniqueIndex } from 'drizzle-orm/pg-core';
-import { relations, sql } from 'drizzle-orm';
+import { relations } from 'drizzle-orm';
 import { users } from './users';
 import { locations, trips, tripSeats } from './transport';
 
@@ -107,6 +107,10 @@ export const tickets = pgTable(
     orderId: uuid('order_id')
       .references(() => orders.id)
       .notNull(),
+    // Half-open route stop orders. The defaults span the whole route; migration 0016 forbids
+    // overlapping legs on a seat with the exclusion constraint tickets_seat_leg_excl.
+    legFrom: integer('leg_from').notNull().default(0),
+    legTo: integer('leg_to').notNull().default(2147483647),
     status: text('status').notNull().default('active'), // active, used, cancelled
     qrTokenHash: text('qr_token_hash'),
     issuedAt: timestamp('issued_at').defaultNow().notNull(),
@@ -114,9 +118,6 @@ export const tickets = pgTable(
   },
   (table) => ({
     orderTicketUnique: uniqueIndex('order_ticket_unique_idx').on(table.orderId),
-    seatTicketUnique: uniqueIndex('seat_ticket_unique_idx')
-      .on(table.tripSeatId)
-      .where(sql`${table.status} != 'cancelled'`),
   }),
 );
 
