@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
@@ -36,17 +37,24 @@ export default function DriverLoginPage() {
   }
 
   return (
-    <main className="center-screen">
-      <section className="login-card">
-        <span className="brand-tile">SKE</span>
+    <main className="page page-center">
+      <section className="panel">
+        <Image
+          src="/brand/logo.png"
+          alt="Siirt Kurtalan Ekspres"
+          width={126}
+          height={34}
+          className="logo"
+          priority
+        />
         <div>
-          <p className="eyebrow">Sürücü operasyon</p>
+          <p className="eyebrow">Şoför girişi</p>
           <h1>Günün seferi burada.</h1>
           <p className="muted" style={{ marginTop: 6 }}>
-            Durakları, yolcuları ve canlı konum paylaşımını tek ekrandan yönetin.
+            Durakları, yolcuları ve canlı konumu tek ekrandan yönet.
           </p>
         </div>
-        <form onSubmit={submit} className="login-form">
+        <form onSubmit={submit} className="panel" style={{ padding: 0, border: 0 }}>
           <label className="field">
             E-posta
             <input
@@ -72,8 +80,8 @@ export default function DriverLoginPage() {
               {error}
             </p>
           ) : null}
-          <button className="btn btn-primary btn-lg" disabled={pending} type="submit">
-            {pending ? 'Giriş yapılıyor…' : 'Sürücü paneline gir'}
+          <button className="btn-main" disabled={pending} type="submit">
+            {pending ? 'Giriş yapılıyor…' : 'Şoför paneline gir'}
           </button>
         </form>
       </section>

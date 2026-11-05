@@ -1,116 +1,81 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Download, LogOut, Smartphone } from 'lucide-react';
+import { ChevronLeft, Download, LogOut } from 'lucide-react';
 import { useDriver } from '@/components/DriverProvider';
-import {
-  DriverPageShell,
-  formatDate,
-  formatTime,
-  OnlineBadge,
-  StatusChip,
-} from '@/components/DriverUI';
 import { isStandalone, useInstallPrompt } from '@/components/PwaRegister';
 
 export default function DriverProfilePage() {
-  return (
-    <DriverPageShell requireTrip={false}>
-      <DriverProfileContent />
-    </DriverPageShell>
-  );
-}
-
-function DriverProfileContent() {
-  const { driver, trips, trip, sharing, switchTrip, logout } = useDriver();
+  const { driver, sharing, stopLocationSharing, logout } = useDriver();
   const { available, install } = useInstallPrompt();
   const [standalone, setStandalone] = useState(false);
   useEffect(() => setStandalone(isStandalone()), []);
 
   const initials = driver
     ? `${driver.firstName.charAt(0)}${driver.lastName.charAt(0)}`.toLocaleUpperCase('tr-TR')
-    : 'S';
+    : 'Ş';
 
   return (
-    <>
+    <main className="page">
       <header className="page-head">
+        <Link href="/" className="round" aria-label="Ana ekrana dön">
+          <ChevronLeft size={20} strokeWidth={2.4} aria-hidden />
+        </Link>
         <h1>Profil</h1>
-        <OnlineBadge />
       </header>
 
-      <section className="card profile-card">
+      <section className="panel profile-card">
         <span className="avatar" aria-hidden>
           {initials}
         </span>
         <div>
-          <p style={{ fontSize: '1.15rem', fontWeight: 600 }}>
-            {driver ? `${driver.firstName} ${driver.lastName}` : 'Sürücü'}
-          </p>
+          <strong>{driver ? `${driver.firstName} ${driver.lastName}` : 'Şoför'}</strong>
           <p className="muted" style={{ overflowWrap: 'anywhere' }}>
-            {driver?.email ?? 'Sürücü hesabı'}
-          </p>
-          <p className="muted" style={{ fontSize: '0.875rem' }}>
-            Konum paylaşımı {sharing ? 'açık' : 'kapalı'}
+            {driver?.email ?? 'Şoför hesabı'}
           </p>
         </div>
       </section>
 
-      <section className="card" aria-labelledby="trips-title">
-        <h2 id="trips-title" className="eyebrow">
-          Atanmış seferler
-        </h2>
-        {trips.length ? (
-          <ul className="list">
-            {trips.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  className="trip-item"
-                  aria-current={item.id === trip?.id}
-                  onClick={() => void switchTrip(item.id)}
-                >
-                  <strong>
-                    {item.route.origin.name} → {item.route.destination.name}
-                  </strong>
-                  <StatusChip status={item.status} />
-                  <small>
-                    {formatDate(item.departureTime)} · {formatTime(item.departureTime)} ·{' '}
-                    <span className="mono">{item.bus.plateNumber}</span>
-                  </small>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted" style={{ paddingTop: 12 }}>
-            Size atanmış sefer yok.
+      <section className="panel">
+        <div>
+          <h2 className="eyebrow">Konum paylaşımı</h2>
+          <p className="muted" style={{ marginTop: 6 }}>
+            {sharing
+              ? 'Açık. Yolcular otobüsü canlı izliyor.'
+              : 'Kapalı. Sefer başladığında otomatik açılır.'}
           </p>
-        )}
+        </div>
+        {sharing ? (
+          <button type="button" className="btn-quiet" onClick={stopLocationSharing}>
+            Paylaşımı durdur
+          </button>
+        ) : null}
       </section>
 
       {!standalone ? (
-        <section className="card toggle-row">
-          <Smartphone size={28} aria-hidden />
+        <section className="panel">
           <div>
-            <h2>Uygulamayı yükle</h2>
-            <p>
+            <h2 className="eyebrow">Uygulamayı yükle</h2>
+            <p className="muted" style={{ marginTop: 6 }}>
               {available
-                ? 'Ana ekrana ekleyin; tam ekran ve hızlı açılır.'
-                : 'Tarayıcı menüsünden “Ana ekrana ekle” seçeneğini kullanın.'}
+                ? 'Ana ekrana ekle; tam ekran ve hızlı açılır.'
+                : 'Tarayıcı menüsünden “Ana ekrana ekle” seçeneğini kullan.'}
             </p>
           </div>
           {available ? (
-            <button type="button" className="btn btn-secondary" onClick={() => void install()}>
-              <Download aria-hidden />
+            <button type="button" className="btn-main" onClick={() => void install()}>
+              <Download size={18} aria-hidden />
               Yükle
             </button>
           ) : null}
         </section>
       ) : null}
 
-      <button type="button" className="btn btn-danger-outline btn-lg" onClick={() => void logout()}>
-        <LogOut aria-hidden />
+      <button type="button" className="btn-quiet" onClick={() => void logout()}>
+        <LogOut size={18} aria-hidden />
         Çıkış yap
       </button>
-    </>
+    </main>
   );
 }

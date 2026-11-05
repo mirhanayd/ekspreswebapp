@@ -243,12 +243,24 @@ and `notification_preferences` with `IF NOT EXISTS` guards, so it can be re-run 
 seeds now create the 41-seat coach layout; existing staging buses keep their stored layout until re-seeded.
 
 **Map worker.** maplibre-gl 6 starts its worker from `import.meta.url`, which a bundled build turns into a
-`file:` URL, so the map would only paint its background. `apps/passenger-web/scripts/copy-maplibre-worker.mjs`
-(run by `pnpm dev` and `pnpm build`) copies the worker and its shared chunk to `public/maplibre/`, and the
-live-tracking screen calls `setWorkerUrl()`. Do not bypass the package `build` script on Vercel.
+`file:` URL, so the map would only paint its background. In passenger-web and driver-web,
+`scripts/copy-maplibre-worker.mjs` (run by `pnpm dev` and `pnpm build`) copies the worker and its shared
+chunk to `public/maplibre/`, and the map code calls `setWorkerUrl()`. Do not bypass the package `build`
+script on Vercel.
 
 **Timezone.** Trip and hold times are stored as zone-less wall-clock values and read back as UTC. Run the
 seed and the apps with `TZ=UTC` (as Vercel and CI do); a local non-UTC machine shifts raw-SQL hold sweeps.
+
+## Driver redesign (#108)
+
+`apps/driver-web` is now a single screen at `/`; `/map`, `/passengers` and `/trips` redirect there. The driver
+Route Handler accepts a fourth passenger state, `alighted`, which needs migration `0014_passenger-alighted`
+(idempotent: it replaces the `passenger_boarding_status_check` constraint). Deploy the migration before the
+driver app, otherwise "İndi" fails the constraint. Alighted passengers no longer receive alighting alerts.
+
+Leaving a stop marks on-board passengers for that stop `alighted` and waiting passengers `no_show`, after a
+confirmation when anyone is still waiting. The operations call and report buttons appear only when
+`NEXT_PUBLIC_OPERATIONS_PHONE` is set.
 
 ## Temporary compatibility path
 

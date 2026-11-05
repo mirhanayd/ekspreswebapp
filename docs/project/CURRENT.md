@@ -39,6 +39,12 @@ Incremental serverless backend migration.
   server-generated temporary passwords, same-origin assignment handlers, overlap conflict/override
   auditing, and live driver assignment/session revalidation.
 
+## Driver redesign (#108)
+
+- `apps/driver-web` is one screen: Today, then a trip layer alternating between a stop (top-down 41-seat plan, list) and the road (MapLibre with per-stop alighting/boarding bubbles).
+- Passenger state gains `alighted` (migration `0014_passenger-alighted`), so "İndi" is stored on the server. Depends on #107 for the 41-seat layout and the alighting stop default.
+- The current stop is device-local (`localStorage`); after a reinstall or on another device it is re-derived from the trip status and last GPS fix. There is no server-side stop log yet.
+
 ## Temporary Hybrid State
 
 - Driver HTTP operations: Vercel Route Handlers -> Neon.
@@ -65,6 +71,7 @@ Incremental serverless backend migration.
 
 ## Next Gate
 
+- #108: run migration `0014` on Neon after `0013`, then field-test the stop flow on a phone with real GPS.
 - #106: generate a VAPID pair (`npx web-push generate-vapid-keys`), set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` on the passenger and driver Vercel projects, run migration `0013` on Neon, then verify a real Web Push on a phone (installed PWA, app closed) at 5 km and 1 km on staging.
 
 - Complete #88 CI and HTTPS Preview managed-realtime smoke with the legacy API unavailable.

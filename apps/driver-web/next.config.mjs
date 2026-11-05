@@ -1,6 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async redirects() {
+    // The map, passenger list and trip list are now layers of the single driver screen.
+    return ['/map', '/passengers', '/trips'].map((source) => ({
+      source,
+      destination: '/',
+      permanent: false,
+    }));
+  },
   async headers() {
     return [
       {

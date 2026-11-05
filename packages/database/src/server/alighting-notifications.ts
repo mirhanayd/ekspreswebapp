@@ -289,7 +289,7 @@ export function createSqlAlightingStore(database: () => Database = serverDatabas
         WHERE t.trip_id = ${tripId}
           AND t.status = 'active'
           AND l.coordinates IS NOT NULL
-          AND COALESCE(pb.status, 'pending') <> 'no_show'
+          AND COALESCE(pb.status, 'pending') NOT IN ('no_show', 'alighted')
       `);
       return result.rows.map((row) => ({
         ticketId: row.ticket_id,

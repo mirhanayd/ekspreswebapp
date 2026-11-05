@@ -223,6 +223,115 @@ async function adminJourney(browser) {
   }
 }
 
+/**
+ * Driver app on the real API, at phone width: stop plan, passenger card with undo, list quick
+ * action and the road view. Runs last because it changes the seeded ticket's boarding state.
+ */
+export async function runDriverUiJourney(baseURL) {
+  const browser = await chromium.launch({ channel: browserUse.channel, headless: true });
+  const context = await browser.newContext({ viewport: browserUse.viewport });
+  const page = await context.newPage();
+  const manifestStatus = async (ticketNo) => {
+    const trips = await (await context.request.get(`${baseURL}/api/driver/trips`)).json();
+    for (const trip of trips) {
+      const detail = await (
+        await context.request.get(`${baseURL}/api/driver/trips/${trip.id}`)
+      ).json();
+      const passenger = detail.manifest.find((item) => item.ticketNo === ticketNo);
+      if (passenger) return { tripId: trip.id, ...passenger };
+    }
+    throw new Error(`${ticketNo} is not on any assigned trip`);
+  };
+  try {
+    await page.goto(`${baseURL}/login`);
+    await page.getByLabel('E-posta').fill('sofor@siirtkurtalan.demo');
+    await page.getByLabel('Şifre').fill('Sofor123!');
+    await page.getByRole('button', { name: 'Şoför paneline gir' }).click();
+    await page.waitForURL(`${baseURL}/`);
+    await visible(page.getByRole('heading', { name: /İyi günler/ }), 'today greeting');
+    await noPageOverflow(page);
+
+    // The seeded passenger rides to the last stop; the alert journey left the bus right before it.
+    const ticket = await manifestStatus('TKT-DEMO-AKTIF');
+    assert.equal(
+      (
+        await context.request.patch(
+          `${baseURL}/api/driver/trips/${ticket.tripId}/passengers/${ticket.ticketId}`,
+          { data: { status: 'boarded' } },
+        )
+      ).status(),
+      200,
+    );
+    await page.reload();
+    await page.getByRole('button', { name: 'Sefere dön' }).click();
+
+    const seats = page.locator('button.seat');
+    await visible(seats.first(), 'seat plan');
+    assert.equal(await seats.count(), 41, 'the plan draws all 41 seats');
+    // Measured after the row-by-row reveal, which scales the seats while it runs.
+    await page.waitForTimeout(1600);
+    const small = await page.$$eval(
+      '.stop button, .stop a',
+      (controls) =>
+        controls
+          .filter((control) => control.checkVisibility({ checkVisibilityCSS: true }))
+          .map((control) => control.getBoundingClientRect())
+          .filter((box) => box.width < 44 || box.height < 44).length,
+    );
+    assert.equal(small, 0, 'every stop control is at least 44 px');
+    await noPageOverflow(page);
+
+    const seat = page.getByRole('button', { name: new RegExp(`^Koltuk ${ticket.seatNo}: `) });
+    await seat.click();
+    const card = page.getByRole('region', { name: 'Yolcu bilgisi' });
+    await visible(card, 'passenger card');
+    await card.getByRole('button', { name: 'İndi', exact: true }).click();
+    const undo = page.getByRole('button', { name: 'Geri al' });
+    await visible(undo, 'undo toast');
+    await expectStatus(manifestStatus, 'alighted');
+    await undo.click();
+    await expectStatus(manifestStatus, 'boarded');
+
+    await page.getByRole('button', { name: 'Yolcu listesi' }).click();
+    await page
+      .getByRole('button', { name: /indi olarak işaretle$/ })
+      .first()
+      .click();
+    await expectStatus(manifestStatus, 'alighted');
+    await noPageOverflow(page);
+
+    await page.getByRole('button', { name: 'Otobüs planı' }).click();
+    await page.getByRole('button', { name: 'Haritaya dön' }).click();
+    await visible(page.locator('.bubble').first(), 'stop bubbles');
+    await visible(page.getByRole('button', { name: /vardım$/ }), 'arrival button');
+    assert.equal(await page.locator('canvas').count(), 1, 'MapLibre should render one canvas');
+    const worker = await context.request.get(`${baseURL}/maplibre/maplibre-gl-worker.mjs`);
+    assert.equal(worker.status(), 200, 'maplibre worker must be reachable');
+    await noPageOverflow(page);
+    process.stdout.write(
+      'PASS driver UI: today → 41-seat plan → passenger card → undo → list → road view at 390 px\n',
+    );
+  } catch (error) {
+    await mkdir('test-results', { recursive: true });
+    await page.screenshot({ path: 'test-results/driver-failure.png' }).catch(() => {});
+    throw error;
+  } finally {
+    await closeWithin(context);
+    await closeWithin(browser);
+  }
+}
+
+async function expectStatus(read, expected) {
+  const deadline = Date.now() + 5_000;
+  let actual;
+  while (Date.now() < deadline) {
+    actual = (await read('TKT-DEMO-AKTIF')).boardingStatus;
+    if (actual === expected) return;
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
+  assert.equal(actual, expected);
+}
+
 export async function runCriticalJourneys({ headed = false } = {}) {
   const browser = await chromium.launch({ channel: browserUse.channel, headless: !headed });
   try {

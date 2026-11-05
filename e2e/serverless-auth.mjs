@@ -356,7 +356,7 @@ export async function runServerlessDriverRegression(baseURL) {
     assert.ok(detail.route.stops.length > 0);
     assert.ok(detail.manifest.length > 0);
     const passenger = detail.manifest[0];
-    for (const status of ['boarded', 'no_show', 'pending']) {
+    for (const status of ['boarded', 'alighted', 'no_show', 'pending']) {
       const changed = await context.patch(
         `/api/driver/trips/${trip.id}/passengers/${passenger.ticketId}`,
         { data: { status } },

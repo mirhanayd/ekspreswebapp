@@ -10,7 +10,17 @@ import {
   useState,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import type { DriverMapPosition, RouteGeometry } from './DriverMap';
+import type { SeatLayoutItem } from '@/lib/seat-plan';
+
+export type RouteGeometry = { type: 'LineString'; coordinates: Array<[number, number]> };
+
+export type DriverMapPosition = {
+  longitude: number;
+  latitude: number;
+  speedKph: number;
+  headingDeg: number;
+  recordedAt: string;
+};
 
 export type Passenger = {
   ticketId: string;
@@ -22,7 +32,7 @@ export type Passenger = {
   email: string | null;
   boardingLocationId: string | null;
   alightingLocationId: string | null;
-  boardingStatus: 'pending' | 'boarded' | 'no_show';
+  boardingStatus: 'pending' | 'boarded' | 'alighted' | 'no_show';
 };
 
 export type Stop = {
@@ -39,7 +49,13 @@ export type Trip = {
   status: string;
   departureTime: string;
   arrivalTime: string;
-  bus: { id: string; plateNumber: string; model: string | null };
+  bus: {
+    id: string;
+    plateNumber: string;
+    model: string | null;
+    totalSeats?: number | null;
+    seatLayout?: { layout?: string; items?: SeatLayoutItem[] } | null;
+  };
   route: {
     id: string;
     name: string;
@@ -72,18 +88,13 @@ type DriverContextValue = {
   busyTickets: Set<string>;
   lastLocationAt: string | null;
   latestPosition: DriverMapPosition | null;
-  counts: { total: number; boarded: number; pending: number; noShow: number };
-  nextStop: Stop | null;
-  /** Stops the driver marked as reached on this device; there is no server-side stop log yet. */
-  arrivedStopIds: Set<string>;
-  // eslint-disable-next-line no-unused-vars
-  markStopArrived: (stopId: string) => void;
+  counts: { total: number; boarded: number; alighted: number; pending: number; noShow: number };
   // eslint-disable-next-line no-unused-vars
   switchTrip: (tripId: string) => Promise<void>;
   // eslint-disable-next-line no-unused-vars
-  setTripStatus: (status: string) => Promise<void>;
+  setTripStatus: (status: string) => Promise<boolean>;
   // eslint-disable-next-line no-unused-vars
-  setPassengerStatus: (ticketId: string, status: Passenger['boardingStatus']) => Promise<void>;
+  setPassengerStatus: (ticketId: string, status: Passenger['boardingStatus']) => Promise<boolean>;
   startLocationSharing: () => void;
   stopLocationSharing: () => void;
   reload: () => void;
@@ -153,10 +164,6 @@ export function DriverProvider({
   const [busyTickets, setBusyTickets] = useState<Set<string>>(() => new Set());
   const [lastLocationAt, setLastLocationAt] = useState<string | null>(null);
   const [latestPosition, setLatestPosition] = useState<DriverMapPosition | null>(null);
-  const [arrived, setArrived] = useState<{ tripId: string | null; ids: Set<string> }>(() => ({
-    tripId: null,
-    ids: new Set(),
-  }));
   const watchId = useRef<number | null>(null);
   const lastSentAt = useRef(0);
   const sharingTripId = useRef<string | null>(null);
@@ -212,7 +219,10 @@ export function DriverProvider({
       try {
         const assigned = await api<TripSummary[]>('trips');
         setTrips(assigned);
-        const keep = assigned.find((item) => item.id === currentTripId.current);
+        // A finished trip gives way to the next one instead of staying on the Today card.
+        const keep = assigned.find(
+          (item) => item.id === currentTripId.current && item.status !== 'completed',
+        );
         const target = keep || preferredTrip(assigned);
         if (!target) {
           const hadTrip = currentTripId.current !== null;
@@ -285,53 +295,28 @@ export function DriverProvider({
     return {
       total: manifest.length,
       boarded: manifest.filter((item) => item.boardingStatus === 'boarded').length,
+      alighted: manifest.filter((item) => item.boardingStatus === 'alighted').length,
       pending: manifest.filter((item) => item.boardingStatus === 'pending').length,
       noShow: manifest.filter((item) => item.boardingStatus === 'no_show').length,
     };
   }, [trip]);
 
-  const arrivedStopIds = useMemo(
-    () => (arrived.tripId === trip?.id ? arrived.ids : new Set<string>()),
-    [arrived, trip?.id],
-  );
-
-  const markStopArrived = useCallback(
-    (stopId: string) => {
-      if (!trip) return;
-      setArrived((current) => {
-        const ids = new Set(current.tripId === trip.id ? current.ids : []);
-        ids.add(stopId);
-        return { tripId: trip.id, ids };
-      });
-    },
-    [trip],
-  );
-
-  const nextStop = useMemo(() => {
-    if (!trip) return null;
-    const stops = [...trip.route.stops].sort((a, b) => a.stopOrder - b.stopOrder);
-    return stops.find((stop) => !arrivedStopIds.has(stop.id)) || null;
-  }, [arrivedStopIds, trip]);
-
   const setTripStatus = useCallback(
     async (status: string) => {
-      if (!trip || statusBusy || trip.status === status) return;
-      if (
-        status === 'completed' &&
-        !window.confirm('Sefer tamamlansın mı? Canlı konum paylaşımı da kapanacak.')
-      ) {
-        return;
-      }
+      if (!trip || statusBusy) return false;
+      if (trip.status === status) return true;
       setMessage('');
       setNotice('');
       setStatusBusy(true);
       try {
         await api(`trips/${trip.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
         if (status === 'completed' && sharingTripId.current === trip.id) stopLocationSharing();
-        await loadTrip(trip.id);
+        await (status === 'completed' ? loadRef.current(true) : loadTrip(trip.id));
+        return true;
       } catch (error) {
-        if (statusOf(error) === 401) return signOutExpired();
-        setMessage(messageOf(error, 'Sefer durumu güncellenemedi.'));
+        if (statusOf(error) === 401) signOutExpired();
+        else setMessage(messageOf(error, 'Sefer durumu güncellenemedi.'));
+        return false;
       } finally {
         setStatusBusy(false);
       }
@@ -363,7 +348,7 @@ export function DriverProvider({
 
   const setPassengerStatus = useCallback(
     async (ticketId: string, status: Passenger['boardingStatus']) => {
-      if (!trip || busyTickets.has(ticketId)) return;
+      if (!trip || busyTickets.has(ticketId)) return false;
       const previous = trip.manifest.find((item) => item.ticketId === ticketId)?.boardingStatus;
       setMessage('');
       applyPassengerStatus(ticketId, status);
@@ -373,10 +358,12 @@ export function DriverProvider({
           method: 'PATCH',
           body: JSON.stringify({ status }),
         });
+        return true;
       } catch (error) {
         if (previous) applyPassengerStatus(ticketId, previous);
-        if (statusOf(error) === 401) return signOutExpired();
-        setMessage(messageOf(error, 'Yolcu durumu güncellenemedi.'));
+        if (statusOf(error) === 401) signOutExpired();
+        else setMessage(messageOf(error, 'Yolcu durumu güncellenemedi.'));
+        return false;
       } finally {
         setBusyTickets((current) => {
           const next = new Set(current);
@@ -506,9 +493,6 @@ export function DriverProvider({
       lastLocationAt,
       latestPosition,
       counts,
-      nextStop,
-      arrivedStopIds,
-      markStopArrived,
       switchTrip,
       setTripStatus,
       setPassengerStatus,
@@ -518,7 +502,6 @@ export function DriverProvider({
       logout,
     }),
     [
-      arrivedStopIds,
       busyTickets,
       counts,
       driver,
@@ -526,9 +509,7 @@ export function DriverProvider({
       latestPosition,
       loading,
       logout,
-      markStopArrived,
       message,
-      nextStop,
       notice,
       reload,
       setPassengerStatus,

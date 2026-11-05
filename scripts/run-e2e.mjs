@@ -195,6 +195,8 @@ try {
   await runServerlessTrackingJourney('http://127.0.0.1:3010');
   const { runAlightingNotificationJourney } = await import('../e2e/serverless-auth.mjs');
   await runAlightingNotificationJourney('http://127.0.0.1:3010', 'http://127.0.0.1:3011');
+  const { runDriverUiJourney } = await import('../e2e/critical-journeys.mjs');
+  await runDriverUiJourney('http://127.0.0.1:3011');
   if (rejectedLegacyRequests !== 0)
     throw new Error('Driver/tracking regression attempted a legacy API request.');
   exitCode = 0;
