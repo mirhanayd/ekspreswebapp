@@ -1,4 +1,5 @@
 import * as bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 import * as dotenv from 'dotenv';
 import { join } from 'path';
 import { Pool, PoolClient } from 'pg';
@@ -213,6 +214,96 @@ async function insertActiveTicketScenario(client: PoolClient) {
   );
 }
 
+/**
+ * Passengers on the 14:00 Siirt → Diyarbakır run who get on and off at Kurtalan and Batman. Seats
+ * 17, 25, 32 and 34 change hands. Legs are route stop orders; a separate account owns these
+ * tickets so the demo passenger's wallet stays as it was.
+ */
+const STOP_ORDERS = [
+  { first: 'Emre', last: 'Güler', seat: 17, from: 1, to: 2 },
+  { first: 'Nurettin', last: 'Şahin', seat: 17, from: 2, to: 4 },
+  { first: 'Fatma', last: 'Güneş', seat: 32, from: 1, to: 2 },
+  { first: 'Abdullah', last: 'Tekin', seat: 32, from: 2, to: 4 },
+  { first: 'Rojda', last: 'Aslan', seat: 25, from: 1, to: 3 },
+  { first: 'Baran', last: 'Yıldırım', seat: 25, from: 3, to: 4 },
+  { first: 'Ayşe', last: 'Kılıç', seat: 34, from: 1, to: 3 },
+  { first: 'Dilan', last: 'Kaya', seat: 34, from: 3, to: 4 },
+  { first: 'Mehmet', last: 'Demir', seat: 6, from: 1, to: 3 },
+  { first: 'Serkan', last: 'Öztürk', seat: 29, from: 2, to: 3 },
+  { first: 'Berivan', last: 'Acar', seat: 37, from: 2, to: 4 },
+  { first: 'Halil', last: 'Çelik', seat: 9, from: 3, to: 4 },
+  { first: 'Mustafa', last: 'Arslan', seat: 1, from: 1, to: 4 },
+  { first: 'Elif', last: 'Doğan', seat: 3, from: 1, to: 4 },
+];
+
+async function insertStopScenario(client: PoolClient) {
+  const locationAt = (order: number) =>
+    routeStops.find((stop) => stop.order === order)?.locationId as string;
+  // '!' is not a bcrypt hash, so nobody can sign in to this account.
+  await client.query(
+    `INSERT INTO users (id, email, password_hash, first_name, last_name, role)
+     VALUES ($1, 'durak-yolculari@siirtkurtalan.demo', '!', 'Durak', 'Yolcuları', 'passenger')`,
+    [DEMO_IDS.stopPassengers],
+  );
+
+  for (const [index, passenger] of STOP_ORDERS.entries()) {
+    const key = `stop-scenario:${index}`;
+    const orderId = demoUuid(`order:${key}`);
+    const ticketId = demoUuid(`ticket:${key}`);
+    const tripSeatId = demoUuid(`trip-seat:${DEMO_IDS.afternoonTrip}:${passenger.seat}`);
+    const suffix = String(index + 1).padStart(2, '0');
+    await client.query(`UPDATE trip_seats SET status = 'purchased' WHERE id = $1`, [tripSeatId]);
+    await client.query(
+      `INSERT INTO orders
+         (id, order_no, user_id, trip_id, trip_seat_id, boarding_location_id, alighting_location_id,
+          status, total_minor, currency, idempotency_key, passenger_first_name, passenger_last_name,
+          passenger_phone, expires_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'paid', 45000, 'TRY', $8, $9, $10, $11,
+               now() + interval '1 day')`,
+      [
+        orderId,
+        `SKE-DEMO-DURAK-${suffix}`,
+        DEMO_IDS.stopPassengers,
+        DEMO_IDS.afternoonTrip,
+        tripSeatId,
+        locationAt(passenger.from),
+        locationAt(passenger.to),
+        demoUuid(`idempotency:${key}`),
+        passenger.first,
+        passenger.last,
+        `0555 000 70 ${suffix}`,
+      ],
+    );
+    await client.query(
+      `INSERT INTO payments
+         (id, order_id, provider, provider_payment_id, status, amount_minor, currency, paid_at)
+       VALUES ($1, $2, 'demo', $3, 'success', 45000, 'TRY', now())`,
+      [demoUuid(`payment:${key}`), orderId, `demo_seed_stop_${suffix}`],
+    );
+    await client.query(
+      `INSERT INTO tickets
+         (id, ticket_no, user_id, trip_id, trip_seat_id, order_id, leg_from, leg_to, status,
+          qr_token_hash)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'active', $9)`,
+      [
+        ticketId,
+        `TKT-DEMO-DURAK-${suffix}`,
+        DEMO_IDS.stopPassengers,
+        DEMO_IDS.afternoonTrip,
+        tripSeatId,
+        orderId,
+        passenger.from,
+        passenger.to,
+        createHash('sha256').update(key).digest('hex'),
+      ],
+    );
+    await client.query(
+      `INSERT INTO passenger_boarding (id, ticket_id, status) VALUES ($1, $2, 'pending')`,
+      [demoUuid(`boarding:${key}`), ticketId],
+    );
+  }
+}
+
 async function main() {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) throw new Error('DATABASE_URL is not set');
@@ -231,6 +322,7 @@ async function main() {
     await insertUsers(client);
     await insertTransport(client);
     await insertActiveTicketScenario(client);
+    await insertStopScenario(client);
     await client.query('COMMIT');
     console.log(
       'Demo reset complete: passenger, admin, driver, trips, seats, ticket and assignments ready.',

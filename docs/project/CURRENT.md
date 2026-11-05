@@ -45,6 +45,12 @@ Incremental serverless backend migration.
 - Passenger state gains `alighted` (migration `0014_passenger-alighted`), so "İndi" is stored on the server. Depends on #107 for the 41-seat layout and the alighting stop default.
 - The current stop is device-local (`localStorage`); after a reinstall or on another device it is re-derived from the trip status and last GPS fix. There is no server-side stop log yet.
 
+## Driver stop data (#110)
+
+- `GET /api/driver/trips/:id/stops/:locationId` returns one stop's alighting and boarding passengers plus per-stop counts, behind the assigned-driver check.
+- Buses are converted to the 41-seat coach by migration `0015`; `0016` replaces the one-ticket-per-seat index with a per-leg exclusion constraint so a seat can change hands at a stop.
+- Checkout still sells whole trips only: its tickets keep the full-route leg. Segment sales need their own seat availability work.
+
 ## Temporary Hybrid State
 
 - Driver HTTP operations: Vercel Route Handlers -> Neon.

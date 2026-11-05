@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
 import { alightingNotifier } from './alighting-notifications.js';
+import { buildStopManifest } from './driver-stops.js';
 import { publishManagedTrackingPosition } from './tracking-service.js';
 
 export { ServerError as DriverBackendError } from './errors.js';
@@ -195,6 +196,12 @@ export async function getDriverTrip(driverId: string, tripId: string) {
     latestPosition,
     manifest,
   };
+}
+
+export async function getDriverStop(driverId: string, tripId: string, locationId: string) {
+  await assertAssignment(driverId, tripId);
+  const [trip, manifest] = await Promise.all([getTripDetails(tripId), getManifest(tripId)]);
+  return buildStopManifest(trip, manifest, locationId);
 }
 
 export async function updateDriverTripStatus(

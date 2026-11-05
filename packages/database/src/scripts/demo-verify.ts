@@ -47,7 +47,7 @@ async function main() {
       result?.passenger_count === '1' &&
       result.admin_count === '1' &&
       Number(result.future_trip_count) >= 3 &&
-      result.seat_count === '156' &&
+      result.seat_count === '164' &&
       result.route_geometry_count === '1' &&
       result.active_ticket_count === '1' &&
       result.secure_qr_count === '1' &&

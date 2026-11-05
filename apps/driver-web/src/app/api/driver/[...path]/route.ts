@@ -3,6 +3,7 @@ import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 import {
   authService,
   DriverBackendError,
+  getDriverStop,
   getDriverTrip,
   listDriverTrips,
   recordDriverLocation,
@@ -82,6 +83,15 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
 
     if (request.method === 'GET' && path.length === 2 && path[0] === 'trips') {
       return json(await getDriverTrip(user.id, path[1]!));
+    }
+
+    if (
+      request.method === 'GET' &&
+      path.length === 4 &&
+      path[0] === 'trips' &&
+      path[2] === 'stops'
+    ) {
+      return json(await getDriverStop(user.id, path[1]!, path[3]!));
     }
 
     if (

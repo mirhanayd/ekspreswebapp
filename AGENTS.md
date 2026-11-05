@@ -88,7 +88,7 @@ Use Conventional Commits (e.g., `feat:`, `fix:`, `chore:`, `docs:`).
 - Passenger state is `pending`, `boarded`, `alighted` or `no_show`, enforced by a database constraint; the driver's current stop is device-local and is never a source of truth for tickets or boarding.
 - Driver Route Handlers must revalidate the signed principal against the current users row on every request; deactivation and password reset increment `session_version` to revoke existing sessions.
 - Admin driver provisioning and trip assignments use the shared Neon-backed service, a live admin role check, transaction-scoped conflict checks and `driver_admin_audit`. Never expose an account password in API responses or audit records.
-- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants.
+- PostgreSQL transactions and constraints remain authoritative for seat, order, payment, ticket, boarding-state and durable tracking invariants. A seat may carry several tickets only on non-overlapping legs, enforced by the `tickets_seat_leg_excl` exclusion constraint; never relax it.
 - Redis latest-location keys are ephemeral operational state and must have bounded TTLs.
 - Managed realtime tokens must be short-lived, subscribe-only and scoped to the authenticated passenger's entitled trip channel.
 - Managed realtime API keys are server-only and must never use a `NEXT_PUBLIC_*` name.
