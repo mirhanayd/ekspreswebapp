@@ -14,6 +14,13 @@ maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 
 const ARRIVAL_ZOOM = 13.6;
 const ARRIVAL_MS = 820;
+/** Driving camera: close enough that roads, towns and the next stop read as a real map. */
+const FOLLOW_ZOOM = 12.4;
+const FOLLOW_MS = 900;
+/** Below this zoom the whole route is in view, so only the next stop keeps its bubble. */
+const OVERVIEW_ZOOM = 9;
+
+type CameraMode = 'follow' | 'overview' | 'free';
 
 function mapStyle(): string | maplibregl.StyleSpecification {
   const custom = process.env.NEXT_PUBLIC_MAP_STYLE_URL;
@@ -66,6 +73,7 @@ export function RouteMap({
   position,
   bottomInset,
   zoomTo,
+  focusIndex,
   renderDot,
   renderBubble,
 }: {
@@ -74,6 +82,8 @@ export function RouteMap({
   position: DriverMapPosition | null;
   bottomInset: number;
   zoomTo: LngLat | null;
+  /** The next stop; it keeps its bubble when the whole route is in view. */
+  focusIndex: number;
   renderDot: (stop: TripStop) => React.ReactNode;
   renderBubble: (stop: TripStop) => React.ReactNode;
 }) {
@@ -85,24 +95,58 @@ export function RouteMap({
   latest.current = position;
   const insetRef = useRef(bottomInset);
   insetRef.current = bottomInset;
+  const zoomRef = useRef(zoomTo);
+  zoomRef.current = zoomTo;
   const [slots, setSlots] = useState<Slot[]>([]);
   const [ready, setReady] = useState(false);
+  const [mode, setMode] = useState<CameraMode>('follow');
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
+  const focusRef = useRef(focusIndex);
+  focusRef.current = focusIndex;
 
   const cumulative = useMemo(() => measureRoute(coordinates), [coordinates]);
 
-  const frame = useCallback(() => {
+  const overview = useCallback(
+    (duration = 0) => {
+      const instance = map.current;
+      if (!instance || coordinates.length < 2) return;
+      const bounds = coordinates.reduce(
+        (value, coordinate) => value.extend(coordinate),
+        new maplibregl.LngLatBounds(coordinates[0], coordinates[0]),
+      );
+      instance.fitBounds(bounds, {
+        padding: { top: 130, bottom: insetRef.current + 34, left: 56, right: 56 },
+        maxZoom: 11,
+        duration,
+      });
+    },
+    [coordinates],
+  );
+
+  /** Keeps the bus in the visible band above the bottom panel. */
+  const follow = useCallback((duration = FOLLOW_MS) => {
     const instance = map.current;
-    if (!instance || coordinates.length < 2) return;
-    const bounds = coordinates.reduce(
-      (value, coordinate) => value.extend(coordinate),
-      new maplibregl.LngLatBounds(coordinates[0], coordinates[0]),
-    );
-    instance.fitBounds(bounds, {
-      padding: { top: 130, bottom: insetRef.current + 34, left: 56, right: 56 },
-      maxZoom: 11,
-      duration: 0,
+    const current = latest.current;
+    if (!instance || !current) return false;
+    instance.easeTo({
+      center: [current.longitude, current.latitude],
+      zoom: FOLLOW_ZOOM,
+      padding: { top: 120, bottom: insetRef.current + 24, left: 0, right: 0 },
+      duration,
+      essential: true,
     });
-  }, [coordinates]);
+    return true;
+  }, []);
+
+  /** Puts the camera where the current mode wants it. */
+  const frame = useCallback(
+    (duration = 0) => {
+      if (modeRef.current === 'follow' && follow(duration)) return;
+      if (modeRef.current !== 'free') overview(duration);
+    },
+    [follow, overview],
+  );
 
   const paintRoute = useCallback(
     (instance: maplibregl.Map, current: DriverMapPosition | null) => {
@@ -195,6 +239,12 @@ export function RouteMap({
     // `load` waits for every first tile; the route and stops must not.
     instance.once('style.load', setup);
     instance.once('load', setup);
+    // A finger on the map hands the camera to the driver until they pick a mode again.
+    const release = (event: { originalEvent?: unknown }) => {
+      if (event.originalEvent) setMode('free');
+    };
+    instance.on('dragstart', release);
+    instance.on('zoomstart', release);
 
     return () => {
       setReady(false);
@@ -212,15 +262,13 @@ export function RouteMap({
     bus.current?.setLngLat([position.longitude, position.latitude]);
     if (busBody.current) busBody.current.style.transform = `rotate(${position.headingDeg}deg)`;
     paintRoute(instance, position);
-  }, [paintRoute, position, ready]);
+    if (modeRef.current === 'follow' && !zoomRef.current) follow();
+  }, [follow, paintRoute, position, ready]);
 
   useEffect(() => {
     const instance = map.current;
     if (!instance || !ready) return;
-    if (!zoomTo) {
-      frame();
-      return;
-    }
+    if (!zoomTo) return;
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     instance.flyTo({
       center: [zoomTo.longitude, zoomTo.latitude],
@@ -231,8 +279,10 @@ export function RouteMap({
   }, [frame, ready, zoomTo]);
 
   useEffect(() => {
-    if (ready && !zoomTo) frame();
-  }, [bottomInset, frame, ready, zoomTo]);
+    if (ready && !zoomTo) frame(500);
+  }, [bottomInset, frame, mode, ready, zoomTo]);
+
+  const following = mode === 'follow' && position !== null;
 
   // Stops can sit closer on screen than a bubble is wide, so neighbours stack on tiers with a stem.
   useEffect(() => {
@@ -240,12 +290,17 @@ export function RouteMap({
     if (!instance || !ready || !slots.length) return;
     const declutter = () => {
       const tiers: number[] = [];
+      const { clientWidth: w, clientHeight: h } = instance.getContainer();
+      const wide = instance.getZoom() < OVERVIEW_ZOOM;
       const ordered = slots
-        .map((slot) => ({
-          slot,
-          x: instance.project(slot.marker.getLngLat()).x,
-          width: slot.bubble.offsetWidth,
-        }))
+        .map((slot) => {
+          const point = instance.project(slot.marker.getLngLat());
+          const onScreen = point.x > -40 && point.x < w + 40 && point.y > -40 && point.y < h + 40;
+          const shown = onScreen && (!wide || slot.stop.index === focusRef.current);
+          slot.bubble.style.visibility = shown ? 'visible' : 'hidden';
+          return { slot, shown, x: point.x, width: slot.bubble.offsetWidth };
+        })
+        .filter((item) => item.shown)
         .sort((a, b) => a.x - b.x);
       for (const { slot, x, width } of ordered) {
         const left = x - width / 2;
@@ -263,7 +318,7 @@ export function RouteMap({
       cancelAnimationFrame(frameId);
       instance.off('moveend', declutter);
     };
-  }, [ready, slots]);
+  }, [focusIndex, ready, slots]);
 
   return (
     <div className="map-fill">
@@ -272,6 +327,30 @@ export function RouteMap({
       {slots.map((slot) =>
         createPortal(renderBubble(slot.stop), slot.bubble, `bubble-${slot.stop.id}`),
       )}
+      {ready ? (
+        <div className="map-modes" style={{ bottom: bottomInset + 14 }}>
+          {position ? (
+            <button
+              type="button"
+              className="map-mode glass"
+              data-on={following}
+              aria-pressed={following}
+              onClick={() => setMode('follow')}
+            >
+              Takip
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="map-mode glass"
+            data-on={mode === 'overview' || (mode === 'follow' && !position)}
+            aria-pressed={mode === 'overview'}
+            onClick={() => setMode('overview')}
+          >
+            Tüm rota
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

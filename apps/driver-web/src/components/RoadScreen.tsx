@@ -138,6 +138,7 @@ export function RoadScreen({
         position={position}
         bottomInset={inset}
         zoomTo={visible ? null : stop.point}
+        focusIndex={stop.index}
         renderDot={renderDot}
         renderBubble={renderBubble}
       />

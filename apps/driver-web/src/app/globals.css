@@ -1927,6 +1927,33 @@ p {
   height: 100%;
 }
 
+.map-modes {
+  position: absolute;
+  right: 16px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  transition: bottom 280ms var(--ease-spring);
+}
+
+.map-mode {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 18px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  transition:
+    background 200ms ease,
+    color 200ms ease;
+}
+
+.map-mode[data-on='true'] {
+  background: var(--text, #f3f4f6);
+  color: #0e0f12;
+}
+
 .road-top {
   position: absolute;
   left: 16px;
