@@ -1,277 +1,259 @@
-import { ArrowRight, BusFront, Clock3, QrCode, Radio, ShieldCheck } from 'lucide-react';
-import { ServerError, ticketService } from '@ekspres/database';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import QRCode from 'qrcode';
+import { X } from 'lucide-react';
+import { ServerError, ticketService } from '@ekspres/database';
 import { getAccessToken } from '@/lib/server-api';
 import { requirePassengerToken } from '@/lib/server-auth';
+import { qrSvgPath } from '@/lib/qr';
 import { BrandMark } from '@/components/BrandLogo';
-import { PrintButton } from '@/components/PrintButton';
-import { ScreenHeader } from '@/components/ScreenHeader';
+import { BackButton } from '@/components/nav/BackButton';
+import { ShareTicketButton, TicketActions } from '@/components/ticket/TicketActions';
 import {
   formatDuration,
   formatLongDate,
   formatMinorPrice,
   formatTime,
   minutesBetween,
-  placeCodeClass,
   placeShortName,
-  ticketStatusLabel,
-  tripStatusLabel,
 } from '@/lib/format';
 
-export const metadata = { title: 'Bilet detayı' };
+export const metadata = { title: 'Biletim' };
+export const dynamic = 'force-dynamic';
 
 type TicketDetail = {
   id: string;
   ticketNo: string;
   status: string;
-  issuedAt: string | Date;
   trip: {
     id: string;
     status: string;
-    departureTime: string | Date;
-    arrivalTime: string | Date;
-    bus: { plateNumber: string; model?: string | null };
-    route: { name?: string; origin: { name: string }; destination: { name: string } };
+    departureTime: Date;
+    arrivalTime: Date;
+    bus: { plateNumber: string; seatLayout?: { layout?: string } | null };
+    route: { origin: { name: string }; destination: { name: string } };
   };
   tripSeat: { seatNo: string };
-  order: { passengerFirstName: string; passengerLastName: string; totalMinor?: number };
+  order: {
+    passengerFirstName: string;
+    passengerLastName: string;
+    totalMinor?: number;
+    alightingLocation?: { name: string } | null;
+  };
 };
 
+/** Long settlement names step down a size instead of running into the duration marker. */
+function codeClass(name: string) {
+  return `num uppercase leading-none tracking-[-0.01em] ${
+    placeShortName(name).length > 7
+      ? 'text-[20px] [font-stretch:110%]'
+      : 'text-[27px] [font-stretch:122%]'
+  }`;
+}
+
+function boardingTime(departure: Date) {
+  return formatTime(new Date(departure.getTime() - 20 * 60_000));
+}
+
 /**
- * Boarding pass. The rail-and-facts journey card from `/ui` extended into a
- * full ticket: a near-black header carrying the wordmark, the journey block, a
- * #FFFA93 facts strip, and a perforated QR stub.
+ * Boarding pass: dark upper half, perforated divider, facts and the signed QR.
+ * Below it the alighting-notification row and the live-tracking entry.
  */
 export default async function TicketDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ticketId: string }>;
+  searchParams: Promise<{ yeni?: string }>;
 }) {
   const { ticketId } = await params;
-  let ticket: TicketDetail | null = null;
-  let qrImage: string | null = null;
-  let qrExpiresAt: string | null = null;
-  let error: string | null = null;
+  const { yeni } = await searchParams;
+  const returnTo = `/tickets/${ticketId}`;
 
   const token = await getAccessToken();
-  if (!token) redirect(`/login?returnTo=/tickets/${ticketId}`);
+  if (!token) redirect(`/login?returnTo=${returnTo}`);
   let principal: Awaited<ReturnType<typeof requirePassengerToken>>;
   try {
     principal = await requirePassengerToken(token);
   } catch (authError) {
     if (authError instanceof ServerError && [401, 403].includes(authError.status)) {
-      redirect(`/login?returnTo=/tickets/${ticketId}`);
+      redirect(`/login?returnTo=${returnTo}`);
     }
     throw authError;
   }
+
+  let ticket: TicketDetail | null = null;
+  let qr: { path: string; size: number } | null = null;
+  let error: string | null = null;
   try {
-    ticket = await ticketService.getTicketDetail(ticketId, principal.id);
-    const qr = await ticketService.getTicketQr(ticketId, principal.id);
-    qrImage = await QRCode.toDataURL(qr.payload, {
-      errorCorrectionLevel: 'M',
-      margin: 1,
-      width: 320,
-      color: { dark: '#051A09', light: '#FFFFFF' },
-    });
-    qrExpiresAt = qr.expiresAt;
+    ticket = (await ticketService.getTicketDetail(
+      ticketId,
+      principal.id,
+    )) as unknown as TicketDetail;
+    qr = qrSvgPath((await ticketService.getTicketQr(ticketId, principal.id)).payload);
   } catch (caught) {
     error =
       caught instanceof ServerError && [403, 404].includes(caught.status)
-        ? 'Bilet bulunamadı veya erişim yetkiniz yok.'
-        : caught instanceof Error
-          ? caught.message
-          : 'Bilet yüklenemedi.';
+        ? 'Bilet bulunamadı veya erişim yetkin yok.'
+        : 'Bilet şu anda yüklenemedi.';
   }
 
-  if (error || !ticket)
+  if (error || !ticket || !qr) {
     return (
-      <div className="canvas-sage min-h-[100dvh]">
-        <div className="screen screen-pad">
-          <ScreenHeader backHref="/tickets" backLabel="Biletlerime dön" />
-          <div className="empty-state mt-6">
-            <h1 className="title-md">Bilet görüntülenemiyor</h1>
-            <p className="subtle mt-2 max-w-xs">{error}</p>
-            <Link href="/tickets" className="btn btn-primary mt-6">
-              Biletlerime dön
-            </Link>
-          </div>
+      <div className="flex min-h-[100dvh] flex-col gap-4 px-4 pt-3.5">
+        <BackButton fallback="/tickets" />
+        <div className="surface px-6 py-10 text-center">
+          <h1 className="m-0 text-lg font-extrabold">Bilet açılamadı</h1>
+          <p className="mx-auto mb-0 mt-2 max-w-[260px] text-sm text-sk-ink2">{error}</p>
+          <Link href="/tickets" className="btn btn-brand mt-5">
+            Biletlerime dön
+          </Link>
         </div>
       </div>
     );
+  }
 
-  const departure = new Date(ticket.trip.departureTime);
-  const arrival = new Date(ticket.trip.arrivalTime);
-  const duration = minutesBetween(departure, arrival);
-  const liveEligible =
-    ticket.status === 'active' && ['boarding', 'in_transit'].includes(ticket.trip.status);
+  const { trip, order } = ticket;
+  const origin = trip.route.origin.name;
+  const destination = trip.route.destination.name;
+  const stopName = order.alightingLocation?.name ?? destination;
+  const live = ticket.status === 'active' && ['boarding', 'in_transit'].includes(trip.status);
+  const fields = [
+    { k: 'Yolcu', v: `${order.passengerFirstName} ${order.passengerLastName}`, sub: '' },
+    { k: 'Koltuk', v: ticket.tripSeat.seatNo, sub: '' },
+    { k: 'İniş', v: placeShortName(stopName), sub: 'bildirimli durak' },
+    { k: 'Otobüs', v: trip.bus.plateNumber, sub: trip.bus.seatLayout?.layout ?? '2+1' },
+    { k: 'Biniş', v: boardingTime(trip.departureTime), sub: 'kapı açılışı' },
+    {
+      k: 'Ücret',
+      v: order.totalMinor ? formatMinorPrice(order.totalMinor) : '—',
+      sub: 'demo ödeme',
+    },
+  ];
 
   return (
-    <div className="canvas-sage min-h-[100dvh]">
-      <div className="screen screen-pad lg:max-w-4xl">
-        <ScreenHeader
-          backHref="/tickets"
-          backLabel="Biletlerime dön"
-          title="Biniş biletim"
-          action={<PrintButton />}
+    <div className="flex min-h-[100dvh] flex-col">
+      <header className="flex h-[72px] items-center gap-3 px-4 pt-3.5">
+        {yeni ? (
+          <Link href="/" data-nav="back" aria-label="Kapat" className="round-btn no-underline">
+            <X size={20} strokeWidth={2.4} aria-hidden />
+          </Link>
+        ) : (
+          <BackButton fallback="/tickets" />
+        )}
+        <h1 className="m-0 flex-1 text-lg font-extrabold">Biletim</h1>
+        <ShareTicketButton
+          title="Siirt Kurtalan Ekspres bileti"
+          text={`${placeShortName(origin)} → ${placeShortName(destination)} · ${formatLongDate(trip.departureTime)} ${formatTime(trip.departureTime)} · Koltuk ${ticket.tripSeat.seatNo} · ${ticket.ticketNo}`}
         />
+      </header>
 
-        <h1 className="sr-only">
-          {ticket.ticketNo} · {ticket.trip.route.origin.name} – {ticket.trip.route.destination.name}
-        </h1>
-
-        <article className="mt-6 overflow-hidden rounded-[1.75rem] bg-white shadow-lift lg:grid lg:grid-cols-[minmax(0,1fr)_18rem]">
-          <div className="min-w-0">
-            <header className="flex items-center justify-between gap-3 bg-ink-900 px-5 py-4">
-              <BrandMark className="w-24" tone="light" />
-              <div className="text-right">
-                <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-white/45">
-                  Bilet no
-                </p>
-                <p className="num text-[0.8125rem] font-bold text-white">{ticket.ticketNo}</p>
-              </div>
-            </header>
-
-            <div className="px-5 py-5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`badge ${ticket.status === 'active' ? 'badge-lime' : 'badge-muted'}`}
-                >
-                  <ShieldCheck className="h-3 w-3" aria-hidden />
-                  {ticketStatusLabel[ticket.status] ?? ticket.status}
-                </span>
-                <span className="badge badge-muted">
-                  {tripStatusLabel[ticket.trip.status] ?? ticket.trip.status}
+      <div className="flex flex-col gap-[14px] px-4 pb-7 pt-1">
+        <article
+          className="ticket-in flex-none overflow-hidden rounded-[28px] bg-white"
+          style={{ boxShadow: '0 26px 44px -26px rgba(22,23,27,.5)' }}
+        >
+          <div className="flex flex-col gap-[18px] bg-sk-dark px-5 pb-5 pt-[18px] text-white">
+            <div className="flex items-center justify-between gap-2.5">
+              <BrandMark tone="light" className="w-[96px]" />
+              <span className="text-xs font-bold tracking-[0.08em] text-sk-mute">
+                {ticket.ticketNo}
+              </span>
+            </div>
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2.5">
+              <div className="flex min-w-0 flex-col gap-[5px]">
+                <span className="truncate text-xs text-sk-mute">{origin}</span>
+                <span className={codeClass(origin)}>{placeShortName(origin)}</span>
+                <span className="num-md text-xl [font-stretch:115%]">
+                  {formatTime(trip.departureTime)}
                 </span>
               </div>
-
-              <p className="caption mt-3">{formatLongDate(departure)}</p>
-
-              <div className="journey-row mt-3">
-                <div className="journey-from">
-                  <p className={`${placeCodeClass(ticket.trip.route.origin.name)} truncate`}>
-                    {placeShortName(ticket.trip.route.origin.name)}
-                  </p>
-                  <p className="caption mt-1 truncate">{ticket.trip.route.origin.name}</p>
-                </div>
-                <span className="journey-badge" aria-hidden>
-                  <BusFront className="h-4 w-4" />
+              <div className="flex flex-col items-center gap-1.5 pb-2">
+                <span className="whitespace-nowrap text-[11px] text-sk-mute">
+                  {formatDuration(minutesBetween(trip.departureTime, trip.arrivalTime))}
                 </span>
-                <div className="journey-to">
-                  <p className={`${placeCodeClass(ticket.trip.route.destination.name)} truncate`}>
-                    {placeShortName(ticket.trip.route.destination.name)}
-                  </p>
-                  <p className="caption mt-1 truncate">{ticket.trip.route.destination.name}</p>
-                </div>
+                <svg width="64" height="18" viewBox="0 0 64 18" aria-hidden>
+                  <path
+                    d="M2 9H62"
+                    stroke="#4A4C53"
+                    strokeWidth="2"
+                    strokeDasharray="3 4"
+                    strokeLinecap="round"
+                  />
+                  <rect x="22" y="2" width="20" height="14" rx="4" fill="#C8231B" />
+                  <path
+                    d="M25 7H39M25 11H39"
+                    stroke="#FFFFFF"
+                    strokeWidth="1.6"
+                    strokeOpacity=".8"
+                  />
+                </svg>
               </div>
-
-              <div className="mt-5 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-500">
-                    Kalkış
-                  </p>
-                  <p className="num font-display text-[1.75rem] font-bold leading-none text-ink-900">
-                    {formatTime(departure)}
-                  </p>
-                </div>
-                <span className="duration-pill mb-1">{formatDuration(duration)}</span>
-                <div className="text-right">
-                  <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-ink-500">
-                    Varış
-                  </p>
-                  <p className="num font-display text-[1.75rem] font-bold leading-none text-ink-900">
-                    {formatTime(arrival)}
-                  </p>
-                </div>
+              <div className="flex min-w-0 flex-col items-end gap-[5px] text-right">
+                <span className="truncate text-xs text-sk-mute">{destination}</span>
+                <span className={codeClass(destination)}>{placeShortName(destination)}</span>
+                <span className="num-md text-xl [font-stretch:115%]">
+                  {formatTime(trip.arrivalTime)}
+                </span>
               </div>
             </div>
-
-            <dl className="facts-strip">
-              <div className="fact">
-                <dt className="fact-label">Yolcu</dt>
-                <dd className="fact-value">
-                  {ticket.order.passengerFirstName} {ticket.order.passengerLastName}
-                </dd>
-              </div>
-              <div className="fact">
-                <dt className="fact-label">Koltuk</dt>
-                <dd className="fact-value">{ticket.tripSeat.seatNo}</dd>
-              </div>
-              <div className="fact">
-                <dt className="fact-label">Araç</dt>
-                <dd className="fact-value">{ticket.trip.bus.plateNumber}</dd>
-              </div>
-            </dl>
-
-            <div className="px-5 py-4">
-              {liveEligible ? (
-                <Link
-                  href={`/trips/${ticket.trip.id}/live?ticketId=${ticket.id}`}
-                  className="btn btn-primary w-full"
-                >
-                  <Radio className="h-4 w-4" aria-hidden />
-                  Otobüsü canlı izle
-                  <ArrowRight className="h-4 w-4" aria-hidden />
-                </Link>
-              ) : (
-                <p className="alert-info flex items-center gap-2">
-                  <Clock3 className="h-4 w-4 shrink-0 text-ink-400" aria-hidden />
-                  Canlı takip, sefer biniş aşamasına geçtiğinde bu ekranda açılır.
-                </p>
-              )}
+            <div className="flex items-center justify-between gap-2.5 text-[13px] text-sk-mute">
+              <span>{formatLongDate(trip.departureTime)}</span>
+              {live ? (
+                <span className="inline-flex h-6 items-center gap-1.5 rounded-xl bg-[rgba(227,57,46,.18)] px-[9px] text-xs font-extrabold text-[#FF9A92]">
+                  <span aria-hidden className="live-dot h-1.5 w-1.5 text-[#E3392E]" />
+                  Yolda
+                </span>
+              ) : null}
             </div>
           </div>
 
-          {/* QR stub */}
-          <div className="relative border-t-2 border-dashed border-ink-900/12 bg-cream-200 px-5 py-6 text-center lg:border-l-2 lg:border-t-0">
-            <span
-              className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-sage-100 lg:left-auto lg:right-auto"
-              aria-hidden
-            />
-            <span
-              className="absolute -right-3 -top-3 h-6 w-6 rounded-full bg-sage-100 lg:hidden"
-              aria-hidden
-            />
+          <div aria-hidden className="relative h-[22px] bg-white">
+            <span className="absolute -left-[11px] top-0 h-[22px] w-[22px] rounded-full bg-sk-bg" />
+            <span className="absolute -right-[11px] top-0 h-[22px] w-[22px] rounded-full bg-sk-bg" />
+            <span className="absolute inset-x-5 top-2.5 border-t-2 border-dashed border-[#E1E1DC]" />
+          </div>
 
-            <p className="eyebrow justify-center">Biniş kodu</p>
-            <div className="mx-auto mt-4 w-full max-w-[13rem] rounded-[1.25rem] bg-white p-3 shadow-card">
-              {qrImage ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={qrImage}
-                  alt={`${ticket.ticketNo} bilet QR kodu`}
-                  width={208}
-                  height={208}
-                  className="h-auto w-full"
-                />
-              ) : (
-                <div className="grid aspect-square place-items-center text-ink-300">
-                  <QrCode className="h-20 w-20" aria-hidden />
+          <div className="flex flex-col gap-[18px] px-5 pb-5 pt-1">
+            <dl className="m-0 grid grid-cols-3 gap-x-2.5 gap-y-4">
+              {fields.map((field) => (
+                <div key={field.k} className="flex min-w-0 flex-col gap-[3px]">
+                  <dt className="eyebrow">{field.k}</dt>
+                  <dd className="m-0 break-words text-base font-extrabold leading-tight">
+                    {field.v}
+                  </dd>
+                  <dd className="m-0 text-xs text-sk-ink2">{field.sub}</dd>
                 </div>
-              )}
+              ))}
+            </dl>
+            <div className="flex items-center gap-4 rounded-[20px] bg-[#F6F6F3] p-3">
+              <svg
+                width="104"
+                height="104"
+                viewBox={`0 0 ${qr.size} ${qr.size}`}
+                role="img"
+                aria-label="Bilet QR kodu"
+                shapeRendering="crispEdges"
+                className="flex-none rounded-[10px]"
+              >
+                <rect width={qr.size} height={qr.size} fill="#FFFFFF" />
+                <path d={qr.path} fill="#15161A" />
+              </svg>
+              <div className="flex flex-col gap-1">
+                <span className="text-base font-extrabold">Binişte okut</span>
+                <span className="text-[13px] leading-[1.4] text-sk-ink2">
+                  Şoför kodu okuttuğunda biniş kaydın düşer, iniş bildirimlerin başlar.
+                </span>
+              </div>
             </div>
-
-            <p className="num mt-3 text-[0.8125rem] font-bold text-ink-900">{ticket.ticketNo}</p>
-            <p className="caption mt-2 leading-5">Biniş sırasında bu kodu görevliye okutun.</p>
-            {qrExpiresAt ? (
-              <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[0.6875rem] font-semibold text-ink-700 shadow-card">
-                <Clock3 className="h-3 w-3" aria-hidden />
-                {formatTime(qrExpiresAt)}&apos;e kadar geçerli
-              </p>
-            ) : null}
-            {typeof ticket.order.totalMinor === 'number' ? (
-              <p className="caption mt-3">
-                Ödenen tutar: {formatMinorPrice(ticket.order.totalMinor)}
-              </p>
-            ) : null}
           </div>
         </article>
 
-        <p className="caption mt-4 text-center leading-5">
-          Bilet, Siirt Kurtalan Ekspres yolcu hesabınıza tanımlıdır ve yalnızca kayıtlı yolcu
-          tarafından kullanılabilir.
-        </p>
+        <TicketActions
+          stopName={stopName}
+          seatNo={ticket.tripSeat.seatNo}
+          live={live}
+          trackHref={`/trips/${trip.id}/live?ticketId=${ticket.id}`}
+        />
       </div>
     </div>
   );

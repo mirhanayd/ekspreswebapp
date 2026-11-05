@@ -99,3 +99,30 @@ export const ticketStatusLabel: Record<string, string> = {
   cancelled: 'İptal',
   expired: 'Süresi doldu',
 };
+
+/** 7.2 → "7,2" (one decimal, Turkish comma). */
+export function formatKm(km: number): string {
+  return (Math.round(km * 10) / 10).toFixed(1).replace('.', ',');
+}
+
+/** Whole minutes to cover `km` at the app's planning speed of 54 km/h. */
+export function minutesForKm(km: number, speedKph = 54): number {
+  return Math.max(0, Math.ceil((km / speedKph) * 60));
+}
+
+/** 450 → "₺450". */
+export function formatTl(value: number): string {
+  return `₺${value.toLocaleString(TR, { maximumFractionDigits: 2 })}`;
+}
+
+/**
+ * Trip times are stored as wall-clock values without a zone and read back as UTC,
+ * so a browser must print them as UTC to show the same clock the server does.
+ */
+export function formatStoredTime(value: string | Date): string {
+  return new Date(value).toLocaleTimeString(TR, {
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
+}

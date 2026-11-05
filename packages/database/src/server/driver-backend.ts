@@ -2,6 +2,7 @@ import { authService } from './auth-service.js';
 import { and, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { serverDatabase as db } from './database.js';
 import * as schema from '../schema/index.js';
+import { alightingNotifier } from './alighting-notifications.js';
 import { publishManagedTrackingPosition } from './tracking-service.js';
 
 export { ServerError as DriverBackendError } from './errors.js';
@@ -316,5 +317,16 @@ export async function recordDriverLocation(
   }
 
   await publishManagedTrackingPosition(position);
+  // Alerts are best effort: a failure here must never reject the driver's GPS fix.
+  await alightingNotifier
+    .evaluate({
+      tripId,
+      longitude: input.longitude,
+      latitude: input.latitude,
+      speedKph: input.speedKph,
+    })
+    .catch(() => {
+      console.error('Alighting notification evaluation failed');
+    });
   return position;
 }

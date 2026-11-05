@@ -92,6 +92,13 @@
       "when": 1791060000000,
       "tag": "0012_admin-driver-hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791146400000,
+      "tag": "0013_alighting-notifications",
+      "breakpoints": true
     }
   ]
 }

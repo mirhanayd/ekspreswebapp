@@ -46,24 +46,38 @@ async function passengerJourney(browser) {
     await page.goto('http://127.0.0.1:3000');
     const hero = page.getByRole('heading', { level: 1 });
     await visible(hero, 'passenger hero');
-    assert.match((await hero.textContent()) || '', /Yolculuk/);
+    assert.match((await hero.textContent()) || '', /Nereye/);
     await noPageOverflow(page);
 
-    // The journey editor sits on the home screen: each field opens a picker
-    // sheet, and the round magnifier runs the search.
-    await page.getByRole('button', { name: /Nereden/ }).click();
-    await page.getByRole('button', { name: /Siirt Terminali/ }).click();
-    await page.getByRole('button', { name: /Nereye/ }).click();
-    await page.getByRole('button', { name: /Diyarbakır Şehirlerarası Terminali/ }).click();
+    // The search card sits over the dark header: each stop opens a picker sheet, the arrows swap them.
+    await page.getByRole('button', { name: /Kalkış durağı/ }).click();
+    await page
+      .getByRole('dialog', { name: 'Kalkış durağı seç' })
+      .getByRole('button', { name: 'Siirt Terminali' })
+      .click();
+    await page.getByRole('button', { name: /Varış durağı/ }).click();
+    await page
+      .getByRole('dialog', { name: 'Varış durağı seç' })
+      .getByRole('button', { name: 'Diyarbakır Şehirlerarası Terminali' })
+      .click();
+    await page.getByRole('button', { name: 'Kalkış ve varışı yer değiştir' }).click();
+    await visible(
+      page.getByRole('button', { name: /Kalkış durağı: Diyarbakır/ }),
+      'swapped origin',
+    );
+    // The label flips mid-animation and the button ignores taps until the swap has settled.
+    await page.waitForTimeout(300);
+    await page.getByRole('button', { name: 'Kalkış ve varışı yer değiştir' }).click();
+    await visible(page.getByRole('button', { name: /Kalkış durağı: Siirt/ }), 'swapped back');
     await page.getByRole('button', { name: 'Sefer ara' }).click();
 
     await urlMatches(page, /\/search\?/);
-    const trip = page.getByRole('link', { name: /Seferi seç/ }).first();
+    const trip = page.getByRole('link', { name: /seferi/ }).first();
     await visible(trip, 'trip result');
     await noPageOverflow(page);
     await trip.click();
-    await page.getByRole('link', { name: /Koltuk seç/ }).click();
 
+    // The seat map is behind sign-in, which returns here afterwards.
     await urlMatches(page, /\/login\?returnTo=/);
     await page.getByLabel('E-posta', { exact: true }).fill(passenger.email);
     // Exact, because the reveal toggle is also labelled "Şifreyi göster".
@@ -71,31 +85,85 @@ async function passengerJourney(browser) {
     await page.getByRole('button', { name: 'Giriş Yap' }).click();
     await urlMatches(page, /\/trips\/[^/]+\/seats/);
 
-    await page.getByRole('button', { name: 'Koltuk 7, available' }).click();
+    const seven = page.getByRole('button', { name: /^Koltuk 7, .*boş$/ });
+    await visible(seven, '41-seat map');
+    assert.equal(await page.getByRole('button', { name: /^Koltuk \d+,/ }).count(), 41);
+    await seven.click();
     await visible(page.getByText('Ayırma süresi'), 'hold countdown');
+    await visible(page.getByText('Koltuk 7', { exact: true }), 'selected seat label');
     await page.getByRole('button', { name: 'Devam et' }).click();
-    await visible(page.getByRole('heading', { name: 'Biletinizi tamamlayın' }), 'checkout heading');
+
+    // Payment slides up as a sheet; "İniş bildirimleri" is switchable here too.
+    const payment = page.getByRole('dialog', { name: 'Yolcu ve ödeme' });
+    await visible(payment, 'payment sheet');
+    const alerts = payment.getByRole('switch', { name: /İniş bildirimleri/ });
+    assert.equal(await alerts.getAttribute('aria-checked'), 'true');
+    await alerts.click();
+    assert.equal(await alerts.getAttribute('aria-checked'), 'false');
+    await alerts.click();
+    assert.equal(await alerts.getAttribute('aria-checked'), 'true');
+    await payment.getByRole('button', { name: /öde$/ }).click();
+
+    await urlMatches(page, /\/tickets\/[^/]+\?yeni=1/);
+    await visible(page.getByRole('img', { name: 'Bilet QR kodu' }), 'signed ticket QR');
+    await visible(page.getByText('Binişte okut'), 'boarding hint');
     await noPageOverflow(page);
 
-    await page.getByLabel('Ad *', { exact: true }).fill('Sunum');
-    await page.getByLabel('Soyad *', { exact: true }).fill('Yolcusu');
-    await page.getByLabel('Telefon').fill('05550000000');
-    await page.getByLabel('E-posta').fill('sunum.yolcusu@example.test');
-    await page.getByRole('button', { name: /Demo Öde/ }).click();
-
-    await urlMatches(page, /\/checkout\/success\?orderId=/);
-    await visible(page.getByRole('heading', { name: 'Biletiniz hazır!' }), 'success heading');
-    await page.getByRole('link', { name: /Bileti ve QR'ı aç/ }).click();
-    await visible(page.getByRole('img', { name: /bilet QR kodu/ }), 'signed ticket QR');
+    // Notification settings open from the ticket and persist.
+    await page.getByRole('button', { name: /İniş bildirimleri/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'İniş bildirimleri' });
+    await visible(sheet, 'notification settings');
+    const oneKm = sheet.getByRole('switch', { name: /1 km kala/ });
+    assert.equal(await oneKm.getAttribute('aria-checked'), 'true');
+    await oneKm.click();
+    await page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/notifications/preferences') &&
+        response.request().method() === 'PUT',
+    );
+    await page.reload();
+    await page.getByRole('button', { name: /İniş bildirimleri/ }).click();
+    assert.equal(
+      await page
+        .getByRole('dialog', { name: 'İniş bildirimleri' })
+        .getByRole('switch', { name: /1 km kala/ })
+        .getAttribute('aria-checked'),
+      'false',
+    );
+    await page
+      .getByRole('dialog', { name: 'İniş bildirimleri' })
+      .getByRole('switch', { name: /1 km kala/ })
+      .click();
+    await page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/api/notifications/preferences') &&
+        response.request().method() === 'PUT',
+    );
+    await page
+      .getByRole('dialog', { name: 'İniş bildirimleri' })
+      .getByRole('button', { name: 'Tamam' })
+      .click();
 
     await page.goto('http://127.0.0.1:3000/tickets');
-    await page.getByRole('link', { name: /TKT-DEMO-AKTIF/ }).click();
-    await page.getByRole('link', { name: 'Otobüsü canlı izle' }).click();
-    await visible(page.getByText('56 SKE 01'), 'live vehicle plate');
+    await visible(page.getByRole('heading', { name: 'Biletlerim' }), 'wallet heading');
+    await page.locator('a', { hasText: 'YOLDA' }).click();
+    await urlMatches(page, /\/tickets\/[^/]+$/);
+    await page.getByRole('link', { name: 'Canlı izle' }).click();
+    await visible(page.getByText('56 SKE 01').first(), 'live vehicle plate');
     await visible(page.locator('canvas'), 'MapLibre canvas');
     assert.equal(await page.locator('canvas').count(), 1, 'MapLibre should render one canvas');
+    await visible(page.getByText('İniş durağın', { exact: true }), 'alighting stop panel');
+    await visible(page.getByRole('button', { name: /İniş hatırlatıcı/ }), 'reminder row');
+    await visible(page.getByRole('button', { name: 'İniş bildirimleri' }), 'tracking bell');
+    // The worker is served as a static file; without it the map only paints its background.
+    const worker = await context.request.get(
+      'http://127.0.0.1:3000/maplibre/maplibre-gl-worker.mjs',
+    );
+    assert.equal(worker.status(), 200, 'maplibre worker must be reachable');
     await noPageOverflow(page);
-    process.stdout.write('PASS passenger: search → seat → payment → QR → tracking bootstrap\n');
+    process.stdout.write(
+      'PASS passenger: search → 41-seat map → payment sheet → ticket QR → notification settings → tracking\n',
+    );
   } catch (error) {
     await mkdir('test-results', { recursive: true });
     await page

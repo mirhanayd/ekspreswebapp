@@ -1,15 +1,7 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { BrandMark } from './BrandLogo';
+import { BackButton } from '@/components/nav/BackButton';
 
-/**
- * Sign in / sign up. No direct reference screen, so the layout borrows the home
- * composition from `ui/mobile-home-reference.png`: sage canvas, a circular back
- * control, a small tracked eyebrow over an oversized display heading, and the
- * coach photograph as a rounded hero card. Wide viewports place that hero
- * alongside the form instead of above it.
- */
+/** Sign in / sign up: a dark header carrying the title, with the form card overlapping it. */
 export function AuthShell({
   eyebrow,
   title,
@@ -24,51 +16,37 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="canvas-sage min-h-[100dvh]">
-      <div className="screen screen-pad lg:max-w-5xl">
-        <div className="top-row">
-          <Link href="/" aria-label="Ana sayfaya dön" className="icon-btn icon-btn-white">
-            <ArrowLeft className="h-5 w-5" aria-hidden />
-          </Link>
-          <BrandMark className="w-28" />
-          <span className="h-14 w-14 shrink-0" aria-hidden />
+    <div className="min-h-[100dvh] pb-8">
+      <header className="relative overflow-hidden rounded-b-[34px] bg-sk-dark px-5 pb-[120px] pt-4">
+        <div className="relative flex h-11 items-center justify-between">
+          <BackButton fallback="/" className="!border-0 !bg-white/[0.08] !text-white" />
+          <BrandMark tone="light" className="w-[110px]" priority />
+          <span className="h-11 w-11" aria-hidden />
         </div>
+        <p className="eyebrow relative m-0 mt-7 !text-sk-mute">{eyebrow}</p>
+        <h1 className="relative m-0 mt-1.5 text-[30px] font-extrabold leading-[1.08] tracking-[-0.02em] text-white [font-stretch:110%]">
+          {title}
+        </h1>
+        <p className="relative m-0 mt-2 max-w-[320px] text-[15px] leading-snug text-sk-mute">
+          {description}
+        </p>
+      </header>
 
-        <div className="mt-8 lg:grid lg:grid-cols-2 lg:items-center lg:gap-10">
-          <figure className="relative order-last hidden overflow-hidden rounded-[2rem] bg-ink-900 lg:block">
-            <Image
-              src="/brand/coach.jpg"
-              alt=""
-              fill
-              sizes="50vw"
-              aria-hidden
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-hero-scrim" aria-hidden />
-            <figcaption className="relative flex min-h-[26rem] flex-col justify-end p-7 text-white">
-              <p className="font-display text-[1.75rem] font-bold leading-tight">
-                Biletin, koltuğun ve canlı yolculuğun tek hesapta.
-              </p>
-              <ul className="mt-5 space-y-2 text-[0.8125rem] text-white/75">
-                {highlights.map((item) => (
-                  <li key={item} className="flex items-center gap-2.5">
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-lime-400" aria-hidden />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </figcaption>
-          </figure>
-
-          <div className="min-w-0">
-            <p className="eyebrow">{eyebrow}</p>
-            <h1 className="display-1 mt-2 text-[2.25rem] sm:text-[2.75rem]">{title}</h1>
-            <p className="subtle mt-3 max-w-sm">{description}</p>
-
-            <div className="card card-pad mt-7">{children}</div>
-          </div>
-        </div>
+      <div
+        className="relative -mt-[88px] mx-4 rounded-[28px] bg-white p-5"
+        style={{ boxShadow: '0 24px 48px -16px rgba(22,23,27,.32), 0 2px 6px rgba(22,23,27,.06)' }}
+      >
+        {children}
       </div>
+
+      <ul className="m-0 mx-5 mt-5 flex list-none flex-col gap-2 p-0">
+        {highlights.map((item) => (
+          <li key={item} className="flex items-center gap-2.5 text-[13px] text-sk-ink2">
+            <span aria-hidden className="h-1.5 w-1.5 flex-none rounded-full bg-sk-brand" />
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

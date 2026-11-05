@@ -24,6 +24,7 @@ Incremental serverless backend migration.
 - #84 / PR #85 migrated passenger-owned ticket list/detail and short-lived QR payloads to shared Neon-backed services and same-origin handlers.
 - #86 / PR #87 migrated admin login, overview, transport, tickets, fleet and reports to shared Neon/PostGIS services and same-origin handlers.
 - #88 migrates passenger tracking bootstrap and fan-out from Render/Redis/Socket.IO to ticket-scoped managed realtime with Neon/PostGIS snapshots.
+- #106 rebuilds `apps/passenger-web` to the "Yolcu Uygulaması" design (light theme, Archivo, 41-seat SVG coach map, bottom-sheet payment, ticket with real QR, camera-following live tracking, View Transition screen changes) and adds alighting notifications: the driver GPS ingest evaluates every active ticket on the trip, sends one Web Push each at 5 km and 1 km of remaining road distance to the ticket's alighting stop (`0013_alighting-notifications` migration), and the passenger app shows an in-app banner when the device has no push delivery. Settings (5 km / 1 km / sound) are per passenger.
 
 ## Previous Campaign
 
@@ -63,6 +64,8 @@ Incremental serverless backend migration.
 - PostGIS stores sampled durable tracking history.
 
 ## Next Gate
+
+- #106: generate a VAPID pair (`npx web-push generate-vapid-keys`), set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` on the passenger and driver Vercel projects, run migration `0013` on Neon, then verify a real Web Push on a phone (installed PWA, app closed) at 5 km and 1 km on staging.
 
 - Complete #88 CI and HTTPS Preview managed-realtime smoke with the legacy API unavailable.
 - Configure the same server-only `ABLY_API_KEY` in passenger and driver Vercel Preview/Production scopes if it is not already present.

@@ -17,7 +17,7 @@
     "staging:seed": "node --import tsx src/scripts/staging-seed.ts",
     "staging:verify": "node --import tsx src/scripts/staging-verify.ts",
     "test:integration": "vitest run test/database.integration.test.ts test/auth-service.integration.test.ts test/transport-service.integration.test.ts test/seat-service.integration.test.ts test/checkout-service.integration.test.ts test/driver-admin.integration.test.ts",
-    "test": "vitest run test/config.test.ts test/server-auth.test.ts test/auth-service.test.ts test/transport-service.test.ts test/seat-service.test.ts test/checkout-service.test.ts test/ticket-service.test.ts test/admin-service.test.ts test/tracking-service.test.ts test/staging-seed-safety.test.ts",
+    "test": "vitest run test/config.test.ts test/server-auth.test.ts test/auth-service.test.ts test/transport-service.test.ts test/seat-service.test.ts test/checkout-service.test.ts test/ticket-service.test.ts test/admin-service.test.ts test/tracking-service.test.ts test/alighting-notifications.test.ts test/staging-seed-safety.test.ts",
     "lint": "eslint src/ --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -25,13 +25,15 @@
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",
-    "pg": "^8.23.0"
+    "pg": "^8.23.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "@ekspres/eslint-config": "workspace:*",
     "@ekspres/typescript-config": "workspace:^",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.21.0",
+    "@types/web-push": "^3.6.4",
     "drizzle-kit": "^0.31.10",
     "eslint": "^8.57.0",
     "tsx": "^4.23.11",

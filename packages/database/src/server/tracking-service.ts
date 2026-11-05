@@ -104,6 +104,8 @@ export function createTrackingService(database: () => Database = serverDatabase)
     const ticket = await database().query.tickets.findFirst({
       where: and(eq(schema.tickets.id, ticketId), eq(schema.tickets.userId, userId)),
       with: {
+        tripSeat: true,
+        order: { with: { alightingLocation: true } },
         trip: {
           with: {
             bus: true,
@@ -172,8 +174,18 @@ export function createTrackingService(database: () => Database = serverDatabase)
           }
         : null;
 
+      const alightingLocation = ticket.order.alightingLocation ?? ticket.trip.route.destination;
+      const alightingStop = alightingLocation
+        ? {
+            name: alightingLocation.name,
+            coordinates: alightingLocation.coordinates,
+          }
+        : null;
+
       return {
         ticketId: ticket.id,
+        seatNo: ticket.tripSeat.seatNo,
+        alighting: alightingStop,
         trip: {
           id: ticket.trip.id,
           departureTime: ticket.trip.departureTime.toISOString(),

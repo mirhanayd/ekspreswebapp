@@ -4,3 +4,4 @@ export * from './checkout';
 export * from './driver';
 export * from './driver-admin';
 export * from './tracking';
+export * from './notifications';

@@ -3,677 +3,525 @@
 @tailwind utilities;
 
 /* ------------------------------------------------------------------ *
- * Keyframes for the opening animation and the drifting road.
- *
- * Declared here rather than in the Tailwind theme because Tailwind only
- * emits a `@keyframes` block when one of its generated `animate-*`
- * utilities references it, and these are driven from the component
- * classes below.
+ * Passenger app ("Yolcu Uygulaması"): light theme, Archivo, brand red.
  * ------------------------------------------------------------------ */
-@keyframes splash-in {
-  from {
-    opacity: 0;
+:root {
+  --bg: #f1f1ef;
+  --card: #ffffff;
+  --ink: #15161a;
+  --ink-2: #585d66;
+  --ink-3: #6a6f78;
+  --brand: #c8231b;
+  --brand-ink: #a11c15;
+  --tint: #fbeae8;
+  --dark: #16171b;
+  --line: #e3e3df;
+  --ease-nav: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --nav-ms: 520ms;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
+
+html {
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-archivo), 'Helvetica Neue', Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+@layer components {
+  /* Phone-width column; wider screens get the same app centred on a tinted ground. */
+  .app {
+    position: relative;
+    max-width: 480px;
+    min-height: 100dvh;
+    margin: 0 auto;
+    background: var(--bg);
   }
-  to {
-    opacity: 1;
+  .screen-tab {
+    padding-bottom: calc(104px + var(--safe-bottom));
+  }
+  .fixed-col {
+    position: fixed;
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    max-width: 480px;
+  }
+
+  /* Numerals: wide, heavy. */
+  .num {
+    font-weight: 800;
+    font-stretch: 125%;
+    letter-spacing: -0.03em;
+  }
+  .num-md {
+    font-weight: 800;
+    font-stretch: 118%;
+  }
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 700;
+    font-stretch: 80%;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 800;
+    font-stretch: 108%;
+    letter-spacing: -0.015em;
+  }
+
+  .surface {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+  }
+
+  .round-btn {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    flex: none;
+    border-radius: 22px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink);
+    cursor: pointer;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    height: 56px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: 18px;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    transition:
+      background 260ms ease,
+      transform 160ms ease,
+      opacity 200ms ease;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+  }
+  .btn-brand {
+    background: var(--brand);
+    color: #fff;
+    box-shadow: 0 12px 24px -10px rgba(200, 35, 27, 0.6);
+  }
+  .btn-dark {
+    background: var(--dark);
+    color: #fff;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 13px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .field {
+    width: 100%;
+    height: 52px;
+    padding: 0 16px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .field:focus {
+    outline: 3px solid rgba(200, 35, 27, 0.25);
+    border-color: var(--brand);
+  }
+  .field-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+
+  /* Switch (role="switch" button) */
+  .switch {
+    position: relative;
+    width: 52px;
+    height: 32px;
+    flex: none;
+    border-radius: 16px;
+    background: #d4d4cf;
+    transition: background 240ms ease;
+  }
+  .switch::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 26px;
+    height: 26px;
+    border-radius: 13px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 340ms var(--ease-spring);
+  }
+  [aria-checked='true'] > .switch {
+    background: var(--brand);
+  }
+  [aria-checked='true'] > .switch::after {
+    transform: translateX(20px);
+  }
+
+  /* Bottom sheet */
+  .scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    border: 0;
+    padding: 0;
+    background: #0f1013;
+    opacity: 0;
+    visibility: hidden;
+    cursor: pointer;
+    transition:
+      opacity 420ms ease,
+      visibility 0s linear 420ms;
+  }
+  .scrim[data-open='true'] {
+    opacity: 0.5;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .sheet {
+    z-index: 61;
+    bottom: 0;
+    background: #fff;
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    box-shadow: 0 -20px 50px rgba(15, 16, 19, 0.2);
+    transform: translateY(105%);
+    visibility: hidden;
+    transition:
+      transform 540ms var(--ease-nav),
+      visibility 0s linear 560ms;
+  }
+  .sheet[data-open='true'] {
+    transform: translateY(0);
+    visibility: visible;
+    transition-delay: 0s;
+  }
+  .sheet-grip {
+    position: absolute;
+    left: 50%;
+    top: 10px;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: 2px;
+    background: #dcdcd6;
+  }
+
+  .scroll-x {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .scroll-x::-webkit-scrollbar {
+    display: none;
   }
 }
 
-@keyframes splash-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
-  }
-  to {
-    opacity: 0;
-    transform: scale(1.04);
-  }
-}
-
-@keyframes splash-rise {
+/* ------------------------------------------------------------------ *
+ * Motion
+ * ------------------------------------------------------------------ */
+@keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(18px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
+.rise {
+  animation: rise 560ms var(--ease-settle) both;
+  animation-delay: calc(60ms + var(--i, 0) * 55ms);
+}
 
-/* `left`, not `translateX`: a percentage translate is relative to the coach's
-   own width rather than the road it drives along. */
-@keyframes splash-drive {
+@keyframes pop-in {
   from {
-    left: -16%;
+    opacity: 0;
+    transform: scale(0.85);
   }
   to {
-    left: 104%;
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-@keyframes road-drift {
+@keyframes ticket-in {
   from {
-    background-position:
-      0 34%,
-      0 71%;
+    opacity: 0;
+    transform: translateY(26px) scale(0.96);
   }
   to {
-    background-position:
-      -1200px 34%,
-      -600px 71%;
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
+}
+.ticket-in {
+  animation: ticket-in 680ms var(--ease-settle) 120ms both;
+}
+
+@keyframes live-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+.live-dot {
+  position: relative;
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background: currentColor;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  animation: live-ping 1.6s ease-out infinite;
+}
+
+@keyframes draw-check {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.check-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: draw-check 520ms cubic-bezier(0.65, 0, 0.35, 1) 260ms forwards;
+}
+
+@keyframes bus-pulse {
+  from {
+    transform: scale(0.35);
+    opacity: 0.25;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes seat-tip-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--tip-from, 8px)) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.8s linear infinite;
 }
 
 /* ------------------------------------------------------------------ *
- * Passenger design system — reproduced from the canonical reference
- * screens in /ui. Measurements below are the CSS values sampled from
- * those PNGs at a 375px (home, search) / 390px (tracking) viewport:
- *
- *   home    canvas #E8F3E9 · chip h50 r-full · search capsule 56x112
- *           · nav pill inset-x 20 bottom 18 h72 · active tab lime #CEDE44
- *   search  canvas #F3F2E7 · back button 56 · segment pill h42
- *           · route card r28 on #E9E7D5 · filter chip h49
- *           · date cell 57x70 (lime when selected) · result card 310x231
- *           with a 63px lime rail and a 76px #FFFA93 facts strip
- *   live    journey panel #1F1F1F r24 · amber #F7AA12 active stop 74
- *           · glass map controls 48 · dark bottom pills h60
+ * Page transitions (View Transitions API, driven by NavProvider).
+ * push / back: 520 ms cubic-bezier(.32,.72,0,1); tabs: cross-fade.
  * ------------------------------------------------------------------ */
-
-@layer base {
-  :root {
-    --background: 130 30% 93%;
-    --foreground: 132 68% 6%;
-    --card: 0 0% 100%;
-    --card-foreground: 132 68% 6%;
-    --primary: 132 68% 6%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 66 30% 92%;
-    --secondary-foreground: 132 68% 6%;
-    --muted: 130 20% 90%;
-    --muted-foreground: 130 12% 40%;
-    --border: 130 16% 86%;
-    --input: 130 16% 86%;
-    --ring: 132 68% 6%;
-    --radius: 1.5rem;
-
-    /* The references are headerless phone screens: each view owns its top
-       row and a floating tab pill sits over the content. */
-    --app-header-h: 0rem;
-    --app-nav-h: 6rem;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
+@keyframes vt-push-out {
+  to {
+    transform: translateX(-28%);
+    opacity: 0.55;
   }
-
-  @media (min-width: 1024px) {
-    :root {
-      --app-header-h: 4.5rem;
-      --app-nav-h: 0rem;
-    }
+}
+@keyframes vt-push-in {
+  from {
+    transform: translateX(100%);
   }
-
-  * {
-    @apply border-border;
+}
+@keyframes vt-back-out {
+  to {
+    transform: translateX(100%);
   }
-
-  html {
-    scroll-behavior: smooth;
-    -webkit-tap-highlight-color: transparent;
+}
+@keyframes vt-back-in {
+  from {
+    transform: translateX(-28%);
+    opacity: 0.55;
   }
+}
+@keyframes vt-tab-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes vt-tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+@keyframes vt-bar-out {
+  to {
+    transform: translateY(110%);
+  }
+}
+@keyframes vt-bar-in {
+  from {
+    transform: translateY(110%);
+  }
+}
 
+::view-transition-group(root),
+::view-transition-group(tabbar) {
+  animation-duration: var(--nav-ms);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-image-pair(root) {
+  isolation: auto;
+}
+html[data-nav='push']::view-transition-old(root) {
+  animation: vt-push-out var(--nav-ms) var(--ease-nav) both;
+  z-index: 1;
+}
+html[data-nav='push']::view-transition-new(root) {
+  animation: vt-push-in var(--nav-ms) var(--ease-nav) both;
+  z-index: 2;
+  box-shadow: -18px 0 40px rgba(22, 23, 27, 0.12);
+}
+html[data-nav='back']::view-transition-old(root) {
+  animation: vt-back-out var(--nav-ms) var(--ease-nav) both;
+  z-index: 2;
+  box-shadow: -18px 0 40px rgba(22, 23, 27, 0.12);
+}
+html[data-nav='back']::view-transition-new(root) {
+  animation: vt-back-in var(--nav-ms) var(--ease-nav) both;
+  z-index: 1;
+}
+html[data-nav='tab']::view-transition-old(root) {
+  animation: vt-tab-out 220ms ease both;
+}
+html[data-nav='tab']::view-transition-new(root) {
+  animation: vt-tab-in 420ms ease both;
+}
+
+.tabbar {
+  view-transition-name: tabbar;
+}
+/* Same bar on both pages: no motion. It only slides when a screen hides or shows it. */
+::view-transition-old(tabbar),
+::view-transition-new(tabbar) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-old(tabbar):only-child {
+  animation: vt-bar-out 440ms var(--ease-nav) both;
+}
+::view-transition-new(tabbar):only-child {
+  animation: vt-bar-in 440ms var(--ease-nav) both;
+}
+
+/* Respect reduced motion: no transitions, no animations, no smooth scrolling. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+  .live-dot::after {
+    display: none;
+  }
+}
+
+@media (min-width: 520px) {
+  html,
   body {
-    @apply bg-sage-100 text-ink-900;
-    text-rendering: optimizeLegibility;
+    background: #e4e4e0;
   }
-
-  h1,
-  h2,
-  h3 {
-    @apply font-display;
-  }
-
-  :focus-visible {
-    @apply outline-none ring-2 ring-ink-900 ring-offset-2 ring-offset-sage-100;
-  }
-
-  ::selection {
-    @apply bg-lime-400 text-ink-900;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+  .app {
+    box-shadow: 0 0 0 1px rgba(22, 23, 27, 0.06);
   }
 }
 
-@layer components {
-  /* ---------------------------------------------------------------- *
-   * Canvas — the reference screens tint the whole page. Home is sage,
-   * every booking surface is cream.
-   * ---------------------------------------------------------------- */
-  .canvas-sage {
-    @apply road-canvas bg-sage-100;
-  }
-
-  .canvas-cream {
-    @apply road-canvas bg-cream-200;
-  }
-
-  /* Slow-drifting lane markings behind the page. Two layers at different
-     speeds give the parallax of watching the road go by, at an opacity low
-     enough that it reads as texture rather than decoration. */
-  .road-canvas {
-    @apply relative isolate overflow-hidden;
-  }
-
-  .road-canvas::before {
-    content: '';
-    @apply pointer-events-none absolute inset-0 -z-10 opacity-[0.45];
-    background-image:
-      repeating-linear-gradient(100deg, currentColor 0 90px, transparent 90px 210px),
-      repeating-linear-gradient(100deg, currentColor 0 50px, transparent 50px 190px);
-    background-size:
-      1200px 3px,
-      600px 2px;
-    background-position:
-      0 34%,
-      0 71%;
-    background-repeat: repeat-x;
-    color: theme('colors.ink.900 / 8%');
-    animation: road-drift 42s linear infinite;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .road-canvas::before {
-      animation: none;
-    }
-  }
-
-  /* Phone-width column. The references are 375px screens with a 20-26px
-     gutter; wider viewports keep the same column and simply centre it. */
-  .screen {
-    @apply mx-auto w-full max-w-[27rem] px-6 lg:max-w-3xl;
-  }
-
-  .screen-wide {
-    @apply mx-auto w-full max-w-[27rem] px-6 lg:max-w-6xl;
-  }
-
-  /* Status-bar clearance at the top, floating tab pill clearance at the bottom. */
-  .screen-pad {
-    @apply pb-[calc(var(--app-nav-h)+var(--safe-bottom))] pt-[calc(4rem+env(safe-area-inset-top,0px))] lg:pb-14 lg:pt-[calc(var(--app-header-h)+2rem)];
-  }
-
-  /* Top row of every view: 56px control, optional centre title, 56px slot. */
-  .top-row {
-    @apply flex min-h-14 items-center justify-between gap-3;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Typography — one heavy display face, tight leading, a wide-tracked
-   * micro caps label, and a quiet body.
-   * ---------------------------------------------------------------- */
-  .eyebrow {
-    @apply flex items-center gap-1.5 text-[0.6875rem] font-bold uppercase tracking-[0.2em] text-ink-500;
-  }
-
-  .display-1 {
-    @apply font-display text-[3.25rem] font-semibold leading-[0.96] tracking-tightest text-ink-900;
-  }
-
-  .title-lg {
-    @apply font-display text-2xl font-bold leading-tight tracking-tight text-ink-900 sm:text-[1.75rem];
-  }
-
-  .title-md {
-    @apply font-display text-lg font-bold leading-snug tracking-tight text-ink-900;
-  }
-
-  /* The oversized origin/destination code the reference leads every journey
-     block with. `code-2xl` is used where the panel spans the full screen. */
-  .code-xl {
-    @apply font-display text-[1.3125rem] font-bold leading-none tracking-tight text-ink-900;
-  }
-
-  /* Journey block: the origin is sized to its own name so the longer Turkish
-     destination names keep the remaining width instead of being clipped by an
-     even split. */
-  .journey-row {
-    @apply flex items-start gap-2.5;
-  }
-
-  .journey-from {
-    @apply min-w-0 shrink;
-  }
-
-  .journey-to {
-    @apply min-w-0 flex-1 text-right;
-  }
-
-  .journey-badge {
-    @apply mt-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink-900/[0.07] text-ink-700;
-  }
-
-  .code-lg {
-    @apply font-display text-[1.125rem] font-bold leading-none tracking-tight text-ink-900;
-  }
-
-  .code-2xl {
-    @apply font-display text-[1.625rem] font-bold leading-none tracking-tight text-ink-900 sm:text-[2rem];
-  }
-
-  .caption {
-    @apply text-[0.8125rem] font-medium text-ink-400;
-  }
-
-  .subtle {
-    @apply text-sm leading-6 text-ink-500;
-  }
-
-  .num {
-    @apply tabular-nums;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Surfaces
-   * ---------------------------------------------------------------- */
-  .card {
-    @apply rounded-card bg-white shadow-card;
-  }
-
-  .card-pad {
-    @apply p-5;
-  }
-
-  .card-link {
-    @apply rounded-card bg-white shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-lift;
-  }
-
-  /* The tinted "route" panel from the search reference. */
-  .panel-tint {
-    @apply relative overflow-hidden rounded-[1.75rem] bg-cream-300 p-5;
-  }
-
-  /* Faint dotted world-map texture behind journey panels, as in /ui. */
-  .map-texture::before {
-    content: '';
-    @apply pointer-events-none absolute inset-0 opacity-[0.16];
-    background-image: radial-gradient(currentColor 1px, transparent 1.2px);
-    background-size: 7px 7px;
-    mask-image: radial-gradient(120% 90% at 50% 45%, black 30%, transparent 78%);
-    -webkit-mask-image: radial-gradient(120% 90% at 50% 45%, black 30%, transparent 78%);
-  }
-
-  .panel-dark {
-    @apply relative overflow-hidden rounded-[1.75rem] bg-ink-900 text-white shadow-panel;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Buttons — near-black is the primary fill in every reference; lime
-   * marks selection, never an action.
-   * ---------------------------------------------------------------- */
-  .btn {
-    @apply inline-flex min-h-[3.25rem] select-none items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 text-[0.9375rem] font-semibold transition duration-150 disabled:cursor-not-allowed disabled:opacity-50;
-  }
-
-  .btn-sm {
-    @apply min-h-[2.625rem] px-4 text-[0.8125rem];
-  }
-
-  .btn-primary {
-    @apply bg-ink-900 text-white hover:bg-ink-800 active:translate-y-px;
-  }
-
-  .btn-lime {
-    @apply bg-lime-400 text-ink-900 hover:bg-lime-500 active:translate-y-px;
-  }
-
-  .btn-quiet {
-    @apply bg-white text-ink-900 shadow-card hover:bg-cream-50;
-  }
-
-  .btn-ghost {
-    @apply bg-ink-900/5 text-ink-800 hover:bg-ink-900/10;
-  }
-
-  /* White outline pill over imagery — the reference's "Start Trip". */
-  .btn-outline-invert {
-    @apply border border-white/70 text-white backdrop-blur-[2px] hover:bg-white hover:text-ink-900;
-  }
-
-  /* 56px circular control: back, share, account, filter. */
-  .icon-btn {
-    @apply inline-grid h-14 w-14 shrink-0 place-items-center rounded-full transition;
-  }
-
-  .icon-btn-white {
-    @apply bg-white text-ink-900 shadow-card hover:bg-cream-50;
-  }
-
-  .icon-btn-dark {
-    @apply bg-ink-900 text-white hover:bg-ink-800;
-  }
-
-  .icon-btn-sm {
-    @apply h-12 w-12;
-  }
-
-  .link-quiet {
-    @apply font-semibold text-ink-500 underline-offset-4 transition hover:text-ink-900 hover:underline;
-  }
-
-  .link-strong {
-    @apply font-semibold text-ink-900 underline underline-offset-4 transition hover:text-ink-700;
-  }
-
-  /* Tall search capsule beside the display heading (56 x 112 in /ui). */
-  .search-capsule {
-    @apply grid h-28 w-14 shrink-0 place-items-center rounded-full bg-white text-ink-900 shadow-card transition hover:bg-cream-50;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Chips, segments, dates
-   * ---------------------------------------------------------------- */
-  .chip {
-    @apply inline-flex min-h-[3.0625rem] shrink-0 items-center gap-2 rounded-full bg-white px-4 text-[0.8125rem] font-semibold text-ink-900 shadow-card transition hover:bg-cream-50;
-  }
-
-  .chip-active {
-    @apply bg-ink-900 text-white shadow-float hover:bg-ink-800;
-  }
-
-  .chip-sm {
-    @apply min-h-10 px-3.5 text-xs;
-  }
-
-  .chip-flat {
-    @apply bg-cream-300 text-ink-700 shadow-none hover:bg-cream-400;
-  }
-
-  .segmented {
-    @apply inline-flex items-center rounded-full bg-cream-100 p-1.5 shadow-card;
-  }
-
-  .segmented-item {
-    @apply inline-flex min-h-[2.625rem] items-center justify-center rounded-full px-5 text-[0.8125rem] font-semibold text-ink-500 transition hover:text-ink-900;
-  }
-
-  .segmented-item-active {
-    @apply bg-ink-900 text-white hover:text-white;
-  }
-
-  /* 57 x 70 date cell from the search reference. */
-  .date-cell {
-    @apply flex h-[4.375rem] w-[3.5625rem] flex-col items-center justify-center gap-1 rounded-[2.1875rem] bg-cream-300 text-ink-700 transition hover:bg-cream-400;
-  }
-
-  .date-cell-active {
-    @apply bg-lime-500 text-ink-900 hover:bg-lime-500;
-  }
-
-  .badge {
-    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.6875rem] font-bold uppercase tracking-wide;
-  }
-
-  .badge-lime {
-    @apply bg-lime-200 text-ink-800;
-  }
-
-  .badge-ink {
-    @apply bg-ink-900 text-white;
-  }
-
-  .badge-muted {
-    @apply bg-ink-900/[0.06] text-ink-600;
-  }
-
-  .badge-amber {
-    @apply bg-amber-200 text-ink-900;
-  }
-
-  /* Amber duration pill — journey lengths and live ETA only. */
-  .duration-pill {
-    @apply inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full bg-amber-400 px-3.5 py-1.5 text-[0.8125rem] font-bold text-ink-900;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Journey rails, dotted paths, facts strip
-   * ---------------------------------------------------------------- */
-  .dotted-path {
-    @apply h-0 flex-1 border-t-2 border-dashed border-ink-300;
-  }
-
-  .dotted-path-invert {
-    @apply h-0 flex-1 border-t-2 border-dashed border-white/40;
-  }
-
-  /* Vertical brand rail down the left edge of a journey card. */
-  .rail {
-    @apply relative flex w-[3.9375rem] shrink-0 flex-col items-center justify-between bg-lime-500 py-4;
-  }
-
-  /* Search results carry the darker ticket theme: near-black rail, lime
-     wordmark, soft sage facts strip. */
-  .rail-dark {
-    @apply bg-ink-900;
-  }
-
-  .rail-label {
-    writing-mode: vertical-rl;
-    @apply rotate-180 text-[0.8125rem] font-bold uppercase tracking-[0.16em] text-ink-900;
-  }
-
-  .rail-label-invert {
-    @apply text-lime-400;
-  }
-
-  /* Three-up tinted strip under the journey block (#FFFA93 in /ui). */
-  .facts-strip {
-    @apply grid grid-cols-3 divide-x divide-ink-900/10 bg-butter-200;
-  }
-
-  .facts-strip-soft {
-    @apply bg-sage-200;
-  }
-
-  .fact {
-    @apply min-w-0 px-3 py-3.5 text-center;
-  }
-
-  .fact-label {
-    @apply block truncate text-[0.6875rem] font-semibold text-ink-600;
-  }
-
-  .fact-value {
-    @apply mt-0.5 block truncate font-display text-[0.875rem] font-bold text-ink-900;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Forms
-   * ---------------------------------------------------------------- */
-  .field-label {
-    @apply mb-2 block text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-ink-500;
-  }
-
-  /* Recessed control fill, sampled from the reference segmented-control track.
-     White would vanish against the white cards these fields sit in. */
-  .field {
-    @apply min-h-[3.25rem] w-full rounded-full bg-cream-100 px-5 text-[0.9375rem] font-medium text-ink-900 transition placeholder:font-normal placeholder:text-ink-400 hover:bg-cream-200 focus:bg-cream-100 focus:outline-none focus:ring-2 focus:ring-ink-900;
-  }
-
-  .field-with-icon {
-    @apply pl-12;
-  }
-
-  .field-icon {
-    @apply pointer-events-none absolute left-5 top-1/2 -translate-y-1/2 text-ink-400 [&>svg]:h-[1.125rem] [&>svg]:w-[1.125rem];
-  }
-
-  .select {
-    @apply appearance-none bg-[length:1.1rem] bg-[right_1.25rem_center] bg-no-repeat pr-11;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236E8372' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Opening animation
-   * ---------------------------------------------------------------- */
-  .splash {
-    @apply fixed inset-0 z-[100] grid place-items-center bg-sage-100;
-    animation: splash-in 0.35s ease-out both;
-  }
-
-  .splash-leaving {
-    animation: splash-out 0.45s ease-in forwards;
-  }
-
-  /* Already seen this session — hide before paint, no flash. */
-  .splash-done .splash {
-    display: none;
-  }
-
-  .splash-stage {
-    @apply flex w-full max-w-sm flex-col items-center px-7;
-  }
-
-  .splash-mark {
-    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
-  }
-
-  .splash-tagline {
-    @apply mt-3 text-center text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-ink-500;
-    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
-  }
-
-  .splash-road {
-    @apply relative mt-10 h-8 w-full;
-  }
-
-  .splash-road-line {
-    @apply absolute inset-x-0 bottom-0 border-t-2 border-dashed border-ink-900/20;
-    animation: splash-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s both;
-  }
-
-  .splash-coach {
-    @apply absolute bottom-1;
-    animation: splash-drive 2.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * Floating chrome
-   * ---------------------------------------------------------------- */
-  .tab-bar {
-    @apply fixed inset-x-5 bottom-[calc(1.125rem+var(--safe-bottom))] z-50 h-[4.5rem] rounded-full bg-ink-900 shadow-panel lg:hidden;
-  }
-
-  .tab-item {
-    @apply grid h-12 w-12 place-items-center rounded-[1.125rem] text-sage-300 transition;
-  }
-
-  .tab-item-active {
-    @apply bg-lime-400 text-ink-900;
-  }
-
-  /* Glass map control stacked at the map edge. */
-  .map-fab {
-    @apply grid h-12 w-12 place-items-center rounded-full bg-white/85 text-ink-800 shadow-glass backdrop-blur-md transition hover:bg-white disabled:opacity-45;
-  }
-
-  /* Numbered stop tile down the left edge of the tracking map. */
-  .stop-tile {
-    @apply grid h-[4.625rem] w-[4.625rem] place-items-center rounded-[1.5rem] bg-white/70 font-display text-2xl font-bold text-ink-700 shadow-glass backdrop-blur-md transition;
-  }
-
-  .stop-tile-active {
-    @apply bg-amber-400 text-ink-900;
-  }
-
-  /* Sticky action bar that clears the floating tab pill. */
-  .action-bar {
-    @apply fixed inset-x-4 bottom-[calc(var(--app-nav-h)+var(--safe-bottom)-0.5rem)] z-40 rounded-[1.75rem] bg-white/95 p-3 shadow-lift backdrop-blur lg:inset-x-8 lg:bottom-5;
-  }
-
-  /* ---------------------------------------------------------------- *
-   * States
-   * ---------------------------------------------------------------- */
-  .empty-state {
-    @apply flex flex-col items-center rounded-card bg-white px-6 py-12 text-center shadow-card;
-  }
-
-  .alert-error {
-    @apply rounded-[1.25rem] bg-signal-500/10 p-4 text-sm font-semibold text-signal-600;
-  }
-
-  .alert-info {
-    @apply rounded-[1.25rem] bg-ink-900/[0.04] p-4 text-sm text-ink-600;
-  }
-
-  .meter {
-    @apply block h-1.5 w-full overflow-hidden rounded-full bg-ink-900/10;
-  }
-
-  .meter-fill {
-    @apply block h-full rounded-full bg-lime-500;
-  }
-
-  .hide-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-
-  .hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .skeleton {
-    @apply relative overflow-hidden rounded-[1.25rem] bg-ink-900/[0.07];
-  }
-
-  .skeleton::after {
-    content: '';
-    @apply absolute inset-0 -translate-x-full animate-shimmer bg-gradient-to-r from-transparent via-white/70 to-transparent;
-  }
-
-  /* Horizontal rails bleed to the screen edge like the reference rows. */
-  .rail-scroll {
-    @apply hide-scrollbar -mx-6 flex gap-2 overflow-x-auto px-6;
-  }
-
-  /* Dark status pill under the live journey panel. */
-  .status-pill {
-    @apply flex min-h-14 items-center gap-2 rounded-full bg-ink-900 px-4 text-[0.875rem] font-semibold text-white shadow-panel sm:px-5 sm:text-[0.9375rem];
-  }
-}
-
-/* MapLibre chrome restyled as the glass control stack from the tracking
- * reference. Declared outside @layer so it wins over the library sheet. */
-.maplibregl-ctrl-group {
-  border: 0 !important;
-  border-radius: 9999px !important;
-  overflow: hidden !important;
-  background: rgba(255, 255, 255, 0.85) !important;
-  box-shadow: 0 6px 20px -8px rgba(5, 26, 9, 0.3) !important;
-  backdrop-filter: blur(10px);
-}
-
-.maplibregl-ctrl-group button {
-  width: 2.75rem !important;
-  height: 2.75rem !important;
-}
-
-.maplibregl-ctrl-group button + button {
-  border-top: 1px solid rgba(5, 26, 9, 0.08) !important;
-}
-
-.maplibregl-popup-content {
-  border-radius: 1.25rem !important;
-  padding: 0.75rem 1rem !important;
-  box-shadow: 0 22px 44px -28px rgba(5, 26, 9, 0.5) !important;
+/* MapLibre popups/attribution inherit the app font. */
+.maplibregl-ctrl-attrib {
+  font-size: 10px !important;
 }
