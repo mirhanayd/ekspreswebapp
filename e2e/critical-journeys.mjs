@@ -65,6 +65,8 @@ async function passengerJourney(browser) {
       page.getByRole('button', { name: /Kalkış durağı: Diyarbakır/ }),
       'swapped origin',
     );
+    // The label flips mid-animation and the button ignores taps until the swap has settled.
+    await page.waitForTimeout(300);
     await page.getByRole('button', { name: 'Kalkış ve varışı yer değiştir' }).click();
     await visible(page.getByRole('button', { name: /Kalkış durağı: Siirt/ }), 'swapped back');
     await page.getByRole('button', { name: 'Sefer ara' }).click();
