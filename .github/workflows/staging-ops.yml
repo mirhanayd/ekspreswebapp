@@ -1,0 +1,67 @@
+name: Staging Ops
+
+# Run by hand from the Actions tab (also works on the GitHub mobile site).
+# Needs the repository secret STAGING_DATABASE_URL: the Neon connection string of ekspres_staging.
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Ne yapılsın?'
+        required: true
+        type: choice
+        options:
+          - migrate
+          - field-test-seed
+          - field-test-clean
+
+concurrency:
+  group: staging-ops
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: ${{ inputs.operation }}
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.STAGING_DATABASE_URL }}
+      STAGING_SEED_CONFIRM: ekspres-staging
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9.15.4
+          run_install: false
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @ekspres/database...
+
+      - name: Check secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::STAGING_DATABASE_URL secret is missing."
+            exit 1
+          fi
+          case "$DATABASE_URL" in
+            *.neon.tech/ekspres_staging*) ;;
+            *) echo "::error::STAGING_DATABASE_URL must point to ekspres_staging on Neon."; exit 1 ;;
+          esac
+
+      - name: Migrate
+        if: inputs.operation == 'migrate'
+        run: pnpm db:migrate
+
+      - name: Field test seed
+        if: inputs.operation == 'field-test-seed'
+        run: pnpm --filter @ekspres/database field-test seed
+
+      - name: Field test clean
+        if: inputs.operation == 'field-test-clean'
+        run: pnpm --filter @ekspres/database field-test clean
