@@ -1,5 +1,5 @@
-import { DriverDashboard } from '@/components/DriverDashboard';
+import { DriverApp } from '@/components/DriverApp';
 
 export default function DriverHomePage() {
-  return <DriverDashboard />;
+  return <DriverApp />;
 }

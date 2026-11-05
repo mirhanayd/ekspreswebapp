@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google';
+import { Archivo } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { authService } from '@ekspres/database';
 import './globals.css';
@@ -7,16 +7,11 @@ import { DriverProvider, type DriverIdentity } from '@/components/DriverProvider
 import { PwaRegister } from '@/components/PwaRegister';
 import { ACCESS_TOKEN_COOKIE } from '@/lib/auth';
 
-const plexSans = IBM_Plex_Sans({
+// The width axis powers the wide clock figures.
+const archivo = Archivo({
   subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-plex-sans',
-  display: 'swap',
-});
-const plexMono = IBM_Plex_Mono({
-  subsets: ['latin', 'latin-ext'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-mono',
+  axes: ['wdth'],
+  variable: '--font-archivo',
   display: 'swap',
 });
 
@@ -39,7 +34,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0B0D10',
+  themeColor: '#0D0E11',
   colorScheme: 'dark',
 };
 
@@ -61,7 +56,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const driver = await currentDriver();
   return (
     <html lang="tr">
-      <body className={`${plexSans.variable} ${plexMono.variable}`}>
+      <body className={archivo.variable}>
         <DriverProvider driver={driver}>{children}</DriverProvider>
         <PwaRegister />
       </body>

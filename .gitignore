@@ -33,5 +33,6 @@ yarn-error.log*
 # turbo
 .turbo
 
-# Copied from maplibre-gl at build time (apps/passenger-web/scripts/copy-maplibre-worker.mjs)
+# Copied from maplibre-gl at build time (apps/*/scripts/copy-maplibre-worker.mjs)
 apps/passenger-web/public/maplibre/
+apps/driver-web/public/maplibre/

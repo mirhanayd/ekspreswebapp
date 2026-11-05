@@ -14,7 +14,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const tripStatuses = new Set(['scheduled', 'boarding', 'in_transit', 'completed']);
-const boardingStatuses = new Set(['pending', 'boarded', 'no_show']);
+const boardingStatuses = new Set(['pending', 'boarded', 'alighted', 'no_show']);
 
 function json(message: unknown, status = 200) {
   const response = NextResponse.json(message, {
@@ -118,7 +118,7 @@ async function handler(request: NextRequest, context: { params: Promise<{ path: 
           user.id,
           path[1]!,
           path[3]!,
-          body.status as 'pending' | 'boarded' | 'no_show',
+          body.status as 'pending' | 'boarded' | 'alighted' | 'no_show',
         ),
       );
     }

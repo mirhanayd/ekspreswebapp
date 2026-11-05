@@ -116,7 +116,10 @@ export async function listDriverTrips(driverId: string) {
         ...trip,
         passengerSummary: {
           total: manifest.length,
-          boarded: manifest.filter((passenger) => passenger.boardingStatus === 'boarded').length,
+          // A passenger who has already alighted did board this trip.
+          boarded: manifest.filter((passenger) =>
+            ['boarded', 'alighted'].includes(passenger.boardingStatus),
+          ).length,
           noShow: manifest.filter((passenger) => passenger.boardingStatus === 'no_show').length,
         },
       };
@@ -217,7 +220,7 @@ export async function updateDriverPassengerStatus(
   driverId: string,
   tripId: string,
   ticketId: string,
-  status: 'pending' | 'boarded' | 'no_show',
+  status: 'pending' | 'boarded' | 'alighted' | 'no_show',
 ) {
   await assertAssignment(driverId, tripId);
   const ticket = await db().query.tickets.findFirst({
@@ -230,13 +233,15 @@ export async function updateDriverPassengerStatus(
 
   if (!ticket) throw new DriverBackendError(404, 'Yolcu bileti bulunamadı.');
 
+  // Alighting leaves the recorded boarding time alone; every other state sets or clears it.
+  const boardedAt = status === 'boarded' ? new Date() : null;
   const [boarding] = await db()
     .insert(schema.passengerBoarding)
     .values({
       ticketId,
       status,
       updatedBy: driverId,
-      boardedAt: status === 'boarded' ? new Date() : null,
+      boardedAt,
       updatedAt: new Date(),
     })
     .onConflictDoUpdate({
@@ -244,7 +249,7 @@ export async function updateDriverPassengerStatus(
       set: {
         status,
         updatedBy: driverId,
-        boardedAt: status === 'boarded' ? new Date() : null,
+        ...(status === 'alighted' ? {} : { boardedAt }),
         updatedAt: new Date(),
       },
     })
